@@ -1,5 +1,4 @@
 /.phpunit.cache
-/bootstrap/ssr
 /node_modules
 /public/build
 /public/hot
@@ -22,3 +21,9 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+/docker/volumes/*
+/build
+auth.json
+storage/logs/wm-package
+storage/media-library
+bootstrap/ssr
