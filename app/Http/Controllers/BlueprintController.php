@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Blueprint;
+use App\Models\Expansion;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -16,19 +17,22 @@ class BlueprintController extends Controller
     public function index(Request $request): Response
     {
         $request->validate([
-            'category_id' => 'nullable|integer|exists:blueprints,ct_category_id', // Validate if category_id is present
+            'category_id' => 'nullable|integer|exists:blueprints,ct_category_id',
+            'expansion_id' => 'nullable|integer|exists:expansions,id', // Validate expansion_id
         ]);
 
         $selectedCategoryId = $request->input('category_id');
-        $defaultCategoryId = 192; // Default to "single cards" category ID
+        $selectedExpansionId = $request->input('expansion_id'); // Get expansion_id from request
+        $defaultCategoryId = 192;
 
         $blueprints = Blueprint::with(['expansion', 'latestPrice'])
             ->when($selectedCategoryId !== null, function ($query) use ($selectedCategoryId) {
-                // If a category_id is provided in the request, use it
                 return $query->where('ct_category_id', $selectedCategoryId);
             }, function ($query) use ($defaultCategoryId) {
-                // Otherwise, apply the default category_id filter
                 return $query->where('ct_category_id', $defaultCategoryId);
+            })
+            ->when($selectedExpansionId, function ($query, $expansionId) { // Add when clause for expansion_id
+                return $query->where('expansion_id', $expansionId);
             })
             ->orderBy('name')
             ->paginate(30)
@@ -59,10 +63,19 @@ class BlueprintController extends Controller
                 ];
             });
 
+        // Get available expansions that have at least one blueprint
+        $availableExpansions = Expansion::whereHas('blueprints')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return Inertia::render('Dashboard/Blueprints/Index', [
             'blueprints' => $blueprints,
-            'filters' => ['category_id' => $selectedCategoryId ?? $defaultCategoryId], // Pass current or default filter back to view
+            'filters' => [
+                'category_id' => $selectedCategoryId ?? $defaultCategoryId,
+                'expansion_id' => $selectedExpansionId, // Pass current expansion filter
+            ],
             'availableCategories' => $availableCategories,
+            'availableExpansions' => $availableExpansions, // Pass available expansions
         ]);
     }
 

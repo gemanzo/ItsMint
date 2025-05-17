@@ -1,34 +1,42 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { ref, watch, reactive } from 'vue';
 
 const props = defineProps({
     blueprints: Object, // Expect blueprints to have latest_price eager loaded or attached
     filters: {
         type: Object,
-        default: () => ({ category_id: null }) // Default to null or empty string if you prefer
+        default: () => ({ 
+            category_id: null, 
+            expansion_id: null // Added expansion_id to default filters
+        })
     },
     availableCategories: Array, // Added availableCategories prop
+    availableExpansions: Array, // Added availableExpansions prop
 });
 
-// Reactive variable for the selected category filter
-const selectedCategory = ref(props.filters.category_id || '');
+// Reactive object for filters
+const currentFilters = reactive({
+    category: props.filters.category_id || '',
+    expansion: props.filters.expansion_id || '',
+});
 
 const formatPrice = (cents, currency = 'EUR') => {
     if (cents === null || cents === undefined) return 'N/A';
     return (cents / 100).toLocaleString('it-IT', { style: 'currency', currency: currency });
 };
 
-// Watch for changes in selectedCategory and reload page with new filter
-watch(selectedCategory, (newValue) => {
+// Watch for changes in any filter and reload page
+watch(currentFilters, (newFilters) => {
     router.get(route('dashboard.blueprints.index'), {
-        category_id: newValue || undefined, // Send undefined if empty to remove filter
+        category_id: newFilters.category || undefined,
+        expansion_id: newFilters.expansion || undefined, // Send expansion_id
     }, {
-        preserveState: true, // Keep component state like scroll position
-        replace: true, // Replace history state instead of pushing a new one
+        preserveState: true,
+        replace: true,
     });
-});
+}, { deep: true }); // Use deep watch for object
 
 </script>
 
@@ -39,19 +47,35 @@ watch(selectedCategory, (newValue) => {
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Blueprints</h2>
-                <!-- Category Filter Dropdown -->
-                <div class="ml-4">
-                    <label for="category_filter" class="sr-only">Filter by Category</label>
-                    <select 
-                        id="category_filter" 
-                        v-model="selectedCategory"
-                        class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                    >
-                        <option value="">All Categories</option>
-                        <option v-for="category in availableCategories" :key="category.id" :value="category.id">
-                            {{ category.name }}
-                        </option>
-                    </select>
+                <div class="flex space-x-4 items-center">
+                    <!-- Category Filter Dropdown -->
+                    <div>
+                        <label for="category_filter" class="sr-only">Filter by Category</label>
+                        <select 
+                            id="category_filter" 
+                            v-model="currentFilters.category"
+                            class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        >
+                            <option value="">All Categories</option>
+                            <option v-for="category in availableCategories" :key="category.id" :value="category.id">
+                                {{ category.name }}
+                            </option>
+                        </select>
+                    </div>
+                    <!-- Expansion Filter Dropdown -->
+                    <div>
+                        <label for="expansion_filter" class="sr-only">Filter by Expansion</label>
+                        <select 
+                            id="expansion_filter" 
+                            v-model="currentFilters.expansion"
+                            class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        >
+                            <option value="">All Expansions</option>
+                            <option v-for="expansion in availableExpansions" :key="expansion.id" :value="expansion.id">
+                                {{ expansion.name }}
+                            </option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </template>
