@@ -20,10 +20,15 @@ class BlueprintController extends Controller
         ]);
 
         $selectedCategoryId = $request->input('category_id');
+        $defaultCategoryId = 192; // Default to "single cards" category ID
 
         $blueprints = Blueprint::with(['expansion', 'latestPrice'])
-            ->when($selectedCategoryId, function ($query, $categoryId) {
-                return $query->where('ct_category_id', $categoryId);
+            ->when($selectedCategoryId !== null, function ($query) use ($selectedCategoryId) {
+                // If a category_id is provided in the request, use it
+                return $query->where('ct_category_id', $selectedCategoryId);
+            }, function ($query) use ($defaultCategoryId) {
+                // Otherwise, apply the default category_id filter
+                return $query->where('ct_category_id', $defaultCategoryId);
             })
             ->orderBy('name')
             ->paginate(30)
@@ -56,7 +61,7 @@ class BlueprintController extends Controller
 
         return Inertia::render('Dashboard/Blueprints/Index', [
             'blueprints' => $blueprints,
-            'filters' => ['category_id' => $selectedCategoryId], // Pass current filter back to view
+            'filters' => ['category_id' => $selectedCategoryId ?? $defaultCategoryId], // Pass current or default filter back to view
             'availableCategories' => $availableCategories,
         ]);
     }
