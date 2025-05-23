@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BlueprintController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PortfolioController as WebPortfolioController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -33,6 +35,15 @@ Route::middleware('auth')->group(function () {
             ->middleware(['verified'])
             ->name('show'); // Will be dashboard.blueprints.show
     });
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Potremmo avere una route dedicata per la vista "Portfolio" se diversa dalla dashboard
+    // Route::get('/portfolios', [PortfolioController::class, 'view'])->name('portfolios.view');
+
+    // Portfolio Web Routes
+    Route::get('/portfolios', [WebPortfolioController::class, 'index'])->name('portfolios.index');
+    Route::get('/portfolios/{portfolio}', [WebPortfolioController::class, 'show'])->name('portfolios.show');
 });
 
 require __DIR__ . '/auth.php';

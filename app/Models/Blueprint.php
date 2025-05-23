@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use App\Models\UserCard;
 
 class Blueprint extends Model
 {
@@ -105,5 +106,10 @@ class Blueprint extends Model
             'id' => $this->ct_category_id,
             'name' => (string) $this->ct_category_id,
         ];
+    }
+
+    public function userCards(): HasMany
+    {
+        return $this->hasMany(UserCard::class);
     }
 }

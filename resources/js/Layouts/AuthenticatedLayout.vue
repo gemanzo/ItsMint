@@ -45,6 +45,12 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     Blueprints
                                 </NavLink>
+                                <NavLink
+                                    :href="route('portfolios.index')"
+                                    :active="route().current('portfolios.index') || route().current('portfolios.show')"
+                                >
+                                    Portfolios
+                                </NavLink>
                             </div>
                         </div>
 
@@ -157,6 +163,12 @@ const showingNavigationDropdown = ref(false);
                             :active="route().current('dashboard.blueprints.index') || route().current('dashboard.blueprints.show')"
                         >
                             Blueprints
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="route('portfolios.index')"
+                            :active="route().current('portfolios.index') || route().current('portfolios.show')"
+                        >
+                            Portfolios
                         </ResponsiveNavLink>
                     </div>
 

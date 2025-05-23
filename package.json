@@ -9,6 +9,7 @@
         "@inertiajs/vue3": "^2.0.0",
         "@tailwindcss/forms": "^0.5.3",
         "@tailwindcss/vite": "^4.0.0",
+        "@types/lodash": "^4.17.17",
         "@vitejs/plugin-vue": "^5.0.0",
         "@vue/server-renderer": "^3.4.0",
         "autoprefixer": "^10.4.12",
@@ -21,5 +22,10 @@
         "vite": "^6.2.4",
         "vue": "^3.4.0",
         "vue-tsc": "^2.0.24"
+    },
+    "dependencies": {
+        "@headlessui/vue": "^1.7.23",
+        "lodash": "^4.17.21",
+        "pinia": "^3.0.2"
     }
 }
