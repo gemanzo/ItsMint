@@ -236,7 +236,7 @@ const searchBlueprints = async () => {
         return;
     }
     try {
-        // NEW: Use Elasticsearch API instead of old database search
+        // Use Elasticsearch API - backend now handles normalization and fuzzy matching
         const response = await axios.get('blueprints/search', {
             params: { 
                 q: blueprintSearchQuery.value,
