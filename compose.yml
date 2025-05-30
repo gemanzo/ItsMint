@@ -1,4 +1,15 @@
 services:
+  nginx:
+    image: nginx:alpine
+    container_name: "nginx_${APP_NAME}"
+    restart: always
+    ports:
+      - "8000:80"
+    volumes:
+      - ".:/var/www/html/${DOCKER_PROJECT_DIR_NAME}"
+      - "./docker/configs/nginx/nginx.conf:/etc/nginx/conf.d/default.conf"
+    depends_on:
+      - php
   php:
     extra_hosts:
       - host.docker.internal:host-gateway

@@ -25,7 +25,7 @@ export default defineConfig({
             host: 'localhost',
         },
         cors: {
-            origin: 'http://localhost:8000'
+            origin: ['http://localhost:8000', 'http://0.0.0.0:8000']
         }
     }
 });
