@@ -3,7 +3,7 @@
         <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
             Dashboard
         </NavLink>
-        <NavLink :href="route('blueprints.index')" :active="route().current('blueprints.index') || route().current('blueprints.show')">
+        <NavLink :href="route('dashboard.blueprints.index')" :active="route().current('dashboard.blueprints.index') || route().current('dashboard.blueprints.show')">
             Blueprints
         </NavLink>
         <NavLink :href="route('portfolios.index')" :active="route().current('portfolios.index') || route().current('portfolios.show')">
@@ -17,7 +17,7 @@
             <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
                 Dashboard
             </ResponsiveNavLink>
-            <ResponsiveNavLink :href="route('blueprints.index')" :active="route().current('blueprints.index') || route().current('blueprints.show')">
+            <ResponsiveNavLink :href="route('dashboard.blueprints.index')" :active="route().current('dashboard.blueprints.index') || route().current('dashboard.blueprints.show')">
                 Blueprints
             </ResponsiveNavLink>
             <ResponsiveNavLink :href="route('portfolios.index')" :active="route().current('portfolios.index') || route().current('portfolios.show')">
