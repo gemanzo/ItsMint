@@ -18,10 +18,25 @@ class PortfolioController extends Controller
     /**
      * Display a listing of the user's portfolios.
      */
-    public function index(Request $request): InertiaResponse
+    public function index(Request $request)
     {
         $user = Auth::user();
-        $portfolios = $user->portfolios()->withCount('userCards')->latest()->get(); // Basic query, add pagination if needed
+
+        // Check if this is an API request (JSON expected) - for dashboard calculations
+        if ($request->expectsJson() || $request->is('api/*')) {
+            // For API requests (dashboard), load full data with relationships for calculations
+            $portfolios = $user->portfolios()
+                ->with(['userCards.blueprint.latestPrice'])
+                ->latest()
+                ->get();
+
+            return response()->json([
+                'data' => $portfolios
+            ]);
+        }
+
+        // For web requests (portfolios index page), just load counts for performance
+        $portfolios = $user->portfolios()->withCount('userCards')->latest()->get();
 
         return Inertia::render('Portfolios/Index', [
             'portfolios' => $portfolios,
@@ -48,7 +63,7 @@ class PortfolioController extends Controller
     /**
      * Display the specified portfolio.
      */
-    public function show(Request $request, Portfolio $portfolio): InertiaResponse
+    public function show(Request $request, Portfolio $portfolio)
     {
         $this->authorize('view', $portfolio);
 
@@ -61,6 +76,14 @@ class PortfolioController extends Controller
         // For example, an alternative to loading all user_cards:
         // $userCards = $portfolio->userCards()->with('blueprint.latestPrice')->paginate(15);
 
+        // Check if this is an API request (JSON expected)
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'data' => $portfolio
+            ]);
+        }
+
+        // For web requests, return Inertia view
         return Inertia::render('Portfolios/Show', [
             'portfolio' => $portfolio, // Again, consider using a resource
             // 'userCards' => UserCardResource::collection($userCards), // If paginating separately

@@ -56,14 +56,20 @@ interface PortfolioState {
     error: string | null;
 }
 
-export type PortfolioStoreType = Store<'portfolio', PortfolioState, {}, PortfolioActions>;
-
 interface PortfolioActions {
-    fetchPortfolios(this: PortfolioStoreType): Promise<void>;
-    fetchPortfolioDetails(this: PortfolioStoreType, portfolioId: number): Promise<void>;
-    createPortfolio(this: PortfolioStoreType, name: string, description?: string): Promise<void>;
-    addUserCardToPortfolio(this: PortfolioStoreType, portfolioId: number, userCardId: number, quantity: number): Promise<void>;
-    createUserCard(this: PortfolioStoreType, data: Omit<UserCard, 'id' | 'user_id' | 'pivot' | 'blueprint' | 'estimated_value_cents' | 'sold_price_cents' | 'sold_currency' | 'sold_at' | 'acquired_at' | 'notes' | 'purchase_currency'> & { blueprint_id: number; condition: string; language: string; purchase_price?: number | null; notes?: string; acquired_at?: string;}): Promise<UserCard>;
+    fetchPortfolios(): Promise<void>;
+    fetchPortfolioDetails(portfolioId: number): Promise<void>;
+    createPortfolio(name: string, description?: string): Promise<Portfolio>;
+    addUserCardToPortfolio(portfolioId: number, userCardId: number, quantity: number): Promise<void>;
+    createUserCard(data: Omit<UserCard, 'id' | 'user_id' | 'pivot' | 'blueprint' | 'estimated_value_cents' | 'sold_price_cents' | 'sold_currency' | 'sold_at' | 'acquired_at' | 'notes' | 'purchase_currency'> & { 
+        blueprint_id: number; 
+        condition: string; 
+        language: string; 
+        quantity: number; 
+        purchase_price?: number | null; 
+        notes?: string; 
+        acquired_at?: string;
+    }): Promise<UserCard | UserCard[]>;
 }
 
 export const usePortfolioStore = defineStore('portfolio', {
@@ -90,54 +96,35 @@ export const usePortfolioStore = defineStore('portfolio', {
         // Altri getters utili (es. carte per un portfolio specifico, valore di un singolo portfolio)
     },
     actions: {
-        async fetchPortfolios(this: PortfolioStoreType) {
+        async fetchPortfolios() {
             this.isLoading = true;
             this.error = null;
             try {
-                const response = await axios.get<any>('http://localhost:8000/api/portfolios');
-                console.log('API /api/portfolios response:', response);
-
-                let portfoliosData: Portfolio[] = [];
-
-                if (response.data && Array.isArray(response.data.data)) {
-                    // Standard Laravel API Resource collection (e.g., from pagination)
-                    portfoliosData = response.data.data;
-                } else if (Array.isArray(response.data)) {
-                    // Data might be a direct array (e.g. if withoutWrapping() is used, or not a resource collection)
-                    portfoliosData = response.data;
-                } else {
-                    console.error('Unexpected response structure for /api/portfolios:', response.data);
-                    this.error = 'Unexpected response structure from server.';
-                    this.portfolios = []; // Clear portfolios on error
-                    this.isLoading = false;
-                    return;
-                }
+                const response = await axios.get<any>('portfolios');
+                const data = response.data.data || response.data;
                 
-                this.portfolios = portfoliosData.map((p: Portfolio) => ({
-                    ...p,
-                    user_cards: p.user_cards || [], 
-                }));
-
-                // Fetch details only if portfolios were successfully loaded
-                if (this.portfolios.length > 0) {
-                    for (const portfolio of this.portfolios) {
-                        await this.fetchPortfolioDetails(portfolio.id);
-                    }
+                // Ensure we always set an array, even if the response is unexpected
+                if (Array.isArray(data)) {
+                    this.portfolios = data;
+                } else {
+                    console.warn('API response is not an array, setting empty array:', data);
+                    this.portfolios = [];
                 }
-
-            } catch (err) {
+            } catch (error) {
                 this.error = 'Failed to fetch portfolios';
-                console.error(err);
+                console.error(error);
+                // Ensure portfolios remains an array even on error
+                this.portfolios = [];
             } finally {
                 this.isLoading = false;
             }
         },
 
-        async fetchPortfolioDetails(this: PortfolioStoreType, portfolioId: number) {
+        async fetchPortfolioDetails(portfolioId: number) {
             this.isLoading = true; 
             try {
-                const response = await axios.get<any>(`/api/portfolios/${portfolioId}`);
-                console.log(`API /api/portfolios/${portfolioId} response:`, response);
+                const response = await axios.get<any>(`portfolios/${portfolioId}`);
+                console.log('getPortfolioById response:', response.data);
                 
                 let portfolioData: Portfolio | null = null;
 
@@ -180,11 +167,13 @@ export const usePortfolioStore = defineStore('portfolio', {
             }
         },
 
-        async createPortfolio(this: PortfolioStoreType, name: string, description?: string) {
+        async createPortfolio(name: string, description?: string) {
             this.isLoading = true;
             try {
-                const response = await axios.post<Portfolio>('/api/portfolios', { name, description });
-                this.portfolios.push(response.data);
+                const response = await axios.post<Portfolio>('portfolios', { name, description });
+                const newPortfolio = response.data;
+                this.portfolios.push(newPortfolio);
+                return newPortfolio;
             } catch (err) {
                 this.error = 'Failed to create portfolio';
                 console.error(err);
@@ -194,16 +183,26 @@ export const usePortfolioStore = defineStore('portfolio', {
             }
         },
 
-        async addUserCardToPortfolio(this: PortfolioStoreType, portfolioId: number, userCardId: number, quantity: number) {
+        async addUserCardToPortfolio(portfolioId: number, userCardId: number, quantity: number) {
             try {
-                const response = await axios.post<Portfolio>(`/api/portfolios/${portfolioId}/user-cards`, {
+                const response = await axios.post<Portfolio>(`portfolios/${portfolioId}/user-cards`, {
                     user_card_id: userCardId,
-                    quantity,
+                    quantity
                 });
+                
+                // Ensure portfolios is initialized as an array
+                if (!Array.isArray(this.portfolios)) {
+                    console.warn('this.portfolios is not an array, initializing as empty array:', this.portfolios);
+                    this.portfolios = [];
+                }
+                
                 // Aggiorna il portfolio nello store
                 const index = this.portfolios.findIndex((p: Portfolio) => p.id === portfolioId);
                 if (index !== -1) {
                     this.portfolios[index] = response.data;
+                } else {
+                    // Portfolio not in store, add it
+                    this.portfolios.push(response.data);
                 }
             } catch (error) {
                 console.error('Error adding card to portfolio:', error);
@@ -211,31 +210,35 @@ export const usePortfolioStore = defineStore('portfolio', {
             }
         },
         
-        async createUserCard(this: PortfolioStoreType, data: Omit<UserCard, 'id' | 'user_id' | 'pivot' | 'blueprint' | 'estimated_value_cents' | 'sold_price_cents' | 'sold_currency' | 'sold_at' | 'acquired_at' | 'notes' | 'purchase_currency'> & { blueprint_id: number; condition: string; language: string; purchase_price?: number | null; notes?: string; acquired_at?: string;} ): Promise<UserCard> {
+        async createUserCard(data: Omit<UserCard, 'id' | 'user_id' | 'pivot' | 'blueprint' | 'estimated_value_cents' | 'sold_price_cents' | 'sold_currency' | 'sold_at' | 'acquired_at' | 'notes' | 'purchase_currency'> & { 
+            blueprint_id: number; 
+            condition: string; 
+            language: string; 
+            quantity: number; 
+            purchase_price?: number | null; 
+            notes?: string; 
+            acquired_at?: string;
+        }): Promise<UserCard | UserCard[]> {
             const payload: any = { 
                 blueprint_id: data.blueprint_id,
                 condition: data.condition,
                 language: data.language,
                 notes: data.notes,
                 acquired_at: data.acquired_at,
-                // purchase_currency will be set if purchase_price is set, or default on backend
+                purchase_price: data.purchase_price, // Always include, even if null
+                quantity: data.quantity,
             };
 
-            if (typeof data.purchase_price !== 'undefined') { // Check if purchase_price is explicitly passed
-                if (data.purchase_price === null) {
-                    payload.purchase_price_cents = null;
-                } else {
-                    payload.purchase_price_cents = Math.round(data.purchase_price * 100);
-                    payload.purchase_currency = payload.purchase_currency || 'EUR'; // Default currency if price is set
-                }
+            // Set currency when price is provided
+            if (data.purchase_price !== null && data.purchase_price !== undefined) {
+                payload.purchase_currency = 'EUR';
             }
-            // No `delete payload.purchase_price;` needed as it's not part of the initial payload object
+
+            console.log('Payload being sent to API:', payload);
 
             try {
-                const response = await axios.post<UserCard>('/api/user-cards', payload);
-                // Non aggiungiamo UserCard direttamente a un portfolio qui, gestito da addUserCardToPortfolio
-                // Ma potremmo volerla aggiungere a una lista generale di user cards dell'utente se la manteniamo nello store
-                return response.data; // Ritorna la UserCard creata
+                const response = await axios.post<UserCard | UserCard[]>('user-cards', payload);
+                return response.data;
             } catch (error) {
                 console.error('Error creating user card:', error);
                 throw error;

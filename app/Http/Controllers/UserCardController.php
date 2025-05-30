@@ -29,39 +29,53 @@ class UserCardController extends Controller
             'blueprint_id' => 'required|exists:blueprints,id',
             'condition' => 'required|string|max:50',
             'language' => 'required|string|max:10',
+            'quantity' => 'required|integer|min:1|max:50',
             'purchase_price' => 'nullable|numeric|min:0',
             'purchase_currency' => 'nullable|string|max:3',
             'acquired_at' => 'nullable|date',
             'notes' => 'nullable|string',
-            // 'portfolio_id' => 'nullable|exists:portfolios,id', // Opzionale: aggiungi direttamente a un portfolio
-            // 'quantity' => 'required_with:portfolio_id|integer|min:1' // Opzionale: quantità se si aggiunge a un portfolio
         ]);
 
-        // Verifica che il blueprint esista
         $blueprint = Blueprint::find($validated['blueprint_id']);
         if (!$blueprint) {
             return response()->json(['message' => 'Blueprint not found.'], 404);
         }
 
-        $userCard = Auth::user()->userCards()->create([
+        $quantity = $validated['quantity'];
+
+        // Auto-populate purchase_price if not provided
+        if (!isset($validated['purchase_price']) || is_null($validated['purchase_price'])) {
+            $blueprint = Blueprint::with('latestPrice')->find($validated['blueprint_id']);
+            if ($blueprint && $blueprint->latestPrice && !is_null($blueprint->latestPrice->price_cents)) {
+                $validated['purchase_price'] = $blueprint->latestPrice->price_cents / 100; // Convert to euros
+            }
+        }
+
+        $userCardData = [
             'blueprint_id' => $validated['blueprint_id'],
             'condition' => $validated['condition'],
             'language' => $validated['language'],
-            'purchase_price_cents' => isset($validated['purchase_price']) ? (int)round($validated['purchase_price'] * 100) : null,
+            'purchase_price' => $validated['purchase_price'] ?? null,
             'purchase_currency' => $validated['purchase_currency'] ?? 'EUR',
             'acquired_at' => $validated['acquired_at'] ?? null,
             'notes' => $validated['notes'] ?? null,
-        ]);
+        ];
 
-        // Logica per aggiungere a un portfolio se portfolio_id è fornito
-        // if (isset($validated['portfolio_id'])) {
-        //     $portfolio = Auth::user()->portfolios()->find($validated['portfolio_id']);
-        //     if ($portfolio) {
-        //         $portfolio->userCards()->attach($userCard->id, ['quantity' => $validated['quantity'] ?? 1]);
-        //     }
-        // }
+        $createdCards = [];
 
-        return response()->json($userCard->load(['blueprint.expansion', 'blueprint.latestPrice']), 201);
+        // Create multiple UserCard records based on quantity
+        for ($i = 0; $i < $quantity; $i++) {
+            $userCard = Auth::user()->userCards()->create($userCardData);
+            $userCard->load(['blueprint.expansion', 'blueprint.latestPrice']);
+            $createdCards[] = $userCard;
+        }
+
+        // Return single card if quantity = 1, array if multiple
+        if ($quantity === 1) {
+            return response()->json($createdCards[0], 201);
+        }
+
+        return response()->json($createdCards, 201);
     }
 
     /**
@@ -104,19 +118,19 @@ class UserCardController extends Controller
         ];
 
         if (isset($validated['purchase_price'])) {
-            $updateData['purchase_price_cents'] = (int)round($validated['purchase_price'] * 100);
+            $updateData['purchase_price'] = $validated['purchase_price'];
             $updateData['purchase_currency'] = $validated['purchase_currency'] ?? $userCard->purchase_currency ?? 'EUR';
         } elseif (array_key_exists('purchase_price', $validated) && is_null($validated['purchase_price'])) {
-            $updateData['purchase_price_cents'] = null;
+            $updateData['purchase_price'] = null;
             $updateData['purchase_currency'] = null;
         }
 
         if (isset($validated['sold_price'])) {
-            $updateData['sold_price_cents'] = (int)round($validated['sold_price'] * 100);
+            $updateData['sold_price'] = $validated['sold_price'];
             $updateData['sold_currency'] = $validated['sold_currency'] ?? $userCard->sold_currency ?? 'EUR';
             $updateData['sold_at'] = $validated['sold_at'] ?? now();
         } elseif (array_key_exists('sold_price', $validated) && is_null($validated['sold_price'])) {
-            $updateData['sold_price_cents'] = null;
+            $updateData['sold_price'] = null;
             $updateData['sold_currency'] = null;
             $updateData['sold_at'] = null;
         }

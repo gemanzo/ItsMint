@@ -32,10 +32,18 @@
                                 <div class="mt-4 space-y-4">
                                     <div>
                                         <label for="portfolio" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Select Portfolio</label>
+                                        <input 
+                                            v-if="props.portfolioId"
+                                            type="text"
+                                            id="portfolio"
+                                            :value="selectedPortfolioName"
+                                            readonly
+                                            class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 dark:bg-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:text-gray-200 cursor-not-allowed"
+                                        />
                                         <select 
+                                            v-else
                                             id="portfolio"
                                             v-model="selectedPortfolioId"
-                                            :disabled="!!props.portfolioId" 
                                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                                         >
                                             <option disabled value="">Please select one</option>
@@ -107,8 +115,22 @@
                                     </div>
 
                                     <div>
-                                        <label for="purchasePrice" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Purchase Price (Optional)</label>
-                                        <input type="number" id="purchasePrice" v-model.number="cardDetails.purchase_price" step="0.01" placeholder="e.g., 10.50" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
+                                        <label for="acquiredAt" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Acquired Date (Optional)</label>
+                                        <input type="date" id="acquiredAt" v-model="cardDetails.acquired_at" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
+                                    </div>
+
+                                    <div>
+                                        <label for="purchasePrice" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Purchase Price
+                                            <span class="text-xs text-gray-500 dark:text-gray-400 font-normal">- Leave empty to use estimated value</span>
+                                        </label>
+                                        <div class="relative">
+                                            <input type="number" id="purchasePrice" v-model.number="cardDetails.purchase_price" step="0.01" placeholder="e.g., 10.50" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 pr-10" />
+                                            <span class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 text-sm">€</span>
+                                        </div>
+                                        <p v-if="estimatedPrice && !cardDetails.purchase_price" class="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                            💡 Will use estimated value: {{ formatCurrency(estimatedPrice) }}
+                                        </p>
                                     </div>
 
                                     <!-- Notes, Acquired At, etc. can be added here -->
@@ -134,7 +156,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted } from 'vue';
+import { ref, reactive, watch, onMounted, computed } from 'vue';
 import {
     Dialog,
     DialogPanel,
@@ -147,7 +169,8 @@ import { usePortfolioStore, Blueprint, UserCard } from '@/stores/portfolioStore'
 import debounce from 'lodash/debounce';
 
 const props = defineProps<{ 
-    portfolioId?: number | null 
+    portfolioId?: number | null;
+    portfolioName?: string | null;
 }>();
 
 const emit = defineEmits(['close', 'card-added']);
@@ -166,10 +189,25 @@ const cardDetails = reactive({
     language: 'EN',
     quantity: 1,
     purchase_price: null as number | null,
+    acquired_at: undefined as string | undefined,
     // notes: ''
 });
 
 const formErrors = reactive<Record<string, string>>({});
+
+// Computed property to get the selected portfolio name
+const selectedPortfolioName = computed(() => {
+    if (!selectedPortfolioId.value) return '';
+    
+    // If portfolioName is provided as prop, use it (for when opened from specific portfolio page)
+    if (props.portfolioName && props.portfolioId === selectedPortfolioId.value) {
+        return props.portfolioName;
+    }
+    
+    // Otherwise, try to find it in the store
+    const portfolio = portfolioStore.portfolios.find(p => p.id === selectedPortfolioId.value);
+    return portfolio?.name || '';
+});
 
 watch(() => props.portfolioId, (newVal) => {
     selectedPortfolioId.value = newVal || null;
@@ -180,13 +218,25 @@ const closeModal = () => {
     setTimeout(() => emit('close'), 300); // Allow time for transition
 };
 
+const estimatedPrice = computed(() => {
+    if (selectedBlueprint.value?.latest_price?.price_cents) {
+        return selectedBlueprint.value.latest_price.price_cents / 100;
+    }
+    return null;
+});
+
+const formatCurrency = (value: number | null | undefined, currency = 'EUR') => {
+    if (value === null || typeof value === 'undefined') return 'N/A';
+    return new Intl.NumberFormat('it-IT', { style: 'currency', currency: currency }).format(value);
+};
+
 const searchBlueprints = async () => {
     if (blueprintSearchQuery.value.length < 2) {
         blueprintSearchResults.value = [];
         return;
     }
     try {
-        const response = await axios.get<Blueprint[]>('/api/blueprints/search', {
+        const response = await axios.get<Blueprint[]>('blueprints/search', {
             params: { query: blueprintSearchQuery.value }
         });
         blueprintSearchResults.value = response.data;
@@ -238,26 +288,38 @@ const submitAddCard = async () => {
     formErrors.general = '';
 
     try {
-        // 1. Create the UserCard
-        const newUserCard = await portfolioStore.createUserCard({
+        // Single API call that creates multiple UserCard records
+        const response = await portfolioStore.createUserCard({
             blueprint_id: selectedBlueprint.value!.id,
             condition: cardDetails.condition,
             language: cardDetails.language,
-            purchase_price: cardDetails.purchase_price === null ? undefined : cardDetails.purchase_price,
+            quantity: cardDetails.quantity,
+            purchase_price: cardDetails.purchase_price,
+            acquired_at: cardDetails.acquired_at,
             // notes: cardDetails.notes,
         });
 
-        // 2. Add UserCard to the selected Portfolio
-        if (selectedPortfolioId.value && newUserCard) {
-            await portfolioStore.addUserCardToPortfolio(
-                selectedPortfolioId.value,
-                newUserCard.id,
-                cardDetails.quantity
-            );
-            emit('card-added', { portfolioId: selectedPortfolioId.value, card: newUserCard });
+        // Response can be single UserCard or array of UserCards
+        const createdCards = Array.isArray(response) ? response : [response];
+
+        if (createdCards.length > 0 && selectedPortfolioId.value) {
+            // Add all cards to portfolio in a single operation
+            for (const userCard of createdCards) {
+                await portfolioStore.addUserCardToPortfolio(
+                    selectedPortfolioId.value,
+                    userCard.id,
+                    1 // Each card gets quantity 1
+                );
+            }
+
+            emit('card-added', { 
+                portfolioId: selectedPortfolioId.value, 
+                cards: createdCards,
+                totalQuantity: cardDetails.quantity 
+            });
             closeModal();
         } else {
-            throw new Error('Failed to associate card with portfolio.');
+            throw new Error('Failed to create cards or associate them with portfolio.');
         }
 
     } catch (error: any) {
@@ -268,10 +330,15 @@ const submitAddCard = async () => {
     }
 };
 
-onMounted(() => {
+onMounted(async () => {
     // If portfolios are not loaded yet, fetch them
     if (portfolioStore.portfolios.length === 0) {
-        portfolioStore.fetchPortfolios();
+        await portfolioStore.fetchPortfolios();
+    }
+    
+    // If we have a specific portfolioId, also fetch its details to ensure it's in the store
+    if (props.portfolioId) {
+        await portfolioStore.fetchPortfolioDetails(props.portfolioId);
     }
 });
 

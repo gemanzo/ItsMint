@@ -36,19 +36,97 @@
 
                         <!-- Cards List -->
                         <div>
-                            <h2 class="text-xl font-semibold mb-3">Cards in Portfolio</h2>
-                            <div v-if="portfolio.user_cards && portfolio.user_cards.length > 0" class="space-y-3">
-                                <div v-for="item in portfolio.user_cards" :key="item.id" class="bg-gray-50 dark:bg-gray-700 p-4 rounded-md shadow-sm flex justify-between items-center">
-                                    <div>
-                                        <p class="font-medium text-lg">{{ item.blueprint?.name }}</p>
-                                        <p class="text-sm text-gray-500 dark:text-gray-300">Condition: {{ item.condition }} | Language: {{ item.language }} | Qty: {{ item.pivot.quantity }}</p>
-                                        <p class="text-sm text-gray-500 dark:text-gray-300">Acquired: {{ item.acquired_at ? new Date(item.acquired_at).toLocaleDateString() : 'N/A' }}</p>
+                            <h2 class="text-xl font-semibold mb-4">Cards in Portfolio</h2>
+                            <div v-if="groupedCards && groupedCards.length > 0" class="space-y-6">
+                                <div v-for="group in groupedCards" :key="group.groupKey" class="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                    <div class="p-6">
+                                        <div class="flex items-start space-x-6">
+                                            <!-- Card Image - Larger -->
+                                            <div class="flex-shrink-0">
+                                                <img 
+                                                    v-if="group.blueprint?.image_url" 
+                                                    :src="group.blueprint.image_url" 
+                                                    :alt="group.blueprint.name"
+                                                    class="h-36 w-auto object-contain rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-sm"
+                                                />
+                                                <div 
+                                                    v-else 
+                                                    class="h-36 w-24 bg-gray-200 dark:bg-gray-600 rounded-lg border-2 border-gray-300 dark:border-gray-500 flex items-center justify-center text-sm text-gray-500 dark:text-gray-400 font-medium"
+                                                >
+                                                    No Image
+                                                </div>
+                                            </div>
+
+                                            <!-- Card Info - Better Layout -->
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex justify-between items-start">
+                                                    <!-- Left Column - Card Details -->
+                                                    <div class="flex-1 min-w-0 pr-4">
+                                                        <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{{ group.blueprint?.name }}</h3>
+                                                        
+                                                        <div class="space-y-2">
+                                                            <div class="flex flex-wrap gap-4 text-sm">
+                                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                                                    {{ group.condition }}
+                                                                </span>
+                                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                                                    {{ group.language }}
+                                                                </span>
+                                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                                                    Qty: {{ group.totalQuantity }}
+                                                                </span>
+                                                            </div>
+                                                            
+                                                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                                                                <span class="font-medium">Acquired:</span> {{ group.acquired_at ? new Date(group.acquired_at).toLocaleDateString() : 'N/A' }}
+                                                            </p>
+                                                            
+                                                            <p v-if="group.blueprint?.expansion" class="text-sm text-gray-500 dark:text-gray-500">
+                                                                {{ group.blueprint.expansion.name }} ({{ group.blueprint.expansion.code }})
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Right Column - Pricing Info -->
+                                                    <div class="flex-shrink-0 flex space-x-3">
+                                                        <!-- Single Card Values -->
+                                                        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 w-36">
+                                                            <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 text-center">Per Card</p>
+                                                            <div class="text-center space-y-1">
+                                                                <p class="text-sm font-bold text-gray-900 dark:text-gray-100">
+                                                                    {{ formatCurrency(group.singleEstimatedValue) }}
+                                                                </p>
+                                                                <p class="text-xs text-gray-600 dark:text-gray-400">Est. Value</p>
+                                                                <div class="border-t border-gray-200 dark:border-gray-600 pt-1 mt-1">
+                                                                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                                        {{ formatCurrency(group.singlePurchasePrice) }}
+                                                                    </p>
+                                                                    <p class="text-xs text-gray-500 dark:text-gray-500">Purchase</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Group Total Values -->
+                                                        <div class="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30 p-3 rounded-lg border border-indigo-200 dark:border-indigo-700 w-36">
+                                                            <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-2 text-center">Total (×{{ group.totalQuantity }})</p>
+                                                            <div class="text-center space-y-1">
+                                                                <p class="text-sm font-bold text-indigo-900 dark:text-indigo-100">
+                                                                    {{ formatCurrency(group.estimatedValueCents ? group.estimatedValueCents / 100 : undefined) }}
+                                                                </p>
+                                                                <p class="text-xs text-indigo-700 dark:text-indigo-300">Est. Value</p>
+                                                                <div class="border-t border-indigo-200 dark:border-indigo-600 pt-1 mt-1">
+                                                                    <p class="text-sm font-bold text-indigo-800 dark:text-indigo-200">
+                                                                        {{ formatCurrency(group.purchasePriceCents ? group.purchasePriceCents / 100 : undefined) }}
+                                                                    </p>
+                                                                    <p class="text-xs text-indigo-600 dark:text-indigo-400">Purchase</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="text-right">
-                                        <p class="text-md font-semibold">Est. Value: {{ formatCurrency(item.estimated_value_cents ? item.estimated_value_cents / 100 : undefined) }}</p>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400">Purchase: {{ formatCurrency(item.purchase_price_cents ? item.purchase_price_cents / 100 : undefined) }}</p>
-                                    </div>
-                                    <!-- TODO: Add actions per card (edit, delete) -->
                                 </div>
                             </div>
                             <p v-else class="text-gray-500 dark:text-gray-300">No cards in this portfolio yet.</p>
@@ -62,6 +140,7 @@
             v-if="showAddCardModal" 
             @close="closeAddCardModal" 
             :portfolio-id="portfolio.id" 
+            :portfolio-name="portfolio.name"
             @card-added="handleCardAddedToCurrentPortfolio"
         />
     </AuthenticatedLayout>
@@ -83,6 +162,19 @@ interface UserCardData extends UserCardInterface {
 // Interfaccia per Portfolio come viene passata dal controller, ora allineata con lo store
 interface PortfolioPageData extends PortfolioInterface {
     user_cards?: UserCardData[]; // user_cards ora usa UserCardData, che estende la UserCardInterface aggiornata
+}
+
+interface CardGroup {
+    groupKey: string;
+    blueprint?: BlueprintInterface;
+    condition: string;
+    language: string;
+    totalQuantity: number;
+    estimatedValueCents: number;
+    purchasePriceCents: number;
+    acquired_at?: string;
+    singleEstimatedValue: number;
+    singlePurchasePrice: number;
 }
 
 const props = defineProps<{
@@ -125,6 +217,36 @@ const totalPurchaseCost = computed(() => {
         const cost = card.purchase_price_cents ? card.purchase_price_cents / 100 : 0;
         return sum + (cost * (card.pivot?.quantity || 1));
     }, 0) || 0;
+});
+
+const groupedCards = computed(() => {
+    const cards = props.portfolio.user_cards || [];
+    const grouped: Record<string, CardGroup> = {};
+
+    cards.forEach(card => {
+        const groupKey = `${card.blueprint?.name}-${card.condition}-${card.language}-${card.purchase_price_cents}`;
+        if (!grouped[groupKey]) {
+            grouped[groupKey] = {
+                groupKey,
+                blueprint: card.blueprint,
+                condition: card.condition,
+                language: card.language,
+                totalQuantity: 0,
+                estimatedValueCents: 0,
+                purchasePriceCents: 0,
+                acquired_at: card.acquired_at,
+                singleEstimatedValue: 0,
+                singlePurchasePrice: 0
+            };
+        }
+        grouped[groupKey].totalQuantity += card.pivot.quantity;
+        grouped[groupKey].estimatedValueCents += card.estimated_value_cents || 0;
+        grouped[groupKey].purchasePriceCents += card.purchase_price_cents || 0;
+        grouped[groupKey].singleEstimatedValue = card.estimated_value_cents ? card.estimated_value_cents / 100 : 0;
+        grouped[groupKey].singlePurchasePrice = card.purchase_price_cents ? card.purchase_price_cents / 100 : 0;
+    });
+
+    return Object.values(grouped);
 });
 
 </script> 

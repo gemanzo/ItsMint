@@ -86,6 +86,15 @@ onMounted(async () => {
     if (portfolioStore.portfolios.length === 0) {
         await portfolioStore.fetchPortfolios();
     }
+    
+    // Debug: log the portfolios data
+    console.log('Dashboard portfolios data:', portfolioStore.portfolios);
+    if (portfolioStore.portfolios.length > 0 && portfolioStore.portfolios[0].user_cards) {
+        console.log('First portfolio user_cards:', portfolioStore.portfolios[0].user_cards);
+        if (portfolioStore.portfolios[0].user_cards.length > 0) {
+            console.log('First card estimated_value_cents:', portfolioStore.portfolios[0].user_cards[0].estimated_value_cents);
+        }
+    }
 });
 
 const formatCurrency = (value: number | null | undefined, currency = 'EUR') => {
@@ -94,6 +103,9 @@ const formatCurrency = (value: number | null | undefined, currency = 'EUR') => {
 };
 
 const totalEstimatedPortfolioValue = computed(() => {
+    if (!Array.isArray(portfolioStore.portfolios)) {
+        return 0;
+    }
     return portfolioStore.portfolios.reduce((total, portfolio) => {
         const portfolioValue = portfolio.user_cards?.reduce((sum, card) => {
             const value = card.estimated_value_cents ? card.estimated_value_cents / 100 : 0;
@@ -104,6 +116,9 @@ const totalEstimatedPortfolioValue = computed(() => {
 });
 
 const totalPurchasePortfolioCost = computed(() => {
+    if (!Array.isArray(portfolioStore.portfolios)) {
+        return 0;
+    }
     return portfolioStore.portfolios.reduce((total, portfolio) => {
         const portfolioCost = portfolio.user_cards?.reduce((sum, card) => {
             const cost = card.purchase_price_cents ? card.purchase_price_cents / 100 : 0;

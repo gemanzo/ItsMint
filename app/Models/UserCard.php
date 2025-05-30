@@ -18,9 +18,11 @@ class UserCard extends Model
         'blueprint_id',
         'condition',
         'language',
+        'purchase_price',
         'purchase_price_cents',
         'purchase_currency',
         'acquired_at',
+        'sold_price',
         'sold_price_cents',
         'sold_currency',
         'sold_at',
@@ -32,6 +34,10 @@ class UserCard extends Model
         'sold_at' => 'datetime',
         'purchase_price_cents' => 'integer',
         'sold_price_cents' => 'integer',
+    ];
+
+    protected $appends = [
+        'estimated_value_cents',
     ];
 
     // Helper for price condition adjustments
