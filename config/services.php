@@ -18,6 +18,13 @@ return [
         'token' => env('POSTMARK_TOKEN'),
     ],
 
+    'mailgun' => [
+        'domain' => env('MAILGUN_DOMAIN'),
+        'secret' => env('MAILGUN_SECRET'),
+        'endpoint' => env('MAILGUN_ENDPOINT', 'api.mailgun.net'),
+        'scheme' => 'https',
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
@@ -53,6 +60,12 @@ return [
         'one_piece_don_token_category_id' => env('CARDTRADER_ONE_PIECE_DON_TOKEN_CATEGORY_ID', 255),
         'one_piece_tins_category_id' => env('CARDTRADER_ONE_PIECE_TINS_CATEGORY_ID', 256),
         'one_piece_memorabilia_category_id' => env('CARDTRADER_ONE_PIECE_MEMORABILIA_CATEGORY_ID', 257),
+    ],
+
+    'elasticsearch' => [
+        'host' => env('ELASTICSEARCH_HOST', 'elasticsearch:9200'),
+        'username' => env('ELASTICSEARCH_USERNAME'),
+        'password' => env('ELASTICSEARCH_PASSWORD'),
     ],
 
 ];

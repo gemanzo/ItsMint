@@ -5,8 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\UserCardController;
 use App\Http\Controllers\BlueprintController;
-
-// ... (existing api routes, likely for user authentication)
+use App\Http\Controllers\Api\BlueprintSearchController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -36,10 +35,15 @@ Route::apiResource('user-cards', UserCardController::class)->middleware('auth:sa
     'destroy' => 'api.user-cards.destroy',
 ]);
 
-// Route per la ricerca di Blueprint (da definire meglio il controller)
-// Esempio:
-// Route::get('blueprints/search', [BlueprintController::class, 'search'])->name('blueprints.search');
-Route::get('blueprints/search', [BlueprintController::class, 'search'])->name('api.blueprints.search');
+// NEW: Elasticsearch-powered Blueprint search routes
+Route::prefix('blueprints')->middleware([\App\Http\Middleware\ElasticsearchFallback::class])->group(function () {
+    Route::get('search', [BlueprintSearchController::class, 'search'])->name('api.blueprints.search');
+    Route::get('suggestions', [BlueprintSearchController::class, 'suggestions'])->name('api.blueprints.suggestions');
+    Route::get('search/stats', [BlueprintSearchController::class, 'stats'])->name('api.blueprints.search.stats');
+});
+
+// DEPRECATED: Old database-based search (keep for backward compatibility during transition)
+// Route::get('blueprints/search', [BlueprintController::class, 'search'])->name('api.blueprints.search.legacy');
 
 // Route per i dati aggregati della dashboard (valore portafoglio, ecc.)
 // Questa potrebbe anche essere parte del DashboardController servito via web, ma se i dati sono richiesti via XHR:

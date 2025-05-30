@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Blueprint;
+use App\Observers\BlueprintObserver;
 use Illuminate\Support\Facades\Vite;
+use App\Services\ElasticsearchService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -12,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(ElasticsearchService::class);
     }
 
     /**
@@ -20,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Vite::prefetch(concurrency: 3);
+        Vite::prefetch(3);
+
+        Blueprint::observe(BlueprintObserver::class);
     }
 }

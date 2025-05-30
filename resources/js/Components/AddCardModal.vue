@@ -236,15 +236,43 @@ const searchBlueprints = async () => {
         return;
     }
     try {
-        const response = await axios.get<Blueprint[]>('blueprints/search', {
-            params: { query: blueprintSearchQuery.value }
+        // NEW: Use Elasticsearch API instead of old database search
+        const response = await axios.get('blueprints/search', {
+            params: { 
+                q: blueprintSearchQuery.value,
+                size: 10 // Limit to 10 results for UI performance
+            }
         });
-        blueprintSearchResults.value = response.data;
+        
+        // Handle Elasticsearch response format
+        if (response.data.success && response.data.data) {
+            blueprintSearchResults.value = response.data.data;
+        } else {
+            blueprintSearchResults.value = [];
+        }
     } catch (error) {
         console.error('Error searching blueprints:', error);
         blueprintSearchResults.value = [];
     }
 };
+
+// Watch for changes in search query to auto-clear selected blueprint
+watch(blueprintSearchQuery, (newValue, oldValue) => {
+    // If user clears or significantly changes the search, deselect blueprint
+    if (selectedBlueprint.value && newValue.length < 2) {
+        selectedBlueprint.value = null;
+        blueprintSearchResults.value = [];
+    }
+    // If user types something different after selecting, show search again
+    else if (selectedBlueprint.value && newValue !== `${selectedBlueprint.value.name} - ${selectedBlueprint.value.expansion?.code}`) {
+        // Don't auto-deselect immediately, but allow search to show
+        // Only deselect if query becomes too different from selected blueprint
+        const selectedBlueprintText = `${selectedBlueprint.value.name} - ${selectedBlueprint.value.expansion?.code}`;
+        if (!selectedBlueprintText.toLowerCase().includes(newValue.toLowerCase()) && newValue.length > 2) {
+            selectedBlueprint.value = null;
+        }
+    }
+});
 
 const debouncedSearchBlueprints = debounce(searchBlueprints, 300);
 
