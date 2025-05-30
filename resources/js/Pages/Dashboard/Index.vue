@@ -54,9 +54,9 @@
                                 </svg>
                             </div>
                         </div>
-                    </div>
+                            </div>
 
-                    <!-- Total Purchase Cost -->
+                            <!-- Total Purchase Cost -->
                     <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <div class="flex items-center justify-between">
                             <div class="flex-1">
@@ -75,9 +75,9 @@
                                 </svg>
                             </div>
                         </div>
-                    </div>
+                            </div>
 
-                    <!-- Total Profit/Loss -->
+                            <!-- Total Profit/Loss -->
                     <div class="rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1" :class="profitLossCardClasses">
                         <div class="flex items-center justify-between">
                             <div class="flex-1">
@@ -198,15 +198,15 @@
                                 </svg>
                                 <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No Recent Activity</h4>
                                 <p class="text-gray-500 dark:text-gray-400 mb-4">Start by creating a portfolio or adding cards to see activity here.</p>
-                                <button 
-                                    @click="showCreatePortfolioModal = true"
+                             <button 
+                                @click="showCreatePortfolioModal = true"
                                     class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                                 >
                                     Create Portfolio
-                                </button>
+                            </button>
                             </div>
                         </div>
-                    </div>
+                        </div>
 
                     <!-- Right Column - Portfolio Summary -->
                     <div class="space-y-6">
@@ -241,7 +241,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                        </div>
 
                 <!-- Getting Started Guide (if no portfolios) -->
                 <div v-if="portfolioStore.portfolios.length === 0 && !portfolioStore.isLoading" class="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-700 mt-8">
