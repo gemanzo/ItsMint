@@ -44,7 +44,6 @@ RUN chown -R www-data:www-data /var/www \
     protobuf-compiler \
     supervisor \
     zip \
-    nodejs npm \
     postgresql-common
 
 RUN /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -v 17 \
