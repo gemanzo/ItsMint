@@ -87,6 +87,28 @@ resources/js/
 
 ## 🔧 Convenzioni di Coding
 
+### 🐳 Docker-First Development
+**ItsMint è un'applicazione Docker-native**. Tutti i comandi devono essere eseguiti nei container:
+
+```bash
+# ❌ MAI eseguire direttamente sull'host
+php artisan migrate
+npm run dev
+composer install
+
+# ✅ SEMPRE eseguire nei container Docker
+docker exec -it php_itsmint php artisan migrate
+docker exec -it node_itsmint npm run dev  
+docker exec -it php_itsmint composer install
+```
+
+**Container Names**:
+- `php_itsmint` - Backend Laravel 
+- `node_itsmint` - Frontend Vue.js
+- `postgres_itsmint` - Database PostgreSQL
+- `redis_itsmint` - Cache Redis
+- `elasticsearch_itsmint` - Search Engine
+
 ### Database & Models
 ```php
 // Sempre relazioni tipizzate
@@ -252,14 +274,52 @@ const handleApiError = (error: any) => {
 
 ## 📦 Deployment & Environment
 
-### Docker Development
+### Docker Architecture
+L'applicazione **ItsMint gira completamente in Docker** con container separati:
+- **Container PHP**: `php_itsmint` - Laravel backend
+- **Container Node**: `node_itsmint` - Vue.js frontend e build tools
+- **Container Database**: PostgreSQL
+- **Container Cache**: Redis
+- **Container Search**: Elasticsearch
+
+### Docker Command Execution
+**IMPORTANTE**: Tutti i comandi devono essere eseguiti nei rispettivi container Docker:
+
 ```bash
-# Sviluppo con hot reload
+# ⚠️ Comandi Laravel - SEMPRE nel container PHP
+docker exec -it php_itsmint php artisan migrate
+docker exec -it php_itsmint php artisan queue:work
+docker exec -it php_itsmint composer install
+docker exec -it php_itsmint php artisan elasticsearch:index-blueprints
+
+# ⚠️ Comandi Node.js - SEMPRE nel container Node
+docker exec -it node_itsmint npm install
+docker exec -it node_itsmint npm run dev
+docker exec -it node_itsmint npm run build
+docker exec -it node_itsmint npm run test
+
+# Accesso shell ai container
+docker exec -it php_itsmint bash    # Shell PHP container
+docker exec -it node_itsmint sh     # Shell Node container
+```
+
+### Docker Development Workflow
+```bash
+# Avvio ambiente completo
 docker compose up -d
-docker compose exec php composer install
-docker compose exec node npm install
-docker compose exec php php artisan migrate
-docker compose exec php php artisan elasticsearch:index-blueprints --fresh
+
+# Setup iniziale (solo prima volta)
+docker exec -it php_itsmint composer install
+docker exec -it node_itsmint npm install
+docker exec -it php_itsmint php artisan migrate
+docker exec -it php_itsmint php artisan storage:link
+
+# Development con hot reload
+docker exec -it node_itsmint npm run dev  # Vite HMR
+docker exec -it php_itsmint php artisan horizon  # Queue processing
+
+# Stop ambiente
+docker compose down
 ```
 
 ### Environment Variables
@@ -275,6 +335,30 @@ ELASTICSEARCH_INDEX=blueprints
 # Queue
 QUEUE_CONNECTION=redis
 HORIZON_ENABLED=true
+
+# Card Scanner OCR
+TESSERACT_OCR_PATH=/usr/bin/tesseract
+CARD_SCANNER_USE_QUEUE=true
+CARD_SCANNER_MOCK_OCR=false
+```
+
+### Docker Containers Reference
+**⚠️ IMPORTANTE**: ItsMint usa Docker - eseguire sempre i comandi nei container appropriati:
+
+```bash
+# Laravel/PHP commands
+docker exec -it php_itsmint php artisan migrate
+docker exec -it php_itsmint php artisan make:model CardScan
+docker exec -it php_itsmint composer require package/name
+
+# Node.js/Frontend commands  
+docker exec -it node_itsmint npm install @heroicons/vue
+docker exec -it node_itsmint npm run build
+docker exec -it node_itsmint npm run dev
+
+# Database operations
+docker exec -it php_itsmint php artisan migrate:fresh --seed
+docker exec -it php_itsmint php artisan db:seed
 ```
 
 ## 🎨 UI/UX Guidelines

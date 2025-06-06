@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\Portfolio;
 use App\Models\UserCard;
+use App\Models\CardScan;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -58,5 +59,10 @@ class User extends Authenticatable
     public function userCards(): HasMany
     {
         return $this->hasMany(UserCard::class);
+    }
+
+    public function cardScans(): HasMany
+    {
+        return $this->hasMany(CardScan::class);
     }
 }
