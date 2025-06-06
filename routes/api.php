@@ -6,6 +6,7 @@ use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\UserCardController;
 use App\Http\Controllers\BlueprintController;
 use App\Http\Controllers\Api\BlueprintSearchController;
+use App\Http\Controllers\Api\CardScanController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -35,6 +36,18 @@ Route::apiResource('user-cards', UserCardController::class)->middleware('auth:sa
     'destroy' => 'api.user-cards.destroy',
 ]);
 
+// Card Scan routes
+Route::prefix('card-scans')->middleware('auth:sanctum')->group(function () {
+    Route::post('upload', [CardScanController::class, 'upload'])->name('api.card-scans.upload');
+    Route::get('/', [CardScanController::class, 'index'])->name('api.card-scans.index');
+    Route::get('{id}', [CardScanController::class, 'show'])->name('api.card-scans.show');
+    Route::post('{id}/retry', [CardScanController::class, 'retry'])->name('api.card-scans.retry');
+    Route::put('{id}/blueprint', [CardScanController::class, 'updateBlueprint'])->name('api.card-scans.update-blueprint');
+    Route::delete('{id}', [CardScanController::class, 'destroy'])->name('api.card-scans.destroy');
+    Route::get('{id}/image', [CardScanController::class, 'image'])->name('api.card-scans.image');
+    Route::post('{id}/create-user-card', [CardScanController::class, 'createUserCard'])->name('api.card-scans.create-user-card');
+});
+
 // NEW: Elasticsearch-powered Blueprint search routes
 Route::prefix('blueprints')->middleware([\App\Http\Middleware\ElasticsearchFallback::class])->group(function () {
     Route::get('search', [BlueprintSearchController::class, 'search'])->name('api.blueprints.search');
@@ -44,6 +57,9 @@ Route::prefix('blueprints')->middleware([\App\Http\Middleware\ElasticsearchFallb
 
 // DEPRECATED: Old database-based search (keep for backward compatibility during transition)
 // Route::get('blueprints/search', [BlueprintController::class, 'search'])->name('api.blueprints.search.legacy');
+
+// Image Proxy for CardTrader images (public route)
+Route::get('image-proxy', [App\Http\Controllers\Api\ImageProxyController::class, 'proxy'])->name('api.image-proxy');
 
 // Route per i dati aggregati della dashboard (valore portafoglio, ecc.)
 // Questa potrebbe anche essere parte del DashboardController servito via web, ma se i dati sono richiesti via XHR:
