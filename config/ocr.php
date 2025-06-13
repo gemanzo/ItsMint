@@ -8,9 +8,21 @@ return [
     |--------------------------------------------------------------------------
     |
     | Configuration settings for the OCR (Optical Character Recognition)
-    | system used to recognize trading cards from uploaded images.
+    | system using Google Cloud Vision API to recognize trading cards.
     |
     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Google Vision API Settings
+    |--------------------------------------------------------------------------
+    */
+    'google_vision' => [
+        'enabled' => env('GOOGLE_VISION_ENABLED', false),
+        'confidence_threshold' => 80.0,
+        'max_requests_per_batch' => 10,
+        'timeout' => 30, // seconds
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -26,30 +38,14 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Image Preprocessing
+    | Image Preprocessing (Lighter for Google Vision)
     |--------------------------------------------------------------------------
     */
     'preprocessing' => [
-        'target_width' => 1000,
-        'min_width_for_scale_up' => 500,
-        'scale_up_target' => 800,
-        'brightness' => 15,
-        'contrast' => 40,
-        'sharpen' => 15,
-        'quality' => 100,
-        'temp_prefix' => 'card_ocr_',
-        'format' => 'png',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Tesseract OCR Configuration
-    |--------------------------------------------------------------------------
-    */
-    'tesseract' => [
-        'language' => 'eng',
-        'psm_modes' => [11, 3, 7], // Sparse text, Default segmentation, Single line
-        'timeout' => 30, // seconds
+        'max_width' => 2000, // Google Vision handles optimization internally
+        'quality' => 90,
+        'temp_prefix' => 'gv_ocr_',
+        'format' => 'jpg',
     ],
 
     /*
@@ -73,25 +69,11 @@ return [
     'confidence' => [
         'expansion_code_match' => 95.0,
         'card_name_threshold' => 70.0,
-        'auto_assignment_threshold' => 80.0,
+        'auto_assignment_threshold' => 85.0, // Higher threshold for Google Vision
         'exact_match' => 100.0,
         'contains_match' => 85.0,
-        'base_ocr_confidence' => 50.0,
+        'high_confidence_text' => 80.0, // Google Vision specific
         'max_confidence' => 95.0,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | OCR Confidence Boosters
-    |--------------------------------------------------------------------------
-    */
-    'confidence_boosters' => [
-        'long_text_20_chars' => 10,
-        'long_text_50_chars' => 10,
-        'title_case_words' => 15,
-        'contains_numbers' => 5,
-        'special_chars_penalty' => 20,
-        'special_chars_threshold' => 0.3, // 30% special chars triggers penalty
     ],
 
     /*
@@ -110,6 +92,21 @@ return [
         '/\b(ST\d{2,3}[-\.]\d{2,3})\b/i',                   // Starter specific
         '/\b(\d{2,3}[-\.]\d{2,3})\b/',                      // Numeric only
         '/\b(\d{3})\s*$/i',                                  // End-of-text card number
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Card Information Extraction
+    |--------------------------------------------------------------------------
+    */
+    'extraction' => [
+        'min_name_length' => 3,
+        'max_name_length' => 50,
+        'code_patterns' => [
+            'standard' => '/\b[A-Z]{2,4}[\-\s]?\d{1,4}(?:\/\d{1,4})?\b/',
+            'numbers' => '/\b\d{1,4}\/\d{1,4}\b/',
+            'names' => '/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b/',
+        ],
     ],
 
     /*
@@ -142,6 +139,7 @@ return [
     'debug' => [
         'log_ocr_results' => env('OCR_LOG_RESULTS', false),
         'log_search_results' => env('OCR_LOG_SEARCH', false),
+        'log_vision_responses' => env('OCR_LOG_VISION', false),
         'sample_results_count' => 3,
         'save_processed_images' => env('OCR_SAVE_PROCESSED', false),
     ],

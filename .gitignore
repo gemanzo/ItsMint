@@ -27,3 +27,4 @@ auth.json
 storage/logs/wm-package
 storage/media-library
 bootstrap/ssr
+storage/credentials/

@@ -64,7 +64,8 @@ RUN docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg --with-w
     pgsql \
     pdo_pgsql \
     exif \
-    pcntl 
+    pcntl \
+    bcmath 
 
 RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer \

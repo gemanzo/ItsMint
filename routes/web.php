@@ -26,6 +26,11 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Card Scanner route
+    Route::get('/card-scanner', function () {
+        return Inertia::render('CardScan/Index');
+    })->name('card-scanner');
+
     // Blueprint routes
     Route::prefix('dashboard/blueprints')->name('dashboard.blueprints.')->group(function () {
         Route::get('/', [BlueprintController::class, 'index'])
