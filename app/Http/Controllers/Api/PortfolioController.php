@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Response; // Added for Response status codes
+use Illuminate\Http\JsonResponse;
 
 class PortfolioController extends Controller
 {
@@ -48,4 +49,16 @@ class PortfolioController extends Controller
      * Update the specified portfolio in storage.
      */
     // ... existing code ...
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Portfolio $portfolio): JsonResponse
+    {
+        $this->authorize('delete', $portfolio);
+
+        $portfolio->delete();
+
+        return response()->json(null, 204);
+    }
 }
