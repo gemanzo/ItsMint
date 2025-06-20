@@ -236,6 +236,14 @@
         </div>
 
         <CreatePortfolioModal v-if="showCreatePortfolioModal" @close="showCreatePortfolioModal = false" @portfolio-created="handlePortfolioCreated" />
+        
+        <ConfirmationModal 
+            :show="showConfirmDeleteModal"
+            title="Delete Portfolio"
+            :message="`Are you sure you want to delete '${portfolioToDelete?.name}'? This action cannot be undone.`"
+            @close="showConfirmDeleteModal = false"
+            @confirm="confirmDeletePortfolio"
+        />
     </AuthenticatedLayout>
 </template>
 
@@ -244,6 +252,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import CreatePortfolioModal from '@/Components/CreatePortfolioModal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import { usePortfolioStore } from '@/stores/portfolioStore';
 
 interface PortfolioData {
@@ -266,6 +275,8 @@ const showCreatePortfolioModal = ref(false);
 const viewMode = ref<'grid' | 'list'>('grid');
 const searchQuery = ref('');
 const sortBy = ref('name');
+const showConfirmDeleteModal = ref(false);
+const portfolioToDelete = ref<PortfolioData | null>(null);
 
 // Computed properties
 const totalCards = computed(() => {
@@ -338,17 +349,22 @@ const editPortfolio = (portfolio: PortfolioData) => {
     // router.visit(route('portfolios.edit', portfolio.id));
 };
 
-const deletePortfolio = async (portfolio: PortfolioData) => {
-    if (confirm(`Are you sure you want to delete "${portfolio.name}"? This action cannot be undone.`)) {
-        try {
-            // TODO: Implementare delete portfolio API call
-            console.log('Delete portfolio:', portfolio.id);
-            // await portfolioStore.deletePortfolio(portfolio.id);
-            // router.reload({ only: ['portfolios'] });
-        } catch (error) {
-            console.error('Error deleting portfolio:', error);
-            alert('Failed to delete portfolio. Please try again.');
-        }
+const deletePortfolio = (portfolio: PortfolioData) => {
+    portfolioToDelete.value = portfolio;
+    showConfirmDeleteModal.value = true;
+};
+
+const confirmDeletePortfolio = async () => {
+    if (!portfolioToDelete.value) return;
+    try {
+        await portfolioStore.deletePortfolio(portfolioToDelete.value.id);
+        router.reload({ only: ['portfolios'] });
+    } catch (error) {
+        console.error('Error deleting portfolio:', error);
+        alert('Failed to delete portfolio. Please try again.');
+    } finally {
+        showConfirmDeleteModal.value = false;
+        portfolioToDelete.value = null;
     }
 };
 

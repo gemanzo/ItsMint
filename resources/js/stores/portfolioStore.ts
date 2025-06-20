@@ -70,6 +70,7 @@ interface PortfolioActions {
         notes?: string; 
         acquired_at?: string;
     }): Promise<UserCard | UserCard[]>;
+    deletePortfolio(id: number): Promise<void>;
 }
 
 export const usePortfolioStore = defineStore('portfolio', {
@@ -243,7 +244,17 @@ export const usePortfolioStore = defineStore('portfolio', {
                 console.error('Error creating user card:', error);
                 throw error;
             }
-        }
+        },
+
+        async deletePortfolio(id: number) {
+            try {
+                await axios.delete(`portfolios/${id}`);
+                // La lista verrà aggiornata dal reload di inertia nel componente
+            } catch (error) {
+                console.error('Error deleting portfolio:', error);
+                throw error; // Rilancia l'errore per gestirlo nel componente
+            }
+        },
         // Altre azioni: updatePortfolio, deletePortfolio, updateUserCardInPortfolio, removeUserCardFromPortfolio, ecc.
     },
 }); 

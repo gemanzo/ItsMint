@@ -68,4 +68,12 @@ return [
         'password' => env('ELASTICSEARCH_PASSWORD'),
     ],
 
+    'google' => [
+        'vision' => [
+            'project_id' => env('GOOGLE_CLOUD_PROJECT_ID'),
+            'key_path' => env('GOOGLE_APPLICATION_CREDENTIALS'),
+            'enabled' => env('GOOGLE_VISION_ENABLED', false),
+        ],
+    ],
+
 ];

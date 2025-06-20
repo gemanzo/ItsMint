@@ -8,6 +8,7 @@ use App\Models\Blueprint;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class BlueprintPriceService
 {
@@ -27,6 +28,13 @@ class BlueprintPriceService
      */
     public function calculatePrices(Blueprint $blueprint): ?array
     {
+        $cacheKey = "blueprint_price_{$blueprint->id}";
+        $cachedPrices = Cache::get($cacheKey);
+
+        if ($cachedPrices !== null) {
+            return $cachedPrices;
+        }
+
         $token = config('services.cardtrader.api_token');
         $baseApiUrl = config('services.cardtrader.api_base_url');
         $blueprintCtId = $blueprint->ct_id;
@@ -66,13 +74,14 @@ class BlueprintPriceService
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
-                return null;
+                return null; // Don't cache failures to allow for retries
             }
 
             $apiProducts = $response->json()[$blueprintCtId] ?? [];
 
             if (empty($apiProducts)) {
                 Log::info('No products found on marketplace for blueprint in Service.', ['blueprint_id' => $blueprint->id, 'ct_id' => $blueprintCtId]);
+                Cache::put($cacheKey, null, now()->addMinutes(60)); // Cache null result
                 return null;
             }
 
@@ -80,10 +89,15 @@ class BlueprintPriceService
 
             if (empty($lowestPricesByCondition)) {
                 Log::info('No valid products with recognized conditions found to process for blueprint in Service.', ['blueprint_id' => $blueprint->id, 'ct_id' => $blueprintCtId]);
+                Cache::put($cacheKey, null, now()->addMinutes(60)); // Cache null result
                 return null;
             }
 
-            return $this->applyHierarchyLogic($lowestPricesByCondition);
+            $calculatedPrices = $this->applyHierarchyLogic($lowestPricesByCondition);
+
+            Cache::put($cacheKey, $calculatedPrices, now()->addMinutes(60));
+
+            return $calculatedPrices;
         } catch (\Exception $e) {
             Log::error('Exception in BlueprintPriceService', [
                 'blueprint_id' => $blueprint->id,
@@ -104,8 +118,15 @@ class BlueprintPriceService
     private function extractLowestPricesByCondition(array $apiProducts): array
     {
         $lowestPricesByCondition = [];
+        // TODO: Implement a proper currency conversion system. For now, we only process EUR.
+        $targetCurrency = 'EUR';
 
         foreach ($apiProducts as $product) {
+            $currency = $product['price_currency'];
+            if ($currency !== $targetCurrency) {
+                continue;
+            }
+
             $properties = $product['properties_hash'] ?? $product['properties'] ?? [];
             $condition = $properties['condition'] ?? null;
             if (!$condition || !in_array($condition, self::CONDITION_HIERARCHY)) {
@@ -119,7 +140,6 @@ class BlueprintPriceService
             $is_foil = filter_var($foil_raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
 
             $priceCents = $product['price_cents'];
-            $currency = $product['price_currency'];
 
             if (!isset($lowestPricesByCondition[$condition]) || $priceCents < $lowestPricesByCondition[$condition]['price_cents']) {
                 $lowestPricesByCondition[$condition] = [

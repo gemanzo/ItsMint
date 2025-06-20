@@ -1,0 +1,28 @@
+# Git
+.git
+.github
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Dependencies
+node_modules/
+vendor/
+
+# Laravel Storage & Cache
+storage/
+bootstrap/cache/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker
+docker/volumes/ 

@@ -2,11 +2,11 @@ FROM php:8.4.3-fpm
 
 USER root
 
-ADD .bashrc /var/www/.bashrc
+ADD ./docker/configs/phpfpm/.bashrc /var/www/.bashrc
 
-ADD www.conf /usr/local/etc/php-fpm.d/www.conf
-ADD zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
-ADD php.ini /usr/local/etc/php/php.ini
+ADD ./docker/configs/phpfpm/www.conf /usr/local/etc/php-fpm.d/www.conf
+ADD ./docker/configs/phpfpm/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
+ADD ./docker/configs/phpfpm/php.ini /usr/local/etc/php/php.ini
 
 ENV TZ 'Europe/Rome'
 
@@ -64,13 +64,25 @@ RUN docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg --with-w
     pgsql \
     pdo_pgsql \
     exif \
-    pcntl 
+    pcntl \
+    bcmath 
 
 RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer \
     && ln -s /usr/local/bin/composer /usr/bin/composer
 
+# Supervisor configuration
+COPY ./docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
+COPY ./docker/supervisor/horizon.conf /etc/supervisor/conf.d/horizon.conf
+COPY ./docker/supervisor/php-fpm.conf /etc/supervisor/conf.d/php-fpm.conf
+
+RUN mkdir -p /var/log/supervisor /var/www/html/itsmint/storage/logs \
+    && chown -R www-data:www-data /var/log/supervisor \
+    && chown -R www-data:www-data /var/www/html/itsmint/storage
+
 ENV HOME /var/www
 WORKDIR /var/www
 
-USER www-data
+# USER www-data # Supervisor runs as root
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

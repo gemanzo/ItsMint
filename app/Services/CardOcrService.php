@@ -17,11 +17,15 @@ final class CardOcrService
 {
     private readonly ImageManager $imageManager;
     private readonly ElasticsearchService $elasticsearchService;
+    private readonly GoogleVisionOcrService $googleVisionService;
 
-    public function __construct(ElasticsearchService $elasticsearchService)
-    {
+    public function __construct(
+        ElasticsearchService $elasticsearchService,
+        GoogleVisionOcrService $googleVisionService
+    ) {
         $this->imageManager = new ImageManager(new Driver());
         $this->elasticsearchService = $elasticsearchService;
+        $this->googleVisionService = $googleVisionService;
     }
 
     /**
@@ -88,7 +92,7 @@ final class CardOcrService
     }
 
     /**
-     * Process the stored image for OCR
+     * Process the stored image for OCR using Google Vision API
      */
     private function processImage(CardScan $scan): void
     {
@@ -96,67 +100,74 @@ final class CardOcrService
 
         $fullPath = Storage::disk('public')->path($scan->file_path);
 
-        // Preprocess image for better OCR
-        $preprocessedPath = $this->preprocessImage($fullPath);
+        try {
+            // Check if Google Vision is available
+            if (!$this->googleVisionService->isAvailable()) {
+                throw new \Exception('Google Vision API is not properly configured');
+            }
 
-        // Perform OCR
-        $ocrResult = $this->performOcr($preprocessedPath);
+            // Preprocess image for better OCR (optional for Google Vision)
+            $preprocessedPath = $this->preprocessImage($fullPath);
 
-        // Extract card information
-        $detectedCards = $this->extractCardInformation($ocrResult['text']);
+            // Perform OCR using Google Vision
+            $ocrResult = $this->googleVisionService->extractTextFromImage($preprocessedPath);
 
-        // Update scan with results
-        $scan->update([
-            'ocr_text' => $ocrResult['text'],
-            'ocr_data' => $ocrResult,
-            'detected_cards' => $detectedCards,
-            'confidence_score' => $this->calculateOverallConfidence($detectedCards),
-            'status' => 'completed',
-            'processed_at' => now(),
-        ]);
+            // Extract card information from Google Vision results
+            $detectedCards = $this->extractCardInformationFromVision($ocrResult);
 
-        // Auto-assign blueprint if confidence is high enough
-        $this->autoAssignBlueprint($scan);
+            // Update scan with results
+            $scan->update([
+                'ocr_text' => $ocrResult['text'],
+                'ocr_data' => $ocrResult,
+                'detected_cards' => $detectedCards,
+                'confidence_score' => $ocrResult['confidence'],
+                'status' => 'completed',
+                'processed_at' => now(),
+            ]);
 
-        // Clean up preprocessed image
-        if (file_exists($preprocessedPath) && $preprocessedPath !== $fullPath) {
-            unlink($preprocessedPath);
+            // Auto-assign blueprint if confidence is high enough
+            $this->autoAssignBlueprint($scan);
+
+            // Clean up preprocessed image
+            if (file_exists($preprocessedPath) && $preprocessedPath !== $fullPath) {
+                unlink($preprocessedPath);
+            }
+        } catch (\Exception $e) {
+            Log::error('Google Vision OCR processing failed', [
+                'scan_id' => $scan->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $scan->update([
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+                'processed_at' => now(),
+            ]);
+
+            throw $e;
         }
     }
 
     /**
-     * Preprocess image to improve OCR accuracy
+     * Preprocess image to improve OCR accuracy (lighter processing for Google Vision)
      */
     private function preprocessImage(string $imagePath): string
     {
         try {
-            $config = config('ocr.preprocessing');
             $image = $this->imageManager->read($imagePath);
 
-            // Resize to optimal size for OCR (not too big, not too small)
-            $targetWidth = $config['target_width'];
-            if ($image->width() > $targetWidth) {
-                $image->scale(width: $targetWidth);
-            } elseif ($image->width() < $config['min_width_for_scale_up']) {
-                $image->scale(width: $config['scale_up_target']);
+            // Light preprocessing for Google Vision (it handles most optimization internally)
+            // Resize only if too large (>2000px width)
+            if ($image->width() > 2000) {
+                $image->scale(width: 2000);
             }
 
-            // Convert to grayscale for better OCR
-            $image->greyscale();
+            // Save optimized image
+            $preprocessedPath = sys_get_temp_dir() . '/' . uniqid('gv_ocr_') . '.jpg';
+            $image->save($preprocessedPath, quality: 90);
 
-            // Enhance contrast significantly for text recognition
-            $image->brightness($config['brightness']);
-            $image->contrast($config['contrast']);
-
-            // Sharpen the image to improve text clarity
-            $image->sharpen($config['sharpen']);
-
-            // Save preprocessed image with maximum quality
-            $preprocessedPath = sys_get_temp_dir() . '/' . uniqid($config['temp_prefix']) . '.' . $config['format'];
-            $image->save($preprocessedPath, quality: $config['quality']);
-
-            Log::info('Image preprocessed', [
-                'original_size' => $imagePath,
+            Log::info('Image preprocessed for Google Vision', [
+                'original_path' => $imagePath,
                 'processed_size' => $image->width() . 'x' . $image->height(),
                 'processed_path' => $preprocessedPath
             ]);
@@ -169,100 +180,119 @@ final class CardOcrService
     }
 
     /**
-     * Perform OCR using Tesseract
+     * Extract card information from Google Vision results
      */
-    private function performOcr(string $imagePath): array
+    private function extractCardInformationFromVision(array $visionResult): array
     {
-        try {
-            $tesseractConfig = config('ocr.tesseract');
-            $psmModes = $tesseractConfig['psm_modes'];
-            $language = $tesseractConfig['language'];
-            $results = [];
+        $text = $visionResult['text'];
+        $blocks = $visionResult['blocks'] ?? [];
 
-            // Method 1: General OCR with sparse text mode
-            try {
-                $ocr1 = new TesseractOCR($imagePath);
-                $ocr1->lang($language);
-                $ocr1->psm($psmModes[0]); // First PSM mode (11 - Sparse text)
-                $generalText = $ocr1->run();
-                $results['general'] = trim($generalText);
-            } catch (\Exception $e) {
-                Log::warning('OCR Method 1 failed', ['error' => $e->getMessage()]);
-                $results['general'] = '';
-            }
+        Log::info('=== OCR DEBUG: Google Vision raw text ===', [
+            'full_text' => $text,
+            'text_length' => strlen($text),
+            'line_count' => substr_count($text, "\n") + 1,
+            'blocks_count' => count($blocks)
+        ]);
 
-            // Method 2: Basic OCR without restrictions
-            try {
-                $ocr2 = new TesseractOCR($imagePath);
-                $ocr2->lang($language);
-                $ocr2->psm($psmModes[1]); // Second PSM mode (3 - Default segmentation)
-                $basicText = $ocr2->run();
-                $results['basic'] = trim($basicText);
-            } catch (\Exception $e) {
-                Log::warning('OCR Method 2 failed', ['error' => $e->getMessage()]);
-                $results['basic'] = '';
-            }
+        // Extract card info using the Google Vision service
+        $cardInfo = $this->googleVisionService->extractCardInfo($blocks);
 
-            // Method 3: Line-by-line OCR
-            try {
-                $ocr3 = new TesseractOCR($imagePath);
-                $ocr3->lang($language);
-                $ocr3->psm($psmModes[2]); // Third PSM mode (7 - Single text line)
-                $lineText = $ocr3->run();
-                $results['lines'] = trim($lineText);
-            } catch (\Exception $e) {
-                Log::warning('OCR Method 3 failed', ['error' => $e->getMessage()]);
-                $results['lines'] = '';
-            }
+        // Extract additional card attributes from full text
+        $cardAttributes = $this->extractCardAttributes($text);
+        $cardInfo = array_merge($cardInfo, $cardAttributes);
 
-            // Combine all non-empty results
-            $allText = array_filter($results);
-            $combinedText = implode("\n", $allText);
-            $cleanedText = $this->cleanOcrText($combinedText);
+        Log::info('=== OCR DEBUG: Extracted card info ===', [
+            'potential_codes' => $cardInfo['potential_codes'],
+            'potential_names' => $cardInfo['potential_names'],
+            'card_color' => $cardInfo['card_color'] ?? 'not_detected',
+            'card_type' => $cardInfo['card_type'] ?? 'not_detected',
+            'card_rarity' => $cardInfo['card_rarity'] ?? 'not_detected',
+            'power_value' => $cardInfo['power_value'] ?? 'not_detected'
+        ]);
 
-            if (config('ocr.debug.log_ocr_results')) {
-                Log::info('OCR multiple attempts', [
-                    'results' => $results,
-                    'combined' => $cleanedText,
-                    'found_codes' => $this->findExpansionCodes($cleanedText)
-                ]);
-            }
-
-            return [
-                'text' => $cleanedText,
-                'confidence' => $this->calculateOcrConfidence($cleanedText),
-                'timestamp' => now()->toISOString(),
-                'raw_results' => $results
-            ];
-        } catch (\Exception $e) {
-            Log::error('All OCR methods failed', ['error' => $e->getMessage()]);
-
-            return [
-                'text' => '',
-                'confidence' => 0,
-                'error' => $e->getMessage(),
-                'timestamp' => now()->toISOString(),
-            ];
+        // Additional debug for code patterns
+        foreach ($cardInfo['potential_codes'] as $i => $codeData) {
+            Log::info("=== OCR DEBUG: Code {$i} analysis ===", [
+                'original_text' => $codeData['original'] ?? 'N/A',
+                'extracted_code' => $codeData['code'],
+                'pattern_used' => $codeData['pattern'] ?? 'unknown',
+                'confidence' => $codeData['confidence'],
+                'interpretation' => $codeData['interpretation'] ?? 'N/A'
+            ]);
         }
-    }
 
-    /**
-     * Clean and normalize OCR text
-     */
-    private function cleanOcrText(string $text): string
-    {
-        // Remove duplicates and clean up
-        $lines = explode("\n", $text);
-        $cleaned = [];
+        // Search for cards in database using the structured data
+        $searchResults = [];
 
-        foreach ($lines as $line) {
-            $line = trim($line);
-            if (!empty($line) && !in_array($line, $cleaned)) {
-                $cleaned[] = $line;
+        // Search by potential card codes first (highest priority)
+        foreach ($cardInfo['potential_codes'] as $codeData) {
+            Log::info('=== OCR DEBUG: Searching by code ===', [
+                'code' => $codeData['code'],
+                'confidence' => $codeData['confidence']
+            ]);
+
+            $results = $this->searchByExpansionCode($codeData['code']);
+
+            Log::info('=== OCR DEBUG: Code search results ===', [
+                'code' => $codeData['code'],
+                'original' => $codeData['original'] ?? $codeData['code'],
+                'search_variants' => 'see_searchByExpansionCode',
+                'results_count' => count($results),
+                'results' => array_slice($results, 0, 3) // First 3 results
+            ]);
+
+            foreach ($results as $result) {
+                $result['match_type'] = 'code';
+                $result['match_confidence'] = $codeData['confidence'];
+                // Add card attributes for filtering
+                $result['detected_card_type'] = $cardInfo['card_type'] ?? null;
+                $result['detected_rarity'] = $cardInfo['card_rarity'] ?? null;
+                $result['detected_power'] = $cardInfo['power_value'] ?? null;
+                $searchResults[] = $result;
             }
         }
 
-        return implode("\n", $cleaned);
+        // Search by potential card names
+        foreach ($cardInfo['potential_names'] as $nameData) {
+            Log::info('=== OCR DEBUG: Searching by name ===', [
+                'name' => $nameData['name'],
+                'confidence' => $nameData['confidence']
+            ]);
+
+            $results = $this->searchByCardName($nameData['name']);
+
+            Log::info('=== OCR DEBUG: Name search results ===', [
+                'name' => $nameData['name'],
+                'results_count' => count($results),
+                'results' => array_slice($results, 0, 3) // First 3 results
+            ]);
+
+            foreach ($results as $result) {
+                $result['match_type'] = 'name';
+                $result['match_confidence'] = $nameData['confidence'];
+                $searchResults[] = $result;
+            }
+        }
+
+        // Fallback: general text search if no specific matches
+        if (empty($searchResults)) {
+            Log::info('=== OCR DEBUG: No specific matches, using fallback search ===');
+            $searchResults = $this->searchCardsInDatabase($text);
+        }
+
+        // Deduplicate and sort results
+        $finalResults = $this->deduplicateAndSort($searchResults);
+
+        Log::info('=== OCR DEBUG: Final results ===', [
+            'codes_found' => count($cardInfo['potential_codes']),
+            'names_found' => count($cardInfo['potential_names']),
+            'total_search_results' => count($searchResults),
+            'final_results_count' => count($finalResults),
+            'final_results' => $finalResults,
+            'overall_confidence' => $visionResult['confidence'],
+        ]);
+
+        return $finalResults;
     }
 
     /**
@@ -300,45 +330,87 @@ final class CardOcrService
     private function searchCardsInDatabase(string $text): array
     {
         try {
-            Log::info('OCR extracted text for card search', ['text' => $text]);
+            Log::info('=== OCR DEBUG: Starting database search ===', [
+                'text' => $text,
+                'text_length' => strlen($text)
+            ]);
 
             $results = [];
             $lines = explode("\n", $text);
             $cleanText = strtolower(trim($text));
 
+            Log::info('=== OCR DEBUG: Text processing ===', [
+                'lines_count' => count($lines),
+                'lines' => $lines,
+                'clean_text' => $cleanText
+            ]);
+
             // 1. Search for expansion codes (highest priority)
             $expansionMatches = $this->findExpansionCodes($text);
+
+            Log::info('=== OCR DEBUG: Expansion codes found ===', [
+                'codes' => $expansionMatches,
+                'codes_count' => count($expansionMatches)
+            ]);
+
             if (!empty($expansionMatches)) {
                 foreach ($expansionMatches as $code) {
+                    Log::info('=== OCR DEBUG: Searching expansion code ===', ['code' => $code]);
                     $cards = $this->searchByExpansionCode($code);
+                    Log::info('=== OCR DEBUG: Expansion code results ===', [
+                        'code' => $code,
+                        'results_count' => count($cards),
+                        'results' => $cards
+                    ]);
                     $results = array_merge($results, $cards);
                 }
             }
 
             // 2. Search for card names
-            foreach ($lines as $line) {
+            foreach ($lines as $index => $line) {
                 $line = trim($line);
-                if (strlen($line) < 3) continue;
+                if (strlen($line) < 3) {
+                    Log::info('=== OCR DEBUG: Skipping short line ===', [
+                        'line_index' => $index,
+                        'line' => $line,
+                        'length' => strlen($line)
+                    ]);
+                    continue;
+                }
+
+                Log::info('=== OCR DEBUG: Searching card name ===', [
+                    'line_index' => $index,
+                    'line' => $line
+                ]);
 
                 // Search for exact card names in database
                 $cards = $this->searchByCardName($line);
+
+                Log::info('=== OCR DEBUG: Card name results ===', [
+                    'line' => $line,
+                    'results_count' => count($cards),
+                    'results' => array_slice($cards, 0, 3) // First 3 results
+                ]);
+
                 $results = array_merge($results, $cards);
             }
 
             // Remove duplicates and sort by confidence
             $results = $this->deduplicateAndSort($results);
 
-            if (config('ocr.debug.log_search_results')) {
-                Log::info('Card search results', [
-                    'count' => count($results),
-                    'codes_found' => $expansionMatches,
-                    'sample_results' => array_slice($results, 0, config('ocr.debug.sample_results_count'))
-                ]);
-            }
+            Log::info('=== OCR DEBUG: Database search complete ===', [
+                'total_results_before_dedup' => count($results),
+                'final_results_count' => count($results),
+                'codes_found' => $expansionMatches,
+                'final_results' => array_slice($results, 0, config('ocr.debug.sample_results_count', 5))
+            ]);
 
             return array_slice($results, 0, config('ocr.search.max_results')); // Return top N matches
         } catch (\Exception $e) {
-            Log::error('Card search failed', ['error' => $e->getMessage()]);
+            Log::error('=== OCR DEBUG: Card search failed ===', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return [];
         }
     }
@@ -355,27 +427,106 @@ final class CardOcrService
         // Clean text for better pattern matching
         $cleanText = preg_replace('/[^\w\-\.\s]/u', ' ', $text);
 
-        foreach ($patterns as $pattern) {
+        Log::info('=== OCR DEBUG: Finding expansion codes ===', [
+            'original_text' => $text,
+            'clean_text' => $cleanText,
+            'patterns' => $patterns,
+            'default_prefix' => $defaultPrefix
+        ]);
+
+        // Specific One Piece card layout handling
+        // Pattern to match "OP09-001 L 3" and extract only "OP09-001"
+        $onePiecePattern = '/\b(OP\d{2}-\d{3})\s*[LCS]?\s*\d*\b/i';
+        if (preg_match_all($onePiecePattern, $cleanText, $onePieceMatches)) {
+            Log::info('=== OCR DEBUG: One Piece specific pattern matches ===', [
+                'pattern' => $onePiecePattern,
+                'matches' => $onePieceMatches[1]
+            ]);
+
+            foreach ($onePieceMatches[1] as $match) {
+                $normalizedCode = strtoupper(trim($match));
+                Log::info('=== OCR DEBUG: One Piece code extracted ===', [
+                    'raw_match' => $match,
+                    'normalized' => $normalizedCode
+                ]);
+                $codes[] = $normalizedCode;
+            }
+        }
+
+        foreach ($patterns as $patternIndex => $pattern) {
+            Log::info('=== OCR DEBUG: Testing pattern ===', [
+                'pattern_index' => $patternIndex,
+                'pattern' => $pattern
+            ]);
+
             if (preg_match_all($pattern, $cleanText, $matches)) {
-                foreach ($matches[1] as $match) {
+                Log::info('=== OCR DEBUG: Pattern matches found ===', [
+                    'pattern' => $pattern,
+                    'matches' => $matches
+                ]);
+
+                foreach ($matches[1] as $matchIndex => $match) {
+                    Log::info('=== OCR DEBUG: Processing match ===', [
+                        'match_index' => $matchIndex,
+                        'raw_match' => $match
+                    ]);
+
+                    // Skip if this looks like a One Piece code with L/C/S suffix
+                    // (already handled by specific pattern above)
+                    if (preg_match('/^OP\d{2}-\d{3}[LCS]?\d*$/i', trim($match))) {
+                        Log::info('=== OCR DEBUG: Skipping One Piece code (handled by specific pattern) ===', [
+                            'match' => $match
+                        ]);
+                        continue;
+                    }
+
                     // Normalizza il codice rimuovendo spazi e sostituendo punti
                     $normalizedCode = strtoupper(preg_replace('/\s+/', '', $match));
                     $normalizedCode = str_replace('.', '-', $normalizedCode);
 
+                    Log::info('=== OCR DEBUG: Normalized code ===', [
+                        'raw_match' => $match,
+                        'normalized' => $normalizedCode
+                    ]);
+
                     // Se è solo numeri, prova ad aggiungere il prefisso di default
                     if (preg_match('/^\d{2,3}-\d{2,3}$/', $normalizedCode)) {
-                        $codes[] = $defaultPrefix . '-' . substr($normalizedCode, -3);
+                        $finalCode = $defaultPrefix . '-' . substr($normalizedCode, -3);
+                        Log::info('=== OCR DEBUG: Applied default prefix (format 1) ===', [
+                            'normalized' => $normalizedCode,
+                            'final_code' => $finalCode
+                        ]);
+                        $codes[] = $finalCode;
                     } elseif (preg_match('/^\d{3}$/', $normalizedCode)) {
                         // Per pattern come "100" alla fine del testo
-                        $codes[] = $defaultPrefix . '-' . $normalizedCode;
+                        $finalCode = $defaultPrefix . '-' . $normalizedCode;
+                        Log::info('=== OCR DEBUG: Applied default prefix (format 2) ===', [
+                            'normalized' => $normalizedCode,
+                            'final_code' => $finalCode
+                        ]);
+                        $codes[] = $finalCode;
                     } else {
+                        Log::info('=== OCR DEBUG: Using normalized code as-is ===', [
+                            'final_code' => $normalizedCode
+                        ]);
                         $codes[] = $normalizedCode;
                     }
                 }
+            } else {
+                Log::info('=== OCR DEBUG: No matches for pattern ===', [
+                    'pattern' => $pattern
+                ]);
             }
         }
 
-        return array_unique($codes);
+        $uniqueCodes = array_unique($codes);
+
+        Log::info('=== OCR DEBUG: Final expansion codes ===', [
+            'all_codes' => $codes,
+            'unique_codes' => $uniqueCodes
+        ]);
+
+        return $uniqueCodes;
     }
 
     /**
@@ -385,24 +536,61 @@ final class CardOcrService
     {
         $results = [];
 
-        // Cerca carte con il codice esatto
-        $blueprints = Blueprint::whereHas('expansion', function ($query) use ($code) {
-            $query->where('code', 'like', '%' . substr($code, 0, 4) . '%'); // OP01, ST01, etc.
-        })
-            ->where('card_number', 'like', '%' . substr($code, -3) . '%') // 001, 100, etc.
-            ->with(['expansion'])
+        // Cerca carte usando il collector_number nelle properties JSON
+        // Prova diverse varianti del codice per massimizzare le possibilità di match
+        $searchVariants = [
+            $code,
+            strtoupper($code),
+            strtolower($code),
+            str_replace('-', '.', $code),
+            str_replace('.', '-', $code),
+            // Remove spaces and normalize
+            preg_replace('/\s+/', '', $code),
+            preg_replace('/\s+/', '', strtoupper($code)),
+            // Add leading zeros if missing
+            preg_replace('/([A-Z]{2,3}\d{2,3})-(\d{1,2})$/', '$1-0$2', $code),
+            preg_replace('/([A-Z]{2,3}\d{2,3})-(\d{1,2})$/', '$1-00$2', $code),
+        ];
+
+        Log::info('=== OCR DEBUG: Searching expansion code variants ===', [
+            'original_code' => $code,
+            'search_variants' => array_unique($searchVariants)
+        ]);
+
+        $query = Blueprint::query();
+        foreach ($searchVariants as $variant) {
+            if (!empty($variant)) {
+                $query->orWhereRaw("properties->>'fixed_properties' LIKE ?", ['%"collector_number":"' . $variant . '"%']);
+            }
+        }
+
+        $blueprints = $query->with(['expansion'])
             ->limit(config('ocr.search.expansion_code_limit'))
             ->get();
 
+        Log::info('=== OCR DEBUG: Database query results ===', [
+            'original_code' => $code,
+            'blueprints_found' => count($blueprints),
+            'blueprint_ids' => $blueprints->pluck('id')->toArray()
+        ]);
+
         foreach ($blueprints as $blueprint) {
+            $collectorNumber = $this->extractCollectorNumber($blueprint->properties);
+            $confidence = config('ocr.confidence.expansion_code_match');
+
+            // Boost confidence for exact matches
+            if (strtoupper($collectorNumber) === strtoupper($code)) {
+                $confidence = config('ocr.confidence.exact_match');
+            }
+
             $results[] = [
                 'blueprint_id' => $blueprint->id,
                 'name' => $blueprint->name,
                 'expansion' => $blueprint->expansion?->name,
-                'confidence' => config('ocr.confidence.expansion_code_match'),
+                'confidence' => $confidence,
                 'matched_text' => $code,
                 'image_url' => $this->getProxiedImageUrl($blueprint->image_url),
-                'card_number' => $blueprint->card_number,
+                'card_number' => $collectorNumber,
             ];
         }
 
@@ -438,7 +626,8 @@ final class CardOcrService
                     'confidence' => $confidence,
                     'matched_text' => $cleanName,
                     'image_url' => $this->getProxiedImageUrl($blueprint->image_url),
-                    'card_number' => $blueprint->card_number,
+                    'card_number' => $this->extractCollectorNumber($blueprint->properties),
+                    'properties' => $blueprint->properties,
                 ];
             }
         }
@@ -447,24 +636,111 @@ final class CardOcrService
     }
 
     /**
-     * Remove duplicates and sort by confidence
+     * Remove duplicates and sort by confidence with improved scoring
      */
     private function deduplicateAndSort(array $results): array
     {
-        // Rimuovi duplicati basati su blueprint_id
+        // Rimuovi duplicati basati su blueprint_id e calcola il miglior score
         $unique = [];
         foreach ($results as $result) {
             $id = $result['blueprint_id'];
-            if (!isset($unique[$id]) || $unique[$id]['confidence'] < $result['confidence']) {
+
+            // Calculate enhanced confidence score
+            $enhancedScore = $this->calculateEnhancedConfidence($result);
+            $result['enhanced_confidence'] = $enhancedScore;
+
+            if (!isset($unique[$id]) || $unique[$id]['enhanced_confidence'] < $enhancedScore) {
                 $unique[$id] = $result;
             }
         }
 
-        // Ordina per confidenza
+        // Ordina per confidenza migliorata, poi per confidenza originale
         $sorted = array_values($unique);
-        usort($sorted, fn($a, $b) => $b['confidence'] <=> $a['confidence']);
+        usort($sorted, function ($a, $b) {
+            // Prima per enhanced confidence
+            if ($a['enhanced_confidence'] !== $b['enhanced_confidence']) {
+                return $b['enhanced_confidence'] <=> $a['enhanced_confidence'];
+            }
+            // Poi per confidence originale
+            return $b['confidence'] <=> $a['confidence'];
+        });
 
         return $sorted;
+    }
+
+    /**
+     * Calculate enhanced confidence score based on multiple factors
+     */
+    private function calculateEnhancedConfidence(array $result): float
+    {
+        $baseConfidence = $result['confidence'];
+        $enhancedScore = $baseConfidence;
+
+        // Boost score for exact code matches
+        if (isset($result['match_type']) && $result['match_type'] === 'code') {
+            $enhancedScore += 20; // Significant boost for code matches
+        }
+
+        // Boost score for exact name matches
+        if (isset($result['matched_text']) && isset($result['name'])) {
+            if (strtolower($result['matched_text']) === strtolower($result['name'])) {
+                $enhancedScore += 15; // Boost for exact name matches
+            }
+        }
+
+        // Additional boost for One Piece expansion codes
+        if (isset($result['card_number']) && preg_match('/^(OP|ST)\d{2}-\d{3}$/', $result['card_number'])) {
+            $enhancedScore += 10;
+        }
+
+        // NEW: Boost for matching card attributes using properties
+        if (isset($result['properties']) && is_array($result['properties'])) {
+            $fixedProps = $result['properties']['fixed_properties'] ?? [];
+
+            // Check card type match (e.g., Leader detected matches onepiece_rarity: Leader)
+            if (
+                isset($result['detected_card_type']) &&
+                isset($fixedProps['onepiece_rarity']) &&
+                strtolower($result['detected_card_type']) === strtolower($fixedProps['onepiece_rarity'])
+            ) {
+                $enhancedScore += 25; // High boost for type match
+            }
+
+            // Check rarity match (e.g., detected "Alternate Art" matches onepiece_rarity)
+            if (
+                isset($result['detected_rarity']) &&
+                isset($fixedProps['onepiece_rarity']) &&
+                strtolower($result['detected_rarity']) === strtolower($fixedProps['onepiece_rarity'])
+            ) {
+                $enhancedScore += 15; // Medium boost for rarity match
+            }
+
+            // Small boost for having power value detected (indicates card structure recognition)
+            if (isset($result['detected_power']) && $result['detected_power'] > 0) {
+                $enhancedScore += 5;
+            }
+        }
+
+        // Cap the score at a reasonable maximum
+        return min(150.0, $enhancedScore);
+    }
+
+    /**
+     * Extract collector number from blueprint properties
+     */
+    private function extractCollectorNumber(?array $properties): ?string
+    {
+        if (!$properties || !isset($properties['fixed_properties'])) {
+            return null;
+        }
+
+        $fixedProperties = $properties['fixed_properties'];
+
+        if (is_array($fixedProperties) && isset($fixedProperties['collector_number'])) {
+            return $fixedProperties['collector_number'];
+        }
+
+        return null;
     }
 
     /**
@@ -595,5 +871,52 @@ final class CardOcrService
         $this->processImage($scan);
 
         return $scan;
+    }
+
+    /**
+     * Extract additional card attributes from OCR text
+     */
+    private function extractCardAttributes(string $text): array
+    {
+        $attributes = [
+            'card_type' => null,
+            'card_rarity' => null,
+            'power_value' => null,
+        ];
+
+        $upperText = strtoupper($text);
+
+        // Extract card type (Leader, Character, Event, Stage)
+        if (str_contains($upperText, 'LEADER')) {
+            $attributes['card_type'] = 'Leader';
+        } elseif (str_contains($upperText, 'CHARACTER')) {
+            $attributes['card_type'] = 'Character';
+        } elseif (str_contains($upperText, 'EVENT')) {
+            $attributes['card_type'] = 'Event';
+        } elseif (str_contains($upperText, 'STAGE')) {
+            $attributes['card_type'] = 'Stage';
+        }
+
+        // Extract power value (like 5000, 4000, etc.)
+        if (preg_match('/\b(\d{4,5})\b/', $text, $matches)) {
+            $powerValue = (int)$matches[1];
+            // Validate it's a reasonable power value (1000-10000)
+            if ($powerValue >= 1000 && $powerValue <= 10000) {
+                $attributes['power_value'] = $powerValue;
+            }
+        }
+
+        // Extract rarity hints
+        if (str_contains($upperText, 'ALTERNATE ART') || str_contains($upperText, 'ALT ART')) {
+            $attributes['card_rarity'] = 'Alternate Art';
+        } elseif (str_contains($upperText, 'SECRET RARE') || str_contains($upperText, 'SR')) {
+            $attributes['card_rarity'] = 'Secret Rare';
+        } elseif (str_contains($upperText, 'RARE') || str_contains($upperText, 'R')) {
+            $attributes['card_rarity'] = 'Rare';
+        } elseif (str_contains($upperText, 'PROMO')) {
+            $attributes['card_rarity'] = 'Promo';
+        }
+
+        return $attributes;
     }
 }
