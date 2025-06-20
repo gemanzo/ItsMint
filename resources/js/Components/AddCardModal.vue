@@ -90,6 +90,11 @@
                                                         <p class="text-xs">{{ bp.expansion?.name }} ({{ bp.expansion?.code }})</p>
                                                     </div>
                                                 </li>
+                                                <li v-if="hasMoreResults" class="p-2 text-center">
+                                                    <button @click="loadMoreBlueprints" :disabled="isSearching" class="text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50">
+                                                        {{ isSearching ? 'Loading...' : 'Load More' }}
+                                                    </button>
+                                                </li>
                                             </ul>
                                         </div>
                                         <div v-if="selectedBlueprint" class="mt-2 p-3 border rounded-md dark:border-gray-600 flex items-center space-x-4">
@@ -213,6 +218,9 @@ const blueprintSearchQuery = ref('');
 const blueprintSearchResults = ref<Blueprint[]>([]);
 const selectedBlueprint = ref<Blueprint | null>(null);
 const isSubmitting = ref(false);
+const searchPage = ref(1);
+const hasMoreResults = ref(false);
+const isSearching = ref(false);
 
 // Scan modal states
 const showScanModal = ref(false);
@@ -265,29 +273,54 @@ const formatCurrency = (value: number | null | undefined, currency = 'EUR') => {
     return new Intl.NumberFormat('it-IT', { style: 'currency', currency: currency }).format(value);
 };
 
-const searchBlueprints = async () => {
+const searchBlueprints = async (loadMore = false) => {
     if (blueprintSearchQuery.value.length < 2) {
         blueprintSearchResults.value = [];
         return;
     }
+
+    if (!loadMore) {
+        searchPage.value = 1;
+        blueprintSearchResults.value = [];
+    }
+
+    isSearching.value = true;
+
     try {
         // Use Elasticsearch API - backend now handles normalization and fuzzy matching
-        const response = await axios.get('blueprints/search', {
+        const response = await axios.get('/api/blueprint-search', {
             params: { 
                 q: blueprintSearchQuery.value,
-                size: 10 // Limit to 10 results for UI performance
+                page: searchPage.value,
+                size: 15 // Increase size for better experience
             }
         });
         
         // Handle Elasticsearch response format
         if (response.data.success && response.data.data) {
-            blueprintSearchResults.value = response.data.data;
+            if (loadMore) {
+                blueprintSearchResults.value.push(...response.data.data);
+            } else {
+                blueprintSearchResults.value = response.data.data;
+            }
+            hasMoreResults.value = response.data.meta.last_page > response.data.meta.current_page;
         } else {
             blueprintSearchResults.value = [];
+            hasMoreResults.value = false;
         }
     } catch (error) {
         console.error('Error searching blueprints:', error);
         blueprintSearchResults.value = [];
+        hasMoreResults.value = false;
+    } finally {
+        isSearching.value = false;
+    }
+};
+
+const loadMoreBlueprints = () => {
+    if (hasMoreResults.value && !isSearching.value) {
+        searchPage.value++;
+        searchBlueprints(true);
     }
 };
 

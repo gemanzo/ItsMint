@@ -198,6 +198,9 @@ const handleScanComplete = (scan: any) => {
     
     // Add to recent scans
     recentScans.value.unshift(scan)
+    if (recentScans.value.length > 5) {
+        recentScans.value.pop()
+    }
 }
 
 const closeScanResults = () => {
@@ -206,11 +209,12 @@ const closeScanResults = () => {
 }
 
 const handleCardCreated = () => {
-    closeScanResults()
-    // Optionally redirect to portfolio or show success message
+    // Optionally, refresh history or show a success message
+    // For now, closing the results modal is enough
+    showScanResults.value = false
 }
 
-const viewScanDetails = (scan: any) => {
+const viewScanDetails = (scan: CardScan) => {
     currentScan.value = scan
     showScanResults.value = true
 }
@@ -222,31 +226,24 @@ const loadScanHistory = async () => {
         recentScans.value = response.data.data
     } catch (error) {
         console.error('Failed to load scan history:', error)
+        // Optionally, show an error to the user
     } finally {
         isLoading.value = false
     }
 }
 
 const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+    return new Date(dateString).toLocaleDateString(undefined, {
+        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     })
 }
 
-const getConfidenceClass = (confidence: number) => {
-    if (confidence >= 80) {
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-    } else if (confidence >= 60) {
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-    } else {
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-    }
+const getConfidenceClass = (score: number) => {
+    if (score > 85) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+    if (score > 60) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
 }
 
-// Load recent scans on mount
 onMounted(() => {
     loadScanHistory()
 })

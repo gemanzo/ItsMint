@@ -19,7 +19,7 @@ class QueuePriceUpdatesCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'itsmint:queue-price-updates {--blueprint_ct_id= : Queue update for a specific blueprint ID} {--batch_size=100 : Number of jobs per batch}';
+    protected $signature = 'itsmint:queue-price-updates {--blueprint_ct_id= : Queue update for a specific blueprint ID} {--game_id= : Filter by game ID} {--expansion_id= : Filter by expansion ID} {--batch_size=100 : Number of jobs per batch}';
 
     /**
      * The console command description.
@@ -47,6 +47,8 @@ class QueuePriceUpdatesCommand extends Command
     public function handle(): int
     {
         $blueprintCtIdOpt = $this->option('blueprint_ct_id');
+        $gameIdOpt = $this->option('game_id');
+        $expansionIdOpt = $this->option('expansion_id');
         $configuredBatchSize = (int) $this->option('batch_size');
 
         if ($blueprintCtIdOpt) {
@@ -59,13 +61,25 @@ class QueuePriceUpdatesCommand extends Command
                 return Command::FAILURE;
             }
         } else {
-            $this->info("Preparing to queue price updates for all blueprints in batches of {$configuredBatchSize} jobs...");
+            $this->info("Preparing to queue price updates for blueprints in batches of {$configuredBatchSize} jobs...");
+
+            $query = Blueprint::query();
+
+            if ($gameIdOpt) {
+                $query->where('game_id', $gameIdOpt);
+                $this->info("Filtering by Game ID: {$gameIdOpt}");
+            }
+
+            if ($expansionIdOpt) {
+                $query->where('expansion_id', $expansionIdOpt);
+                $this->info("Filtering by Expansion ID: {$expansionIdOpt}");
+            }
 
             $jobsForCurrentBatch = [];
             $totalBlueprintsProcessed = 0;
             $dispatchedBatchCount = 0;
 
-            Blueprint::orderBy('id')->chunkById($configuredBatchSize, function ($blueprintsChunk) use (&$jobsForCurrentBatch, &$totalBlueprintsProcessed, &$dispatchedBatchCount, $configuredBatchSize) {
+            $query->orderBy('id')->chunkById($configuredBatchSize, function ($blueprintsChunk) use (&$jobsForCurrentBatch, &$totalBlueprintsProcessed, &$dispatchedBatchCount, $configuredBatchSize) {
                 foreach ($blueprintsChunk as $blueprint) {
                     $jobsForCurrentBatch[] = new UpdateBlueprintPriceJob($blueprint, $this->blueprintPriceService);
                     $totalBlueprintsProcessed++;

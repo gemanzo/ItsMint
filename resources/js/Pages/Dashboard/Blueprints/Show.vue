@@ -1,7 +1,9 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import PriceHistoryChart from '@/Components/PriceHistoryChart.vue';
+import axios from 'axios';
 
 const props = defineProps({
     blueprint: Object,
@@ -11,6 +13,8 @@ const props = defineProps({
 const showAddToPortfolioModal = ref(false);
 const imageLoaded = ref(false);
 const imageError = ref(false);
+const priceHistory = ref(null);
+const isLoadingChart = ref(true);
 
 // Placeholder image as data URL SVG
 const placeholderImage = 'data:image/svg+xml;base64,' + btoa(`
@@ -91,6 +95,43 @@ const copyToClipboard = (text) => {
 const goBack = () => {
     router.visit(route('dashboard.blueprints.index'));
 };
+
+const fetchPriceHistory = async () => {
+    try {
+        const response = await axios.get(route('api.blueprints.price-history', { blueprint: props.blueprint.id }));
+        const history = response.data;
+
+        if (history.length === 0) {
+            priceHistory.value = null;
+            return;
+        }
+
+        const labels = history.map(p => formatDateShort(p.fetched_at));
+        const data = history.map(p => p.price_cents / 100);
+
+        priceHistory.value = {
+            labels,
+            datasets: [
+                {
+                    label: `Price (${history[0]?.currency || 'EUR'})`,
+                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    data,
+                    tension: 0.1,
+                },
+            ],
+        };
+    } catch (error) {
+        console.error('Failed to fetch price history:', error);
+        priceHistory.value = null;
+    } finally {
+        isLoadingChart.value = false;
+    }
+};
+
+onMounted(() => {
+    fetchPriceHistory();
+});
 </script>
 
 <template>
@@ -398,6 +439,24 @@ const goBack = () => {
                     >
                         Got it!
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Price History Chart -->
+        <div class="py-6">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Price History</h3>
+                    <div v-if="isLoadingChart" class="text-center">
+                        <p>Loading chart...</p>
+                    </div>
+                    <div v-else-if="priceHistory">
+                        <PriceHistoryChart :chartData="priceHistory" style="height: 300px" />
+                    </div>
+                    <div v-else class="text-center text-gray-500">
+                        <p>No price history available for this blueprint.</p>
+                    </div>
                 </div>
             </div>
         </div>

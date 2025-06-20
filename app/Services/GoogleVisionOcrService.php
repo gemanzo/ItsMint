@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Exceptions\GoogleVisionOcrException;
 use Google\Cloud\Vision\V1\Client\ImageAnnotatorClient;
 use Illuminate\Support\Facades\Log;
 use Google\Cloud\Vision\V1\Feature;
@@ -23,7 +24,7 @@ final class GoogleVisionOcrService
         $this->config = config('services.google.vision');
 
         if (!$this->config['enabled']) {
-            throw new Exception('Google Vision API is not enabled');
+            throw new GoogleVisionOcrException('Google Vision API is not enabled');
         }
 
         $this->client = new ImageAnnotatorClient([
@@ -41,7 +42,7 @@ final class GoogleVisionOcrService
             // Read image file
             $imageContent = file_get_contents($imagePath);
             if ($imageContent === false) {
-                throw new Exception("Failed to read image file: {$imagePath}");
+                throw new GoogleVisionOcrException("Failed to read image file: {$imagePath}");
             }
 
             // Create image object
@@ -89,7 +90,7 @@ final class GoogleVisionOcrService
                 'error' => $e->getMessage(),
             ]);
 
-            throw $e;
+            throw new GoogleVisionOcrException('Google Vision OCR failed: ' . $e->getMessage(), 0, $e);
         } finally {
             // Clean up client
             $this->client->close();
@@ -102,6 +103,9 @@ final class GoogleVisionOcrService
     private function processVisionResponse($response): array
     {
         $responses = $response->getResponses();
+        if (empty($responses)) {
+            throw new GoogleVisionOcrException('Received an empty response from Vision API.');
+        }
         $allText = '';
         $blocks = [];
         $overallConfidence = 0;
@@ -111,7 +115,7 @@ final class GoogleVisionOcrService
             // Check for errors
             if ($imageResponse->hasError()) {
                 $error = $imageResponse->getError();
-                throw new Exception("Vision API error: " . $error->getMessage());
+                throw new GoogleVisionOcrException("Vision API error: " . $error->getMessage());
             }
 
             // Process text annotations
@@ -176,10 +180,13 @@ final class GoogleVisionOcrService
             }
         }
 
+        $extractedCardInfo = $this->extractCardInfo($blocks);
+
         return [
             'text' => trim($allText),
             'confidence' => $confidenceCount > 0 ? $overallConfidence / $confidenceCount : 0,
             'blocks' => $blocks,
+            'card_info' => $extractedCardInfo,
             'provider' => 'google_vision',
             'processed_at' => now()->toISOString(),
         ];
