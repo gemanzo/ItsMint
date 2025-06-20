@@ -248,7 +248,7 @@ return [
                 'connection' => 'redis',
                 'queue' => ['default'],
                 'balance' => 'simple', // Keep it simple for local
-                'maxProcesses' => 1,
+                'maxProcesses' => 5,
                 'memory' => 128,
                 'tries' => 1,
                 'timeout' => 60,

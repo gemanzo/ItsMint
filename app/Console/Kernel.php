@@ -14,9 +14,23 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
 
-        // Schedule the command to queue blueprint price updates
-        // Consider adding ->withoutOverlapping() if the job can take a long time
-        $schedule->command('itsmint:queue-price-updates')->everyFifteenMinutes();
+        // Daily data synchronization sequence
+        // 1. Mirror CardTrader database (structure + base data)
+        $schedule->command('itsmint:mirror-ct-database')
+            ->dailyAt('00:00')
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // 2. Enrich with OneLog data (after CT mirror completes)
+        $schedule->command('itsmint:onelog-scrape')
+            ->dailyAt('01:00')
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // 3. Continuous price updates (every 15 minutes)
+        $schedule->command('itsmint:queue-price-updates')
+            ->everySixHours()
+            ->withoutOverlapping();
     }
 
     /**

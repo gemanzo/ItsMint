@@ -3,12 +3,13 @@
 namespace App\Console\Commands;
 
 use App\Models\Game;
-use App\Models\Expansion;
 use App\Models\Blueprint;
-use App\Jobs\UpdateBlueprintPriceJob;
+use App\Models\Expansion;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+use App\Jobs\UpdateBlueprintPriceJob;
+use App\Services\BlueprintPriceService;
 
 class MirrorCTDatabaseCommand extends Command
 {
@@ -32,7 +33,7 @@ class MirrorCTDatabaseCommand extends Command
     public function handle()
     {
         $token = config('services.cardtrader.api_token');
-        $baseApiUrl = config('services.cardtrader.base_url');
+        $baseApiUrl = config('services.cardtrader.api_base_url');
         $opGameID = config('services.cardtrader.one_piece_game_id');
 
         $gamesUrl = $baseApiUrl . '/games';
@@ -58,13 +59,16 @@ class MirrorCTDatabaseCommand extends Command
                 return Command::FAILURE;
             }
             $games = $response->json();
-            foreach ($games as $gameData) {
-                Game::updateOrCreate([
-                    'ct_id' => $gameData['id']
-                ], [
-                    'name' => $gameData['name'],
-                    'display_name' => $gameData['display_name'],
-                ]);
+            foreach ($games['array'] as $gameData) {
+                //get only one piece game
+                if ($gameData['id'] == $opGameID) {
+                    Game::updateOrCreate([
+                        'ct_id' => $gameData['id']
+                    ], [
+                        'name' => $gameData['name'],
+                        'display_name' => $gameData['display_name'],
+                    ]);
+                }
             }
             $this->info(count($games) . " games processed.");
 
@@ -137,7 +141,7 @@ class MirrorCTDatabaseCommand extends Command
                 ]);
 
                 // Dispatch the job to update the price for this blueprint
-                UpdateBlueprintPriceJob::dispatch($localBlueprint);
+                UpdateBlueprintPriceJob::dispatch($localBlueprint, new BlueprintPriceService());
                 $this->line("Queued price update for blueprint: {$localBlueprint->name} (CT ID: {$localBlueprint->ct_id})");
             }
             $this->info("Processed " . count($blueprintsApiData) . " blueprints for expansion {$expansion->name}.");

@@ -24,6 +24,22 @@ class Blueprint extends Model
         'card_market_ids',
         'tcg_player_id',
         'properties',
+        // One Piece TCG specific fields
+        'colors',
+        'card_effect',
+        'card_type',
+        'card_cost',
+        'card_power',
+        'card_counter',
+        'card_attribute',
+        'trigger',
+        'note',
+        'family',
+        'card_number',
+        'official_image_url',
+        'card_archetype',
+        'rarity',
+        'onepiece_rarity',
     ];
 
     /**
@@ -34,6 +50,9 @@ class Blueprint extends Model
     protected $casts = [
         'card_market_ids' => 'array',
         'properties' => 'array',
+        'colors' => 'array',
+        'cost' => 'integer',
+        'power' => 'integer',
     ];
 
     /**
@@ -106,6 +125,87 @@ class Blueprint extends Model
             'id' => $this->ct_category_id,
             'name' => (string) $this->ct_category_id,
         ];
+    }
+
+    /**
+     * Get the collector number from properties or card_number field.
+     */
+    public function getCollectorNumberAttribute(): ?string
+    {
+        // Check new card_number field first, then fallback to properties
+        return $this->card_number ?? $this->properties['fixed_properties']['collector_number'] ?? null;
+    }
+
+    /**
+     * Get the rarity from properties.
+     */
+    public function getRarityAttribute(): ?string
+    {
+        return $this->properties['fixed_properties']['onepiece_rarity'] ?? null;
+    }
+
+    /**
+     * Check if the card is multi-colored.
+     */
+    public function getIsMultiColoredAttribute(): bool
+    {
+        return is_array($this->colors) && count($this->colors) > 1;
+    }
+
+    /**
+     * Get primary color for single-colored cards.
+     */
+    public function getPrimaryColorAttribute(): ?string
+    {
+        if (!is_array($this->colors) || empty($this->colors)) {
+            return null;
+        }
+
+        return $this->colors[0];
+    }
+
+    /**
+     * Check if the card has a counter value.
+     */
+    public function getHasCounterAttribute(): bool
+    {
+        return !empty($this->counter) && $this->counter !== '0';
+    }
+
+    /**
+     * Get formatted cost display.
+     */
+    public function getFormattedCostAttribute(): string
+    {
+        if (is_null($this->cost)) {
+            return '-';
+        }
+
+        return (string) $this->cost;
+    }
+
+    /**
+     * Get formatted power display.
+     */
+    public function getFormattedPowerAttribute(): string
+    {
+        if (is_null($this->power)) {
+            return '-';
+        }
+
+        return number_format($this->power);
+    }
+
+    /**
+     * Get formatted counter display.
+     */
+    public function getFormattedCounterAttribute(): string
+    {
+        if (empty($this->counter)) {
+            return '-';
+        }
+
+        return $this->counter;
     }
 
     public function userCards(): HasMany
