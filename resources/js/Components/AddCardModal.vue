@@ -72,7 +72,7 @@
                                                 type="text" 
                                                 id="searchBlueprint" 
                                                 v-model="blueprintSearchQuery"
-                                                @input="debouncedSearchBlueprints"
+                                                @input="handleSearchInput"
                                                 placeholder="Type to search... e.g., Luffy OP01-001"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
                                             />
@@ -343,6 +343,11 @@ watch(blueprintSearchQuery, (newValue, oldValue) => {
 });
 
 const debouncedSearchBlueprints = debounce(searchBlueprints, 300);
+
+// Wrapper for input event handler
+const handleSearchInput = () => {
+    debouncedSearchBlueprints();
+};
 
 const selectBlueprint = (blueprint: Blueprint) => {
     selectedBlueprint.value = blueprint;
