@@ -288,10 +288,10 @@ const searchBlueprints = async (loadMore = false) => {
 
     try {
         // Use Elasticsearch API - backend now handles normalization and fuzzy matching
-        const response = await axios.get('/api/blueprint-search', {
+        const response = await axios.get('/blueprints/search', {
             params: { 
                 q: blueprintSearchQuery.value,
-                page: searchPage.value,
+                from: (searchPage.value - 1) * 15,
                 size: 15 // Increase size for better experience
             }
         });
@@ -303,7 +303,7 @@ const searchBlueprints = async (loadMore = false) => {
             } else {
                 blueprintSearchResults.value = response.data.data;
             }
-            hasMoreResults.value = response.data.meta.last_page > response.data.meta.current_page;
+            hasMoreResults.value = response.data.pagination.has_more;
         } else {
             blueprintSearchResults.value = [];
             hasMoreResults.value = false;

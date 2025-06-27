@@ -14,7 +14,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::post('/blueprint-search', [BlueprintSearchController::class, 'search']);
     Route::get('/blueprints/{blueprint}/price-history', [BlueprintController::class, 'priceHistory'])->name('api.blueprints.price-history');
     Route::post('/card-scan', [CardScanController::class, 'scan']);
     Route::get('/image-proxy', [ImageProxyController::class, 'proxy']);
@@ -58,7 +57,7 @@ Route::prefix('card-scans')->middleware('auth:sanctum')->group(function () {
 });
 
 // NEW: Elasticsearch-powered Blueprint search routes
-Route::prefix('blueprints')->middleware([\App\Http\Middleware\ElasticsearchFallback::class])->group(function () {
+Route::prefix('blueprints')->middleware(['auth:sanctum', \App\Http\Middleware\ElasticsearchFallback::class])->group(function () {
     Route::get('search', [BlueprintSearchController::class, 'search'])->name('api.blueprints.search');
     Route::get('suggestions', [BlueprintSearchController::class, 'suggestions'])->name('api.blueprints.suggestions');
     Route::get('search/stats', [BlueprintSearchController::class, 'stats'])->name('api.blueprints.search.stats');
