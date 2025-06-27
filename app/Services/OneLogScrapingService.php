@@ -198,7 +198,7 @@ final class OneLogScrapingService
     /**
      * Fetch a single page from OneLog API.
      */
-    private function fetchSinglePageFromApi(string $seriesId, int $page): array
+    public function fetchSinglePageFromApi(string $seriesId, int $page): array
     {
         try {
             $payload = [
@@ -250,6 +250,67 @@ final class OneLogScrapingService
             Log::error("Error calling OneLog API", [
                 'error' => $e->getMessage(),
                 'series_id' => $seriesId,
+                'page' => $page
+            ]);
+            return [];
+        }
+    }
+
+    /**
+     * Fetch a single page from OneLog API WITHOUT series filter.
+     * This matches the user's test: POST with {"page": 0, "showAltArts": true}
+     */
+    public function fetchSinglePageWithoutFilter(int $page): array
+    {
+        try {
+            $payload = [
+                'page' => $page,
+                'showAltArts' => true
+                // NO 'card set' filter - fetch ALL cards
+            ];
+
+            Log::info("OneLog API request (no filter)", [
+                'url' => self::API_ENDPOINT,
+                'payload' => $payload
+            ]);
+
+            $response = Http::withHeaders([
+                'User-Agent' => self::USER_AGENT,
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+                'X-Requested-With' => 'XMLHttpRequest',
+                'Referer' => self::BASE_URL,
+            ])
+                ->timeout(30)
+                ->post(self::API_ENDPOINT, $payload);
+
+            if (!$response->successful()) {
+                Log::warning("OneLog API request failed (no filter)", [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                    'payload' => $payload
+                ]);
+                return [];
+            }
+
+            $data = $response->json();
+
+            if (!isset($data['data']) || !is_array($data['data'])) {
+                Log::warning("Unexpected OneLog API response format (no filter)", [
+                    'response' => $data
+                ]);
+                return [];
+            }
+
+            Log::info("OneLog API response received (no filter)", [
+                'cards_count' => count($data['data']),
+                'total_count' => $data['count'] ?? 'unknown'
+            ]);
+
+            return $data['data'];
+        } catch (Exception $e) {
+            Log::error("Error calling OneLog API (no filter)", [
+                'error' => $e->getMessage(),
                 'page' => $page
             ]);
             return [];

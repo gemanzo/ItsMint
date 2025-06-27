@@ -6,8 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 use App\Models\UserCard;
+use App\Enums\ProductType;
 
 class Blueprint extends Model
 {
@@ -19,6 +21,9 @@ class Blueprint extends Model
         'name',
         'version',
         'ct_category_id',
+        'product_type',
+        'ai_classification',
+        'ai_confidence_score',
         'image_url',
         'scryfall_id',
         'card_market_ids',
@@ -53,6 +58,7 @@ class Blueprint extends Model
         'colors' => 'array',
         'cost' => 'integer',
         'power' => 'integer',
+        'ai_confidence_score' => 'decimal:2',
     ];
 
     /**
@@ -84,6 +90,16 @@ class Blueprint extends Model
     public function latestPrice()
     {
         return $this->hasOne(CardPrice::class)->latestOfMany('fetched_at');
+    }
+
+    /**
+     * OneLog cards related to this blueprint.
+     */
+    public function oneLogCards(): BelongsToMany
+    {
+        return $this->belongsToMany(OneLogCard::class, 'blueprint_onelog_relations', 'blueprint_id', 'onelog_card_id')
+            ->withPivot(['match_type', 'confidence_score', 'match_metadata', 'is_verified', 'notes'])
+            ->withTimestamps();
     }
 
     /**
@@ -211,5 +227,75 @@ class Blueprint extends Model
     public function userCards(): HasMany
     {
         return $this->hasMany(UserCard::class);
+    }
+
+    /**
+     * Get the product type enum instance.
+     */
+    public function getProductTypeEnumAttribute(): ?ProductType
+    {
+        if (!$this->product_type) {
+            return null;
+        }
+
+        return ProductType::tryFrom($this->product_type);
+    }
+
+    /**
+     * Check if this blueprint is a single card.
+     */
+    public function getIsSingleCardAttribute(): bool
+    {
+        // Use product_type first, fallback to enum mapping if available
+        if ($this->product_type) {
+            return $this->product_type_enum?->isSingleCard() ?? false;
+        }
+
+        // Fallback to ProductType enum mapping based on ct_category_id
+        return ProductType::fromCategoryId($this->ct_category_id)->isSingleCard();
+    }
+
+    /**
+     * Get the AI classification confidence level.
+     */
+    public function getConfidenceLevelAttribute(): string
+    {
+        if (is_null($this->ai_confidence_score)) {
+            return 'not_classified';
+        }
+
+        $score = (float) $this->ai_confidence_score;
+
+        if ($score >= 0.8) {
+            return 'high';
+        } elseif ($score >= 0.5) {
+            return 'medium';
+        } elseif ($score >= 0.0) {
+            return 'low';
+        } else {
+            return 'uncertain';
+        }
+    }
+
+    /**
+     * Scope for single cards only.
+     */
+    public function scopeSingleCards($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('product_type', 'single_card')
+                ->orWhereIn('ct_category_id', ProductType::getSingleCardCategoryIds());
+        });
+    }
+
+    /**
+     * Scope for products only (non-cards).
+     */
+    public function scopeProducts($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNotIn('product_type', ['single_card', 'don_token'])
+                ->orWhereNotIn('ct_category_id', ProductType::getSingleCardCategoryIds());
+        });
     }
 }
