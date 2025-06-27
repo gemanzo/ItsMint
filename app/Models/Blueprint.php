@@ -29,22 +29,6 @@ class Blueprint extends Model
         'card_market_ids',
         'tcg_player_id',
         'properties',
-        // One Piece TCG specific fields
-        'colors',
-        'card_effect',
-        'card_type',
-        'card_cost',
-        'card_power',
-        'card_counter',
-        'card_attribute',
-        'trigger',
-        'note',
-        'family',
-        'card_number',
-        'official_image_url',
-        'card_archetype',
-        'rarity',
-        'onepiece_rarity',
     ];
 
     /**
@@ -55,9 +39,6 @@ class Blueprint extends Model
     protected $casts = [
         'card_market_ids' => 'array',
         'properties' => 'array',
-        'colors' => 'array',
-        'cost' => 'integer',
-        'power' => 'integer',
         'ai_confidence_score' => 'decimal:2',
     ];
 
@@ -144,12 +125,11 @@ class Blueprint extends Model
     }
 
     /**
-     * Get the collector number from properties or card_number field.
+     * Get the collector number from properties.
      */
     public function getCollectorNumberAttribute(): ?string
     {
-        // Check new card_number field first, then fallback to properties
-        return $this->card_number ?? $this->properties['fixed_properties']['collector_number'] ?? null;
+        return $this->properties['fixed_properties']['collector_number'] ?? null;
     }
 
     /**
@@ -161,67 +141,114 @@ class Blueprint extends Model
     }
 
     /**
-     * Check if the card is multi-colored.
+     * Get the primary OneLog card (best match).
      */
-    public function getIsMultiColoredAttribute(): bool
+    public function getPrimaryOneLogCardAttribute(): ?OneLogCard
     {
-        return is_array($this->colors) && count($this->colors) > 1;
+        return $this->oneLogCards()
+            ->orderByPivot('confidence_score', 'desc')
+            ->orderByPivot('is_verified', 'desc')
+            ->first();
     }
 
     /**
-     * Get primary color for single-colored cards.
+     * Get card data from OneLog relationship.
      */
-    public function getPrimaryColorAttribute(): ?string
+    public function getOneLogDataAttribute(): ?object
     {
-        if (!is_array($this->colors) || empty($this->colors)) {
+        $card = $this->getPrimaryOneLogCardAttribute();
+
+        if (!$card) {
             return null;
         }
 
-        return $this->colors[0];
+        return (object) [
+            'colors' => $card->colors,
+            'card_effect' => $card->effect,
+            'card_type' => $card->type,
+            'card_cost' => $card->cost,
+            'card_power' => $card->power,
+            'card_counter' => $card->counter,
+            'card_attribute' => $card->attribute,
+            'trigger' => $card->trigger,
+            'rarity' => $card->rarity,
+            'serial' => $card->serial,
+            'feature' => $card->feature,
+        ];
     }
 
     /**
-     * Check if the card has a counter value.
+     * Check if the card is multi-colored (from OneLog data).
+     */
+    public function getIsMultiColoredAttribute(): bool
+    {
+        $oneLogData = $this->getOneLogDataAttribute();
+        if (!$oneLogData || !$oneLogData->colors) {
+            return false;
+        }
+
+        return is_array($oneLogData->colors) && count($oneLogData->colors) > 1;
+    }
+
+    /**
+     * Get primary color for single-colored cards (from OneLog data).
+     */
+    public function getPrimaryColorAttribute(): ?string
+    {
+        $oneLogData = $this->getOneLogDataAttribute();
+        if (!$oneLogData || !$oneLogData->colors || !is_array($oneLogData->colors) || empty($oneLogData->colors)) {
+            return null;
+        }
+
+        return $oneLogData->colors[0];
+    }
+
+    /**
+     * Check if the card has a counter value (from OneLog data).
      */
     public function getHasCounterAttribute(): bool
     {
-        return !empty($this->counter) && $this->counter !== '0';
+        $oneLogData = $this->getOneLogDataAttribute();
+        return $oneLogData && !empty($oneLogData->card_counter) && $oneLogData->card_counter !== '0';
     }
 
     /**
-     * Get formatted cost display.
+     * Get formatted cost display (from OneLog data).
      */
     public function getFormattedCostAttribute(): string
     {
-        if (is_null($this->cost)) {
+        $oneLogData = $this->getOneLogDataAttribute();
+        if (!$oneLogData || is_null($oneLogData->card_cost)) {
             return '-';
         }
 
-        return (string) $this->cost;
+        return (string) $oneLogData->card_cost;
     }
 
     /**
-     * Get formatted power display.
+     * Get formatted power display (from OneLog data).
      */
     public function getFormattedPowerAttribute(): string
     {
-        if (is_null($this->power)) {
+        $oneLogData = $this->getOneLogDataAttribute();
+        if (!$oneLogData || is_null($oneLogData->card_power)) {
             return '-';
         }
 
-        return number_format($this->power);
+        return number_format($oneLogData->card_power);
     }
 
     /**
-     * Get formatted counter display.
+     * Get formatted counter display (from OneLog data).
      */
     public function getFormattedCounterAttribute(): string
     {
-        if (empty($this->counter)) {
+        $oneLogData = $this->getOneLogDataAttribute();
+        if (!$oneLogData || empty($oneLogData->card_counter)) {
             return '-';
         }
 
-        return $this->counter;
+        return $oneLogData->card_counter;
     }
 
     public function userCards(): HasMany
@@ -248,7 +275,8 @@ class Blueprint extends Model
     {
         // Use product_type first, fallback to enum mapping if available
         if ($this->product_type) {
-            return $this->product_type_enum?->isSingleCard() ?? false;
+            $enum = $this->getProductTypeEnumAttribute();
+            return $enum?->isSingleCard() ?? false;
         }
 
         // Fallback to ProductType enum mapping based on ct_category_id

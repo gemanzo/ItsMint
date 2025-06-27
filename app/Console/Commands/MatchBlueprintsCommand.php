@@ -323,7 +323,7 @@ final class MatchBlueprintsCommand extends Command
                 $blueprint->oneLogCards()->attach($match['card']->id, [
                     'match_type' => $match['type'],
                     'confidence_score' => $match['confidence'],
-                    'match_metadata' => $match['metadata'],
+                    'match_metadata' => json_encode($match['metadata']),
                     'is_verified' => $match['confidence'] >= 0.95, // Auto-verify high confidence matches
                 ]);
 

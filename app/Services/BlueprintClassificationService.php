@@ -189,8 +189,7 @@ final class BlueprintClassificationService
      */
     private function hasValidCollectorNumber(Blueprint $blueprint): bool
     {
-        $collectorNumber = $blueprint->card_number ??
-            $blueprint->properties['fixed_properties']['collector_number'] ?? null;
+        $collectorNumber = $blueprint->properties['fixed_properties']['collector_number'] ?? null;
 
         if (!$collectorNumber) {
             return false;
@@ -283,7 +282,7 @@ final class BlueprintClassificationService
         return [
             'classification' => $classification,
             'has_collector_number' => $this->hasValidCollectorNumber($blueprint),
-            'collector_number' => $blueprint->card_number,
+            'collector_number' => $blueprint->collector_number,
             'matches_non_card_patterns' => $this->isDefinitelyProduct($blueprint),
             'has_card_ability_pattern' => $this->hasCardAbilityPattern($blueprint->name),
             'looks_like_character_name' => $this->looksLikeCharacterName($blueprint->name),
@@ -336,7 +335,7 @@ final class BlueprintClassificationService
             $results[] = [
                 'id' => $blueprint->id,
                 'name' => $blueprint->name,
-                'card_number' => $blueprint->card_number,
+                'card_number' => $blueprint->collector_number,
                 'classification' => $this->classifyBlueprint($blueprint),
                 'analysis' => $this->getClassificationAnalysis($blueprint),
             ];
