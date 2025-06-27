@@ -203,53 +203,6 @@ class Blueprint extends Model
         return $oneLogData->colors[0];
     }
 
-    /**
-     * Check if the card has a counter value (from OneLog data).
-     */
-    public function getHasCounterAttribute(): bool
-    {
-        $oneLogData = $this->getOneLogDataAttribute();
-        return $oneLogData && !empty($oneLogData->card_counter) && $oneLogData->card_counter !== '0';
-    }
-
-    /**
-     * Get formatted cost display (from OneLog data).
-     */
-    public function getFormattedCostAttribute(): string
-    {
-        $oneLogData = $this->getOneLogDataAttribute();
-        if (!$oneLogData || is_null($oneLogData->card_cost)) {
-            return '-';
-        }
-
-        return (string) $oneLogData->card_cost;
-    }
-
-    /**
-     * Get formatted power display (from OneLog data).
-     */
-    public function getFormattedPowerAttribute(): string
-    {
-        $oneLogData = $this->getOneLogDataAttribute();
-        if (!$oneLogData || is_null($oneLogData->card_power)) {
-            return '-';
-        }
-
-        return number_format($oneLogData->card_power);
-    }
-
-    /**
-     * Get formatted counter display (from OneLog data).
-     */
-    public function getFormattedCounterAttribute(): string
-    {
-        $oneLogData = $this->getOneLogDataAttribute();
-        if (!$oneLogData || empty($oneLogData->card_counter)) {
-            return '-';
-        }
-
-        return $oneLogData->card_counter;
-    }
 
     public function userCards(): HasMany
     {
@@ -276,11 +229,19 @@ class Blueprint extends Model
         // Use product_type first, fallback to enum mapping if available
         if ($this->product_type) {
             $enum = $this->getProductTypeEnumAttribute();
-            return $enum?->isSingleCard() ?? false;
+            return $enum ? $enum->isSingleCard() : false;
         }
 
         // Fallback to ProductType enum mapping based on ct_category_id
         return ProductType::fromCategoryId($this->ct_category_id)->isSingleCard();
+    }
+
+    /**
+     * Check if this blueprint is a promo card.
+     */
+    public function getIsPromoCardAttribute(): bool
+    {
+        return $this->properties['fixed_properties']['onepiece_rarity'] == 'Promo';
     }
 
     /**

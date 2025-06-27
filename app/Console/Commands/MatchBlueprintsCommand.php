@@ -21,10 +21,13 @@ final class MatchBlueprintsCommand extends Command
      */
     protected $signature = 'itsmint:match-blueprints-onelog
                             {--dry-run : Preview matches without storing}
-                            {--force : Re-process existing matches}
+                            {--force : Re-process existing matches (detach and re-attach)}
+                            {--resync : Update existing matches without detaching}
                             {--expansion= : Match specific expansion only}
                             {--show-stats : Show matching statistics}
-                            {--show-excluded : Show products excluded from matching}';
+                            {--show-excluded : Show products excluded from matching}
+                            {--detailed : Show detailed matching information}
+                            {--debug-serial= : Debug specific serial matching}';
 
     /**
      * The console command description.
@@ -48,6 +51,10 @@ final class MatchBlueprintsCommand extends Command
             return $this->showExcludedProducts($classificationService);
         }
 
+        if ($debugSerial = $this->option('debug-serial')) {
+            return $this->debugSerialMatching($debugSerial);
+        }
+
         try {
             $totalMatches = 0;
 
@@ -67,6 +74,15 @@ final class MatchBlueprintsCommand extends Command
                 $matches = $this->findMatches($blueprint);
 
                 if (!empty($matches)) {
+                    if ($this->option('detailed')) {
+                        $this->newLine();
+                        $this->info("Blueprint #{$blueprint->id}: {$blueprint->name} (collector: {$blueprint->collector_number})");
+                        foreach ($matches as $match) {
+                            $confidence = number_format($match['confidence'], 3);
+                            $this->line("  → Matched with OneLog #{$match['card']->id}: {$match['card']->name} (confidence: {$confidence}, type: {$match['type']})");
+                        }
+                    }
+
                     if (!$this->option('dry-run')) {
                         $this->storeMatches($blueprint, $matches);
                     }
@@ -82,7 +98,8 @@ final class MatchBlueprintsCommand extends Command
             if ($this->option('dry-run')) {
                 $this->info("🔍 DRY RUN: Found {$totalMatches} potential matches");
             } else {
-                $this->info("✅ Stored {$totalMatches} matches");
+                $mode = $this->option('force') ? 'force re-sync' : ($this->option('resync') ? 'resync' : 'initial matching');
+                $this->info("✅ Completed {$mode}: processed {$totalMatches} matches");
             }
 
             return Command::SUCCESS;
@@ -105,7 +122,7 @@ final class MatchBlueprintsCommand extends Command
             });
         }
 
-        if (!$this->option('force')) {
+        if (!$this->option('force') && !$this->option('resync')) {
             // Only process blueprints without existing matches
             $query->whereDoesntHave('oneLogCards');
         }
@@ -178,7 +195,7 @@ final class MatchBlueprintsCommand extends Command
     }
 
     /**
-     * Find exact collector number matches.
+     * Find exact collector number matches with improved version matching.
      */
     private function findExactMatches(Blueprint $blueprint): array
     {
@@ -188,16 +205,265 @@ final class MatchBlueprintsCommand extends Command
             return [];
         }
 
+        // Get all OneLog cards with this serial
         $cards = OneLogCard::where('serial', $collectorNumber)->get();
 
-        return $cards->map(function ($card) {
-            return [
-                'card' => $card,
-                'type' => 'exact_serial',
-                'confidence' => 1.0,
-                'metadata' => ['match_field' => 'serial']
-            ];
-        })->toArray();
+        if ($cards->isEmpty()) {
+            return [];
+        }
+
+        $matches = [];
+        $blueprintRarity = $blueprint->rarity; // Uses getRarityAttribute accessor
+
+        foreach ($cards as $card) {
+            $matchScore = $this->calculateVersionMatchScore($blueprint, $card, $blueprintRarity);
+
+            if ($matchScore > 0) {
+                $matches[] = [
+                    'card' => $card,
+                    'type' => 'exact_serial',
+                    'confidence' => $matchScore,
+                    'metadata' => [
+                        'match_field' => 'serial',
+                        'blueprint_rarity' => $blueprintRarity,
+                        'card_rarity' => $card->rarity,
+                        'blueprint_is_promo' => $blueprint->is_promo_card,
+                        'card_is_promo' => $card->is_promo,
+                        'card_is_variant' => $card->is_variant,
+                        'blueprint_version' => $blueprint->version,
+                        'card_sets' => $card->card_sets,
+                        'score_breakdown' => $this->getScoreBreakdown($blueprint, $card, $blueprintRarity)
+                    ]
+                ];
+            }
+        }
+
+        // Sort by confidence (highest first) and return only the best matches
+        usort($matches, function ($a, $b) {
+            return $b['confidence'] <=> $a['confidence'];
+        });
+
+        // Return top match(es) - if multiple have the same high score, return all of them
+        if (!empty($matches)) {
+            $topScore = $matches[0]['confidence'];
+            return array_filter($matches, fn($match) => $match['confidence'] >= $topScore - 0.05); // Allow small variance
+        }
+
+        return [];
+    }
+
+    /**
+     * Calculate match score between blueprint and OneLog card considering variants, promos, and rarity.
+     */
+    private function calculateVersionMatchScore(Blueprint $blueprint, OneLogCard $card, ?string $blueprintRarity): float
+    {
+        $score = 0.0;
+
+        // Base score for serial match
+        $score += 0.4;
+
+        // Rarity matching (critical for distinguishing versions)
+        $rarityScore = $this->calculateRarityMatchScore($blueprintRarity, $card->rarity);
+        $score += $rarityScore * 0.3;
+
+        // Promo status matching
+        $isPromoMatch = $blueprint->is_promo_card === $card->is_promo;
+        if ($isPromoMatch) {
+            $score += 0.2;
+        } else {
+            // Penalize promo mismatch more heavily
+            $score -= 0.15;
+        }
+
+        // Version/variant logic
+        $variantScore = $this->calculateVariantMatchScore($blueprint, $card);
+        $score += $variantScore * 0.05;
+
+        // Version/card_sets matching (importante per set speciali)
+        $versionSetsScore = $this->calculateVersionSetsMatchScore($blueprint, $card);
+        $score += $versionSetsScore * 0.15;
+
+        // Name matching (fallback verification)
+        $nameScore = $this->calculateNameSimilarity(
+            $this->normalizeName($blueprint->name),
+            $this->normalizeName($card->name)
+        );
+        $score += $nameScore * 0.05;
+
+        // Ensure score is between 0 and 1
+        return max(0.0, min(1.0, $score));
+    }
+
+    /**
+     * Calculate rarity match score with mapping knowledge.
+     */
+    private function calculateRarityMatchScore(?string $blueprintRarity, string $cardRarity): float
+    {
+        if (!$blueprintRarity) {
+            return 0.5; // Neutral if unknown
+        }
+
+        // Exact rarity mapping
+        $rarityMappings = [
+            'Common' => ['C'],
+            'Uncommon' => ['UC'],
+            'Rare' => ['R'],
+            'Super Rare' => ['SR'],
+            'Secret Rare' => ['SEC'],
+            'Leader' => ['L'],
+            'Promo' => ['P', 'SR', 'C', 'R', 'L', 'SEC', 'UC'], // Promos can have various rarities
+            'DON!!' => ['SR', 'L', 'R'], // DON tokens usually map to these
+            'Alternate Art' => ['SR', 'C', 'R', 'L', 'P', 'SEC', 'UC', 'SP CARD'], // Alt arts can be any rarity
+            'Special' => ['L', 'SR', 'R', 'SP CARD', 'SEC', 'C'] // Special cards
+        ];
+
+        $expectedRarities = $rarityMappings[$blueprintRarity] ?? [];
+
+        if (in_array($cardRarity, $expectedRarities)) {
+            // Perfect match gets full score
+            if (($blueprintRarity === 'Common' && $cardRarity === 'C') ||
+                ($blueprintRarity === 'Uncommon' && $cardRarity === 'UC') ||
+                ($blueprintRarity === 'Rare' && $cardRarity === 'R') ||
+                ($blueprintRarity === 'Super Rare' && $cardRarity === 'SR') ||
+                ($blueprintRarity === 'Secret Rare' && $cardRarity === 'SEC') ||
+                ($blueprintRarity === 'Leader' && $cardRarity === 'L')
+            ) {
+                return 1.0;
+            }
+
+            // Acceptable match for multi-rarity categories
+            return 0.8;
+        }
+
+        return 0.0;
+    }
+
+    /**
+     * Calculate variant matching score.
+     */
+    private function calculateVariantMatchScore(Blueprint $blueprint, OneLogCard $card): float
+    {
+        $blueprintVersion = trim($blueprint->version ?? '');
+        $hasSpecialVersion = !empty($blueprintVersion) && $blueprintVersion !== '';
+
+        // If blueprint has special version info and card is variant/parallel
+        if ($hasSpecialVersion && $card->is_variant) {
+            return 1.0;
+        }
+
+        // If blueprint has no special version and card is not variant (base version)
+        if (!$hasSpecialVersion && !$card->is_variant) {
+            return 1.0;
+        }
+
+        // Partial match for other cases
+        return 0.5;
+    }
+
+    /**
+     * Calculate version/card_sets matching score.
+     */
+    private function calculateVersionSetsMatchScore(Blueprint $blueprint, OneLogCard $card): float
+    {
+        $blueprintVersion = trim($blueprint->version ?? '');
+        $cardSets = trim($card->card_sets ?? '');
+
+        // Se entrambi sono vuoti
+        if (empty($blueprintVersion) && empty($cardSets)) {
+            return 0.5; // Neutrale
+        }
+
+        // Se uno è vuoto e l'altro no
+        if (empty($blueprintVersion) || empty($cardSets)) {
+            return 0.0; // Nessun match possibile
+        }
+
+        // Normalizza entrambe le stringhe per il confronto
+        $normalizedVersion = $this->normalizeVersionString($blueprintVersion);
+        $normalizedCardSets = $this->normalizeVersionString($cardSets);
+
+        // Calcola la similarità usando parole chiave comuni
+        $versionWords = $this->extractKeywords($normalizedVersion);
+        $cardSetsWords = $this->extractKeywords($normalizedCardSets);
+
+        if (empty($versionWords) || empty($cardSetsWords)) {
+            return 0.0;
+        }
+
+        // Conta le parole che matchano
+        $matchingWords = array_intersect($versionWords, $cardSetsWords);
+        $totalWords = array_unique(array_merge($versionWords, $cardSetsWords));
+
+        $matchScore = count($matchingWords) / count($totalWords);
+
+        // Bonus per match esatti o quasi esatti
+        if ($normalizedVersion === $normalizedCardSets) {
+            return 1.0;
+        }
+
+        // Bonus per match di parole chiave significative
+        $significantWords = ['championship', 'promo', 'battle', 'pack', 'collection', 'tournament', 'anniversary', 'special', 'limited', 'edition'];
+        $significantMatches = array_intersect($matchingWords, $significantWords);
+
+        if (!empty($significantMatches)) {
+            $matchScore += 0.2; // Bonus per parole chiave importanti
+        }
+
+        return min(1.0, $matchScore);
+    }
+
+    /**
+     * Normalizza stringhe di versione per il confronto.
+     */
+    private function normalizeVersionString(string $version): string
+    {
+        $normalized = strtolower($version);
+
+        // Rimuovi caratteri speciali ma mantieni spazi
+        $normalized = preg_replace('/[^\w\s]/', ' ', $normalized);
+
+        // Rimuovi numeri di anni specifici (per match più flessibili)
+        $normalized = preg_replace('/\b20\d{2}\b/', '', $normalized);
+
+        // Normalizza spazi multipli
+        $normalized = preg_replace('/\s+/', ' ', $normalized);
+
+        return trim($normalized);
+    }
+
+    /**
+     * Estrae parole chiave significative da una stringa.
+     */
+    private function extractKeywords(string $text): array
+    {
+        $words = explode(' ', $text);
+
+        // Filtra parole troppo corte o comuni
+        $stopWords = ['the', 'and', 'or', 'vol', 'v', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by'];
+
+        $keywords = array_filter($words, function ($word) use ($stopWords) {
+            return strlen($word) >= 3 && !in_array($word, $stopWords) && !is_numeric($word);
+        });
+
+        return array_values($keywords);
+    }
+
+    /**
+     * Get detailed score breakdown for debugging.
+     */
+    private function getScoreBreakdown(Blueprint $blueprint, OneLogCard $card, ?string $blueprintRarity): array
+    {
+        return [
+            'serial_match' => 0.4,
+            'rarity_score' => $this->calculateRarityMatchScore($blueprintRarity, $card->rarity),
+            'promo_match' => $blueprint->is_promo_card === $card->is_promo,
+            'variant_score' => $this->calculateVariantMatchScore($blueprint, $card),
+            'version_sets_score' => $this->calculateVersionSetsMatchScore($blueprint, $card),
+            'name_similarity' => $this->calculateNameSimilarity(
+                $this->normalizeName($blueprint->name),
+                $this->normalizeName($card->name)
+            )
+        ];
     }
 
     /**
@@ -318,23 +584,57 @@ final class MatchBlueprintsCommand extends Command
      */
     private function storeMatches(Blueprint $blueprint, array $matches): void
     {
+        // If this is a force re-sync, first remove existing relationships
+        if ($this->option('force')) {
+            $blueprint->oneLogCards()->detach();
+        }
+
+        $isResync = $this->option('resync') || $this->option('force');
+
         foreach ($matches as $match) {
             try {
-                $blueprint->oneLogCards()->attach($match['card']->id, [
-                    'match_type' => $match['type'],
-                    'confidence_score' => $match['confidence'],
-                    'match_metadata' => json_encode($match['metadata']),
-                    'is_verified' => $match['confidence'] >= 0.95, // Auto-verify high confidence matches
-                ]);
+                // Check if relationship already exists to avoid duplicates
+                $existingRelation = $blueprint->oneLogCards()
+                    ->where('onelog_card_id', $match['card']->id)
+                    ->exists();
 
-                Log::info('Blueprint matched with OneLog card', [
-                    'blueprint_id' => $blueprint->id,
-                    'onelog_card_id' => $match['card']->id,
-                    'match_type' => $match['type'],
-                    'confidence' => $match['confidence']
-                ]);
+                if (!$existingRelation) {
+                    $blueprint->oneLogCards()->attach($match['card']->id, [
+                        'match_type' => $match['type'],
+                        'confidence_score' => $match['confidence'],
+                        'match_metadata' => json_encode($match['metadata']),
+                        'is_verified' => $match['confidence'] >= 0.95, // Auto-verify high confidence matches
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+
+                    Log::info('Blueprint matched with OneLog card', [
+                        'blueprint_id' => $blueprint->id,
+                        'onelog_card_id' => $match['card']->id,
+                        'match_type' => $match['type'],
+                        'confidence' => $match['confidence'],
+                        'action' => 'created'
+                    ]);
+                } else {
+                    // Update existing relationship with new data
+                    $blueprint->oneLogCards()->updateExistingPivot($match['card']->id, [
+                        'match_type' => $match['type'],
+                        'confidence_score' => $match['confidence'],
+                        'match_metadata' => json_encode($match['metadata']),
+                        'is_verified' => $match['confidence'] >= 0.95,
+                        'updated_at' => now(),
+                    ]);
+
+                    Log::info('Blueprint relationship updated', [
+                        'blueprint_id' => $blueprint->id,
+                        'onelog_card_id' => $match['card']->id,
+                        'match_type' => $match['type'],
+                        'confidence' => $match['confidence'],
+                        'action' => 'updated'
+                    ]);
+                }
             } catch (\Exception $e) {
-                Log::warning('Failed to store match', [
+                Log::warning('Failed to store/update match', [
                     'blueprint_id' => $blueprint->id,
                     'onelog_card_id' => $match['card']->id,
                     'error' => $e->getMessage()
@@ -602,5 +902,77 @@ final class MatchBlueprintsCommand extends Command
 
         $this->newLine();
         $this->info('💡 Run php artisan itsmint:classify-blueprints --save to improve performance');
+    }
+
+    /**
+     * Debug matching for a specific serial.
+     */
+    private function debugSerialMatching(string $serial): int
+    {
+        $this->info("🔍 Debugging matching for serial: {$serial}");
+        $this->newLine();
+
+        // Get blueprints with this collector number
+        $blueprints = Blueprint::whereRaw("properties->'fixed_properties'->>'collector_number' = ?", [$serial])->get();
+
+        if ($blueprints->isEmpty()) {
+            $this->warn("No blueprints found with collector number: {$serial}");
+            return Command::SUCCESS;
+        }
+
+        $this->info("📋 Found {$blueprints->count()} blueprint(s):");
+        foreach ($blueprints as $blueprint) {
+            $this->line("  - ID: {$blueprint->id}, Name: {$blueprint->name}, Rarity: {$blueprint->rarity}, Version: '{$blueprint->version}', Promo: " . ($blueprint->is_promo_card ? 'Yes' : 'No'));
+        }
+
+        $this->newLine();
+
+        // Get OneLog cards with this serial
+        $oneLogCards = OneLogCard::where('serial', $serial)->get();
+
+        if ($oneLogCards->isEmpty()) {
+            $this->warn("No OneLog cards found with serial: {$serial}");
+            return Command::SUCCESS;
+        }
+
+        $this->info("🃏 Found {$oneLogCards->count()} OneLog card(s):");
+        foreach ($oneLogCards as $card) {
+            $this->line("  - ID: {$card->id}, Name: {$card->name}, Rarity: {$card->rarity}, Variant: " . ($card->is_variant ? 'Yes' : 'No') . ", Promo: " . ($card->is_promo ? 'Yes' : 'No') . ", IMG_ID: {$card->img_id}");
+        }
+
+        $this->newLine();
+
+        // Test matching for each blueprint
+        foreach ($blueprints as $blueprint) {
+            $this->info("🔗 Testing matches for Blueprint #{$blueprint->id} ({$blueprint->name}):");
+
+            $matches = $this->findExactMatches($blueprint);
+
+            if (empty($matches)) {
+                $this->line("  ❌ No matches found");
+            } else {
+                $this->line("  ✅ Found {" . count($matches) . "} match(es):");
+
+                foreach ($matches as $match) {
+                    $card = $match['card'];
+                    $confidence = number_format($match['confidence'], 3);
+                    $metadata = $match['metadata'];
+
+                    $this->line("    - OneLog Card #{$card->id}: {$card->name} (confidence: {$confidence})");
+                    $this->line("      Rarities: Blueprint='{$metadata['blueprint_rarity']}' vs Card='{$metadata['card_rarity']}'");
+                    $this->line("      Promo: Blueprint=" . ($metadata['blueprint_is_promo'] ? 'Yes' : 'No') . " vs Card=" . ($metadata['card_is_promo'] ? 'Yes' : 'No'));
+                    $this->line("      Variant: Card=" . ($metadata['card_is_variant'] ? 'Yes' : 'No'));
+                    $this->line("      Version: Blueprint='{$metadata['blueprint_version']}' vs CardSets='{$metadata['card_sets']}'");
+                    $this->line("      Score breakdown:");
+                    foreach ($metadata['score_breakdown'] as $component => $score) {
+                        $formattedScore = is_numeric($score) ? number_format($score, 3) : ($score ? 'Yes' : 'No');
+                        $this->line("        {$component}: {$formattedScore}");
+                    }
+                    $this->newLine();
+                }
+            }
+        }
+
+        return Command::SUCCESS;
     }
 }
