@@ -31,8 +31,6 @@ final class TestOneLogApiCommand extends Command
      */
     public function handle(OneLogScrapingService $scrapingService): int
     {
-        $this->info('🧪 Testing OneLog API...');
-
         try {
             if ($this->option('discover')) {
                 return $this->discoverSeriesIds($scrapingService);
@@ -54,17 +52,11 @@ final class TestOneLogApiCommand extends Command
      */
     private function testKnownConnection(OneLogScrapingService $scrapingService): int
     {
-        $this->info('🔗 Testing API connection with known expansion EB02...');
-
         $result = $scrapingService->testApiConnection();
 
         if ($result['success']) {
-            $this->info("✅ API connection successful!");
-            $this->info("📊 Found {$result['cards_found']} cards");
-
             if ($result['sample_card']) {
                 $this->newLine();
-                $this->info("📋 Sample card data:");
                 $card = $result['sample_card'];
                 $this->table(
                     ['Field', 'Value'],
@@ -93,15 +85,10 @@ final class TestOneLogApiCommand extends Command
      */
     private function testSpecificSeriesId(OneLogScrapingService $scrapingService, string $seriesId): int
     {
-        $this->info("🎯 Testing series ID: {$seriesId}");
-
         try {
             $result = $scrapingService->testApiConnection();
 
-            if ($result['success']) {
-                $this->info("✅ Series ID {$seriesId} is valid!");
-                $this->info("📊 Found {$result['cards_found']} cards");
-            } else {
+            if (!$result['success']) {
                 $this->warn("⚠️ Series ID {$seriesId} returned no cards or error");
             }
         } catch (Exception $e) {
@@ -116,7 +103,6 @@ final class TestOneLogApiCommand extends Command
      */
     private function discoverSeriesIds(OneLogScrapingService $scrapingService): int
     {
-        $this->info('🔍 Attempting to discover series IDs...');
         $this->warn('⚠️ This will make multiple API calls - use responsibly!');
 
         if (!$this->confirm('Do you want to continue?')) {
@@ -139,7 +125,6 @@ final class TestOneLogApiCommand extends Command
             $potentialSeriesIds[] = sprintf('556%03d', $i); // 556201, 556202, etc. for EB
         }
 
-        $this->info('🧪 Testing potential series IDs...');
         $progressBar = $this->output->createProgressBar(count($potentialSeriesIds));
         $progressBar->start();
 
@@ -185,14 +170,12 @@ final class TestOneLogApiCommand extends Command
         if (empty($foundMappings)) {
             $this->warn('⚠️ No series IDs discovered');
         } else {
-            $this->info("🎉 Discovered " . count($foundMappings) . " series IDs:");
             $this->table(
                 ['Series ID', 'Expansion', 'Card Set', 'Cards', 'Sample Serial'],
                 $foundMappings
             );
 
             $this->newLine();
-            $this->info('💡 Add these mappings to OneLogScrapingService::$expansionMapping');
         }
 
         return Command::SUCCESS;

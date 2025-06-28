@@ -12,7 +12,7 @@ Schedule::command('itsmint:mirror-ct-database')
     ->runInBackground();
 
 // 2. Mirror OneLog data
-Schedule::command('itsmint:mirror-onelog')
+Schedule::command('itsmint:mirror-onelog --all --force')
     ->dailyAt('02:00')
     ->withoutOverlapping()
     ->runInBackground();
@@ -20,6 +20,11 @@ Schedule::command('itsmint:mirror-onelog')
 // 3. Match blueprints with OneLog data
 Schedule::command('itsmint:match-blueprints-onelog')
     ->dailyAt('03:00')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+Schedule::command('itsmint:classify-blueprints --save')
+    ->dailyAt('04:00')
     ->withoutOverlapping()
     ->runInBackground();
 

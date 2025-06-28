@@ -51,7 +51,6 @@ class MirrorCTDatabaseCommand extends Command
         }
 
         if (!$this->option('quick')) {
-            $this->info("Fetching games...");
             $response = $httpClient->get($gamesUrl);
             if (!$response->successful()) {
                 $this->error("Failed to fetch games. Status: {$response->status()}");
@@ -70,9 +69,7 @@ class MirrorCTDatabaseCommand extends Command
                     ]);
                 }
             }
-            $this->info(count($games) . " games processed.");
 
-            $this->info("Fetching expansions...");
             $response = $httpClient->get($expansionsUrl);
             if (!$response->successful()) {
                 $this->error("Failed to fetch expansions. Status: {$response->status()}");
@@ -92,11 +89,9 @@ class MirrorCTDatabaseCommand extends Command
                     ]);
                 }
             }
-            $this->info(count($expansionsData) . " expansions processed.");
         }
 
         // Process Blueprints for One Piece (or all expansions if $opGameID is not set)
-        $this->info("Fetching blueprints and queueing price updates...");
         $expansionsToProcess = $opGameID ?
             Expansion::whereHas('game', fn($query) => $query->where('ct_id', $opGameID))->get() :
             Expansion::all();
@@ -107,7 +102,6 @@ class MirrorCTDatabaseCommand extends Command
         }
 
         foreach ($expansionsToProcess as $expansion) {
-            $this->info("Processing expansion: {$expansion->name} (CT ID: {$expansion->ct_id})");
             $response = $httpClient->get($blueprintsUrl . '?expansion_id=' . $expansion->ct_id);
 
             if (!$response->successful()) {
@@ -118,7 +112,6 @@ class MirrorCTDatabaseCommand extends Command
 
             $blueprintsApiData = $response->json();
             if (empty($blueprintsApiData)) {
-                $this->line("No blueprints found for expansion: {$expansion->name}");
                 continue;
             }
 
@@ -142,12 +135,9 @@ class MirrorCTDatabaseCommand extends Command
 
                 // Dispatch the job to update the price for this blueprint
                 UpdateBlueprintPriceJob::dispatch($localBlueprint, new BlueprintPriceService());
-                $this->line("Queued price update for blueprint: {$localBlueprint->name} (CT ID: {$localBlueprint->ct_id})");
             }
-            $this->info("Processed " . count($blueprintsApiData) . " blueprints for expansion {$expansion->name}.");
         }
 
-        $this->info('All blueprint price updates have been queued.');
         return Command::SUCCESS;
     }
 }

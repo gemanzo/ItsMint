@@ -32,8 +32,6 @@ final class ScrapeOneLogDataCommand extends Command
      */
     public function handle(OneLogScrapingService $scrapingService): int
     {
-        $this->info('🏴‍☠️ Starting OneLog scraping...');
-
         try {
             $expansionCode = $this->argument('expansion');
 
@@ -55,16 +53,12 @@ final class ScrapeOneLogDataCommand extends Command
      */
     private function scrapeAllExpansions(OneLogScrapingService $scrapingService): int
     {
-        $this->info('🔍 Fetching available expansions...');
-
         $expansions = $scrapingService->getAvailableExpansions();
 
         if (empty($expansions)) {
             $this->warn('⚠️ No expansions found');
             return Command::SUCCESS;
         }
-
-        $this->info('📦 Found ' . count($expansions) . ' expansions');
 
         $progressBar = $this->output->createProgressBar(count($expansions));
         $progressBar->start();
@@ -92,8 +86,6 @@ final class ScrapeOneLogDataCommand extends Command
         $progressBar->finish();
         $this->newLine(2);
 
-        $this->info("✅ Scraping completed! Updated {$totalUpdated} blueprints total");
-
         return Command::SUCCESS;
     }
 
@@ -102,11 +94,7 @@ final class ScrapeOneLogDataCommand extends Command
      */
     private function scrapeExpansion(OneLogScrapingService $scrapingService, string $expansionCode): int
     {
-        $this->info("🎯 Scraping expansion: {$expansionCode}");
-
         $updated = $this->processSingleExpansion($scrapingService, $expansionCode);
-
-        $this->info("✅ Updated {$updated} blueprints for {$expansionCode}");
 
         return Command::SUCCESS;
     }
@@ -123,8 +111,6 @@ final class ScrapeOneLogDataCommand extends Command
             return 0;
         }
 
-        $this->info("📊 Found " . count($scrapedCards) . " cards for {$expansionCode}");
-
         if ($this->option('dry-run')) {
             $this->previewScrapedData($scrapedCards, $expansionCode);
             return 0;
@@ -140,7 +126,6 @@ final class ScrapeOneLogDataCommand extends Command
      */
     private function previewScrapedData(array $scrapedCards, string $expansionCode): void
     {
-        $this->info("🔍 DRY RUN - Preview of scraped data for {$expansionCode}:");
         $this->newLine();
 
         $headers = ['Card Number', 'Name', 'Type', 'Colors', 'Cost', 'Power', 'Counter', 'Promo', 'Card Sets'];
@@ -162,17 +147,9 @@ final class ScrapeOneLogDataCommand extends Command
 
         $this->table($headers, $rows);
 
-        if (count($scrapedCards) > 10) {
-            $this->info('... and ' . (count($scrapedCards) - 10) . ' more cards');
-        }
-
         $this->newLine();
-        $this->info('💡 Use without --dry-run to actually update the database');
 
         // Show promo detection info
         $promoCount = collect($scrapedCards)->where('is_promo', true)->count();
-        if ($promoCount > 0) {
-            $this->info("🎁 Found {$promoCount} promotional cards");
-        }
     }
 }

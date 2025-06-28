@@ -41,8 +41,6 @@ final class MatchBlueprintsCommand extends Command
      */
     public function handle(BlueprintClassificationService $classificationService): int
     {
-        $this->info('🔗 Starting blueprint matching...');
-
         if ($this->option('show-stats')) {
             return $this->showMatchingStats();
         }
@@ -62,11 +60,9 @@ final class MatchBlueprintsCommand extends Command
             $blueprints = $this->getBlueprintsToProcess($classificationService);
 
             if ($blueprints->isEmpty()) {
-                $this->info('No blueprints to process');
+                $this->warn('No blueprints to process');
                 return Command::SUCCESS;
             }
-
-            $this->info("Processing {$blueprints->count()} blueprints...");
 
             $progressBar = $this->output->createProgressBar($blueprints->count());
 
@@ -76,7 +72,7 @@ final class MatchBlueprintsCommand extends Command
                 if (!empty($matches)) {
                     if ($this->option('detailed')) {
                         $this->newLine();
-                        $this->info("Blueprint #{$blueprint->id}: {$blueprint->name} (collector: {$blueprint->collector_number})");
+                        $this->line("Blueprint #{$blueprint->id}: {$blueprint->name} (collector: {$blueprint->collector_number})");
                         foreach ($matches as $match) {
                             $confidence = number_format($match['confidence'], 3);
                             $this->line("  → Matched with OneLog #{$match['card']->id}: {$match['card']->name} (confidence: {$confidence}, type: {$match['type']})");
@@ -94,13 +90,6 @@ final class MatchBlueprintsCommand extends Command
 
             $progressBar->finish();
             $this->newLine(2);
-
-            if ($this->option('dry-run')) {
-                $this->info("🔍 DRY RUN: Found {$totalMatches} potential matches");
-            } else {
-                $mode = $this->option('force') ? 'force re-sync' : ($this->option('resync') ? 'resync' : 'initial matching');
-                $this->info("✅ Completed {$mode}: processed {$totalMatches} matches");
-            }
 
             return Command::SUCCESS;
         } catch (\Exception $e) {
@@ -162,8 +151,6 @@ final class MatchBlueprintsCommand extends Command
                 return false;
             });
         }
-
-        $this->info("📊 Filtered {$total} → {$filtered->count()} (single cards only)");
 
         return $filtered;
     }

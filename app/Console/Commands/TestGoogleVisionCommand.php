@@ -15,8 +15,6 @@ final class TestGoogleVisionCommand extends Command
 
     public function handle(): int
     {
-        $this->info('🔍 Testing Google Vision API OCR...');
-
         try {
             // Check if Google Vision is configured
             $visionService = app(GoogleVisionOcrService::class);
@@ -30,8 +28,6 @@ final class TestGoogleVisionCommand extends Command
                 return 1;
             }
 
-            $this->info('✅ Google Vision API configuration is valid');
-
             // Test with provided image or ask for one
             $imagePath = $this->argument('image_path');
 
@@ -44,8 +40,6 @@ final class TestGoogleVisionCommand extends Command
                 return 1;
             }
 
-            $this->info("📸 Processing image: {$imagePath}");
-
             // Extract text using Google Vision
             $startTime = microtime(true);
             $result = $visionService->extractTextFromImage($imagePath);
@@ -55,14 +49,12 @@ final class TestGoogleVisionCommand extends Command
 
             // Display results
             $this->line('');
-            $this->info('🎯 OCR Results:');
             $this->line('Processing time: ' . $processingTime . 'ms');
             $this->line('Overall confidence: ' . round($result['confidence'], 2) . '%');
             $this->line('Text blocks found: ' . count($result['blocks']));
             $this->line('');
 
             if (!empty($result['text'])) {
-                $this->info('📝 Extracted Text:');
                 $this->line($result['text']);
                 $this->line('');
             }
@@ -70,8 +62,6 @@ final class TestGoogleVisionCommand extends Command
             // Show card information extraction
             if (!empty($result['blocks'])) {
                 $cardInfo = $visionService->extractCardInfo($result['blocks']);
-
-                $this->info('🃏 Card Information Extracted:');
 
                 if (!empty($cardInfo['potential_codes'])) {
                     $this->line('Potential Codes:');
@@ -96,7 +86,6 @@ final class TestGoogleVisionCommand extends Command
             }
 
             $this->line('');
-            $this->info('✅ Google Vision OCR test completed successfully!');
 
             return 0;
         } catch (\Exception $e) {

@@ -48,8 +48,6 @@ final class MirrorOneLogDataCommand extends Command
      */
     public function handle(OneLogScrapingService $scrapingService): int
     {
-        $this->info('🏴‍☠️ Starting OneLog data mirroring...');
-
         try {
             if ($seriesId = $this->option('series-id')) {
                 return $this->mirrorSeriesId($scrapingService, $seriesId);
@@ -109,8 +107,6 @@ final class MirrorOneLogDataCommand extends Command
      */
     private function mirrorSeriesId(OneLogScrapingService $scrapingService, string $seriesId): int
     {
-        $this->info("🎯 Mirroring series ID: {$seriesId}");
-
         try {
             $cards = $this->fetchCardsFromSeries($scrapingService, $seriesId);
 
@@ -119,15 +115,12 @@ final class MirrorOneLogDataCommand extends Command
                 return Command::SUCCESS;
             }
 
-            $this->info("📊 Found " . count($cards) . " cards");
-
             if ($this->option('dry-run')) {
                 $this->previewCards($cards, $seriesId);
                 return Command::SUCCESS;
             }
 
             $stored = $this->storeCards($cards);
-            $this->info("✅ Stored {$stored} cards for series {$seriesId}");
 
             return Command::SUCCESS;
         } catch (Exception $e) {
@@ -141,8 +134,6 @@ final class MirrorOneLogDataCommand extends Command
      */
     private function mirrorAllSeries(OneLogScrapingService $scrapingService): int
     {
-        $this->info('🔄 Mirroring all known series...');
-
         $totalStored = 0;
         $progressBar = $this->output->createProgressBar(count($this->knownSeriesIds));
 
@@ -163,7 +154,6 @@ final class MirrorOneLogDataCommand extends Command
 
         $progressBar->finish();
         $this->newLine(2);
-        $this->info("✅ Mirroring completed! Stored {$totalStored} cards total");
 
         return Command::SUCCESS;
     }
@@ -173,11 +163,9 @@ final class MirrorOneLogDataCommand extends Command
      */
     private function mirrorEverything(OneLogScrapingService $scrapingService): int
     {
-        $this->info('🌍 Mirroring ALL cards without series filter...');
         $this->warn('This will fetch ALL 3374+ cards from OneLog API');
 
         if (!$this->option('force') && !$this->confirm('Are you sure you want to fetch ALL cards?', false)) {
-            $this->info('Operation cancelled.');
             return Command::SUCCESS;
         }
 
@@ -189,15 +177,12 @@ final class MirrorOneLogDataCommand extends Command
                 return Command::SUCCESS;
             }
 
-            $this->info("📊 Found " . count($cards) . " cards");
-
             if ($this->option('dry-run')) {
                 $this->previewCards($cards, 'ALL');
                 return Command::SUCCESS;
             }
 
             $stored = $this->storeCards($cards);
-            $this->info("✅ Stored {$stored} cards total");
 
             return Command::SUCCESS;
         } catch (Exception $e) {
@@ -218,8 +203,6 @@ final class MirrorOneLogDataCommand extends Command
             $this->warn("No raw card data fetched from API");
             return [];
         }
-
-        $this->info("🔍 Processing " . count($cardData) . " raw cards from API...");
 
         // Process the raw data for our database format
         $processedCards = [];
@@ -251,11 +234,6 @@ final class MirrorOneLogDataCommand extends Command
                 ]);
             }
         }
-
-        $this->info("📊 Processing Summary:");
-        $this->info("  Raw cards from API: " . count($cardData));
-        $this->info("  Successfully processed: " . count($processedCards));
-        $this->info("  Processing errors: {$processingErrors}");
 
         if ($processingErrors > 0) {
             $this->warn("⚠️ {$processingErrors} cards failed processing - check logs for details");
@@ -299,6 +277,15 @@ final class MirrorOneLogDataCommand extends Command
         try {
             return $scrapingService->fetchSinglePageFromApi($seriesId, $page);
         } catch (Exception $e) {
+            // Check if error indicates no more pages available
+            if (
+                str_contains($e->getMessage(), 'Requested range not satisfiable') ||
+                str_contains($e->getMessage(), 'PGRST103')
+            ) {
+                $this->line("Reached end of available pages for series {$seriesId} at page {$page}");
+                return []; // Return empty to stop pagination
+            }
+
             Log::error("Error calling OneLog API via service", [
                 'series_id' => $seriesId,
                 'page' => $page,
@@ -317,19 +304,12 @@ final class MirrorOneLogDataCommand extends Command
         $page = 0;
         $hasMorePages = true;
 
-        $this->info("🔍 Fetching ALL cards without series filter...");
-
         while ($hasMorePages) {
-            $this->line("Fetching page {$page}...");
-
             $pageCards = $this->fetchSinglePageWithoutFilter($scrapingService, $page);
 
             if (empty($pageCards)) {
                 $hasMorePages = false;
-                $this->line("No more cards on page {$page}, stopping.");
             } else {
-                $this->line("Found " . count($pageCards) . " cards on page {$page}");
-
                 // Process the raw data for our database format
                 $processedCards = [];
                 foreach ($pageCards as $rawCard) {
@@ -350,7 +330,6 @@ final class MirrorOneLogDataCommand extends Command
             }
         }
 
-        $this->info("📊 Total cards fetched: " . count($allCards));
         return $allCards;
     }
 
@@ -362,6 +341,15 @@ final class MirrorOneLogDataCommand extends Command
         try {
             return $scrapingService->fetchSinglePageWithoutFilter($page);
         } catch (Exception $e) {
+            // Check if error indicates no more pages available
+            if (
+                str_contains($e->getMessage(), 'Requested range not satisfiable') ||
+                str_contains($e->getMessage(), 'PGRST103')
+            ) {
+                $this->line("Reached end of available pages at page {$page}");
+                return []; // Return empty to stop pagination
+            }
+
             Log::error("Error calling OneLog API without filter", [
                 'page' => $page,
                 'error' => $e->getMessage()
@@ -380,8 +368,6 @@ final class MirrorOneLogDataCommand extends Command
         $errors = 0;
         $updated = 0;
         $created = 0;
-
-        $this->info("💾 Starting to store " . count($cards) . " cards...");
 
         foreach ($cards as $cardData) {
             try {
@@ -447,16 +433,6 @@ final class MirrorOneLogDataCommand extends Command
             }
         }
 
-        // Summary report
-        $this->newLine();
-        $this->info("📊 Storage Summary:");
-        $this->info("  Total processed: " . count($cards));
-        $this->info("  Successfully stored: {$stored}");
-        $this->info("    - Created: {$created}");
-        $this->info("    - Updated: {$updated}");
-        $this->info("  Skipped (existing): {$skipped}");
-        $this->info("  Errors: {$errors}");
-
         if ($errors > 0) {
             $this->warn("⚠️ {$errors} cards had errors - check storage/logs/laravel.log for details");
             Log::channel('single')->error("Storage completed with errors", [
@@ -464,10 +440,6 @@ final class MirrorOneLogDataCommand extends Command
                 'total_processed' => count($cards),
                 'success_rate' => round((($stored / count($cards)) * 100), 2) . '%'
             ]);
-        }
-
-        if ($skipped > 0 && !$this->option('force')) {
-            $this->info("💡 Use --force to update existing cards");
         }
 
         return $stored;

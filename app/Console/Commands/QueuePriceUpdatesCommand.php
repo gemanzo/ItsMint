@@ -55,24 +55,19 @@ class QueuePriceUpdatesCommand extends Command
             $blueprint = Blueprint::where('ct_id', $blueprintCtIdOpt)->first();
             if ($blueprint) {
                 UpdateBlueprintPriceJob::dispatch($blueprint, $this->blueprintPriceService)->onQueue('price-updates');
-                $this->info("Single price update queued for Blueprint CT_ID: {$blueprintCtIdOpt} (Name: {$blueprint->name})");
             } else {
                 $this->error("Blueprint with CardTrader ID: {$blueprintCtIdOpt} not found.");
                 return Command::FAILURE;
             }
         } else {
-            $this->info("Preparing to queue price updates for blueprints in batches of {$configuredBatchSize} jobs...");
-
             $query = Blueprint::query();
 
             if ($gameIdOpt) {
                 $query->where('game_id', $gameIdOpt);
-                $this->info("Filtering by Game ID: {$gameIdOpt}");
             }
 
             if ($expansionIdOpt) {
                 $query->where('expansion_id', $expansionIdOpt);
-                $this->info("Filtering by Expansion ID: {$expansionIdOpt}");
             }
 
             $jobsForCurrentBatch = [];
@@ -87,7 +82,6 @@ class QueuePriceUpdatesCommand extends Command
                     if (count($jobsForCurrentBatch) >= $configuredBatchSize) {
                         $this->dispatchBatch($jobsForCurrentBatch, 'price-updates');
                         $dispatchedBatchCount++;
-                        $this->info("Dispatched batch #{$dispatchedBatchCount} with " . count($jobsForCurrentBatch) . " jobs.");
                         $jobsForCurrentBatch = [];
                     }
                 }
@@ -96,17 +90,13 @@ class QueuePriceUpdatesCommand extends Command
             if (!empty($jobsForCurrentBatch)) {
                 $this->dispatchBatch($jobsForCurrentBatch, 'price-updates');
                 $dispatchedBatchCount++;
-                $this->info("Dispatched final batch #{$dispatchedBatchCount} with " . count($jobsForCurrentBatch) . " jobs.");
             }
 
-            if ($dispatchedBatchCount > 0) {
-                $this->info("Total of {$dispatchedBatchCount} batches dispatched, encompassing {$totalBlueprintsProcessed} blueprint update jobs.");
-            } else {
-                $this->info('No blueprints found to queue for price updates.');
+            if ($dispatchedBatchCount === 0) {
+                $this->warn('No blueprints found to queue for price updates.');
             }
         }
 
-        Log::info('QueuePriceUpdatesCommand finished.');
         return Command::SUCCESS;
     }
 
@@ -118,10 +108,6 @@ class QueuePriceUpdatesCommand extends Command
         if (empty($jobs)) return;
 
         Bus::batch($jobs)
-            ->then(function (Batch $batch) {
-                Log::info('Blueprint price update batch PARTIALLY completed (a sub-batch). ID: ' . $batch->id, ['total_jobs' => $batch->totalJobs]);
-                echo "Sub-Batch [{$batch->id}] ALL JOBS COMPLETED. Total: {$batch->totalJobs}, Processed: {$batch->processedJobs()}, Failed: {$batch->failedJobs}" . PHP_EOL;
-            })
             ->catch(function (Batch $batch, Throwable $e) {
                 Log::error('Blueprint price update SUB-BATCH failed one or more jobs.', [
                     'batch_id' => $batch->id,
@@ -130,10 +116,6 @@ class QueuePriceUpdatesCommand extends Command
                     'first_failed_job_id' => $batch->failedJobIds[0] ?? 'N/A'
                 ]);
                 echo "Sub-Batch [{$batch->id}] FAILED. Error: {$e->getMessage()}. Failed jobs: {$batch->failedJobs}" . PHP_EOL;
-            })
-            ->finally(function (Batch $batch) {
-                Log::info('Blueprint price update SUB-BATCH finished executing.', ['batch_id' => $batch->id, 'total_jobs' => $batch->totalJobs, 'processed_jobs' => $batch->processedJobs(), 'failed_jobs' => $batch->failedJobs]);
-                echo "Sub-Batch [{$batch->id}] FINISHED. Total: {$batch->totalJobs}, Processed: {$batch->processedJobs()}, Failed: {$batch->failedJobs}" . PHP_EOL;
             })
             ->name('Update Blueprint Prices Batch - Part - ' . now()->toDateTimeString() . '-' . Str::random(4))
             ->onQueue($queueName)

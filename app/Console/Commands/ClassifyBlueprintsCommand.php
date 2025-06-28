@@ -34,8 +34,6 @@ final class ClassifyBlueprintsCommand extends Command
      */
     public function handle(BlueprintClassificationService $classificationService): int
     {
-        $this->info('🔍 Starting Blueprint classification...');
-
         $limit = (int) $this->option('limit');
 
         if ($this->option('test')) {
@@ -55,7 +53,6 @@ final class ClassifyBlueprintsCommand extends Command
      */
     private function testClassification(BlueprintClassificationService $classificationService, int $limit): int
     {
-        $this->info("🧪 Testing classification on {$limit} blueprints...");
         $this->newLine();
 
         $results = $classificationService->bulkClassifyBlueprints($limit);
@@ -89,7 +86,6 @@ final class ClassifyBlueprintsCommand extends Command
      */
     private function showClassificationSummary(BlueprintClassificationService $classificationService, int $limit): int
     {
-        $this->info("📊 Classification summary for {$limit} blueprints:");
         $this->newLine();
 
         $results = $classificationService->bulkClassifyBlueprints($limit);
@@ -111,17 +107,13 @@ final class ClassifyBlueprintsCommand extends Command
 
         foreach ($stats as $type => $count) {
             $percentage = $limit > 0 ? round(($count / $limit) * 100, 1) : 0;
-            $this->info("  {$type}: {$count} ({$percentage}%)");
+            $this->line("  {$type}: {$count} ({$percentage}%)");
         }
 
         $this->newLine();
 
         if ($this->option('show-analysis')) {
             $this->showDetailedAnalysis($results);
-        } else {
-            $this->info('💡 Use --show-analysis to see detailed breakdown');
-            $this->info('💡 Use --test to see individual classifications');
-            $this->info('💡 Use --save to save classifications to database');
         }
 
         return Command::SUCCESS;
@@ -132,8 +124,6 @@ final class ClassifyBlueprintsCommand extends Command
      */
     private function saveClassifications(BlueprintClassificationService $classificationService): int
     {
-        $this->info('💾 Saving classifications to database...');
-
         // Check if columns exist
         if (!$this->columnExists('blueprints', 'product_type')) {
             $this->error('Column product_type does not exist. Please run the migration first.');
@@ -141,7 +131,6 @@ final class ClassifyBlueprintsCommand extends Command
         }
 
         $total = Blueprint::count();
-        $this->info("Processing {$total} blueprints...");
 
         $progressBar = $this->output->createProgressBar($total);
         $updated = 0;
@@ -173,17 +162,14 @@ final class ClassifyBlueprintsCommand extends Command
         $progressBar->finish();
         $this->newLine(2);
 
-        $this->info("✅ Updated {$updated} blueprints with classification");
-
         // Show final stats
         $singleCards = Blueprint::where('product_type', 'single_card')->count();
         $products = Blueprint::whereIn('product_type', ['product', 'unknown'])->count();
         $highConfidence = Blueprint::where('ai_confidence_score', '>=', 0.8)->count();
 
-        $this->info("📊 Final classification:");
-        $this->info("  Single cards: {$singleCards}");
-        $this->info("  Products: {$products}");
-        $this->info("  High confidence (≥0.8): {$highConfidence}");
+        $this->line("  Single cards: {$singleCards}");
+        $this->line("  Products: {$products}");
+        $this->line("  High confidence (≥0.8): {$highConfidence}");
 
         return Command::SUCCESS;
     }
@@ -224,7 +210,6 @@ final class ClassifyBlueprintsCommand extends Command
     private function showTestStatistics(array $results): void
     {
         $this->newLine();
-        $this->info('📊 Test Statistics:');
 
         $withCollectorNumber = 0;
         $productPatterns = 0;
@@ -242,10 +227,10 @@ final class ClassifyBlueprintsCommand extends Command
 
         $total = count($results);
 
-        $this->info("  With collector numbers: {$withCollectorNumber} (" . round(($withCollectorNumber / $total) * 100, 1) . "%)");
-        $this->info("  Match product patterns: {$productPatterns} (" . round(($productPatterns / $total) * 100, 1) . "%)");
-        $this->info("  Have ability patterns: {$abilityPatterns} (" . round(($abilityPatterns / $total) * 100, 1) . "%)");
-        $this->info("  Look like character names: {$characterNames} (" . round(($characterNames / $total) * 100, 1) . "%)");
+        $this->line("  With collector numbers: {$withCollectorNumber} (" . round(($withCollectorNumber / $total) * 100, 1) . "%)");
+        $this->line("  Match product patterns: {$productPatterns} (" . round(($productPatterns / $total) * 100, 1) . "%)");
+        $this->line("  Have ability patterns: {$abilityPatterns} (" . round(($abilityPatterns / $total) * 100, 1) . "%)");
+        $this->line("  Look like character names: {$characterNames} (" . round(($characterNames / $total) * 100, 1) . "%)");
     }
 
     /**

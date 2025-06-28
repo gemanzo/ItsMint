@@ -37,8 +37,6 @@ class ElasticsearchIndexBlueprints extends Command
      */
     public function handle(): int
     {
-        $this->info('🚀 Starting Elasticsearch blueprint indexing...');
-
         // Handle fresh option
         if ($this->option('fresh') && $this->elasticsearch->indexExists()) {
             $this->warn('🗑️  Deleting existing index...');
@@ -46,22 +44,18 @@ class ElasticsearchIndexBlueprints extends Command
                 $this->error('❌ Failed to delete existing index');
                 return Command::FAILURE;
             }
-            $this->info('✅ Existing index deleted');
         }
 
         // Create index if it doesn't exist
         if (!$this->elasticsearch->indexExists()) {
-            $this->info('🏗️  Creating Elasticsearch index...');
             if (!$this->elasticsearch->createIndex()) {
                 $this->error('❌ Failed to create Elasticsearch index');
                 return Command::FAILURE;
             }
-            $this->info('✅ Index created successfully');
         }
 
         // Count total blueprints
         $totalBlueprints = Blueprint::count();
-        $this->info("📊 Found {$totalBlueprints} blueprints to index");
 
         if ($totalBlueprints === 0) {
             $this->warn('⚠️  No blueprints found to index');
@@ -72,7 +66,6 @@ class ElasticsearchIndexBlueprints extends Command
         $batchSize = (int) $this->option('batch-size');
         $totalBatches = ceil($totalBlueprints / $batchSize);
 
-        $this->info("🔄 Processing in {$totalBatches} batches of {$batchSize}");
         $progressBar = $this->output->createProgressBar($totalBlueprints);
         $progressBar->start();
 
@@ -104,7 +97,6 @@ class ElasticsearchIndexBlueprints extends Command
         $this->newLine(2);
 
         // Summary
-        $this->info("✅ Indexing completed!");
         $this->table(
             ['Metric', 'Count'],
             [
@@ -120,7 +112,6 @@ class ElasticsearchIndexBlueprints extends Command
             return Command::FAILURE;
         }
 
-        $this->info('🎉 All blueprints indexed successfully!');
         return Command::SUCCESS;
     }
 
