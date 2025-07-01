@@ -116,6 +116,9 @@ class ElasticsearchService
                             'properties' => [
                                 'price_cents' => ['type' => 'integer'],
                                 'currency' => ['type' => 'keyword'],
+                                'language' => ['type' => 'keyword'],
+                                'condition' => ['type' => 'keyword'],
+                                'is_foil' => ['type' => 'boolean'],
                                 'fetched_at' => ['type' => 'date']
                             ]
                         ],
@@ -251,325 +254,84 @@ class ElasticsearchService
     /**
      * Search blueprints
      */
-    public function searchBlueprints(string $query, int $size = 20, int $from = 0): array
-    {
-        // Normalize the query for expansion code matching
-        $normalizedQuery = strtolower(str_replace(['-', '.'], '', $query));
+    public function searchBlueprints(
+        string $query,
+        int $from = 0,
+        int $size = 30,
+        ?string $language = null,
+        ?int $expansionId = null,
+        ?int $categoryId = null
+    ): array {
+        $searchQuery = trim($query);
+        $expansionCode = null;
 
-        // Try to detect if query contains both name and expansion code
-        $terms = explode(' ', trim($query));
-        $nameTerms = [];
-        $expansionTerms = [];
-
-        foreach ($terms as $term) {
-            $normalizedTerm = strtolower(str_replace(['-', '.'], '', $term));
-            // Improved pattern to match expansion codes: 2-3 letters + 1-3 digits (supports op01, op05, etc.)
-            if (preg_match('/^[a-z]{2,3}[0-9]{1,3}$/i', $normalizedTerm)) {
-                $expansionTerms[] = $term;
-            } else {
-                $nameTerms[] = $term;
-            }
+        // Extract expansion code from the query string
+        if (preg_match('/\\b([A-Z]{2,3}-?[0-9]{1,2})\\b$/i', $searchQuery, $matches)) {
+            $expansionCode = strtoupper(str_replace(['-', '.'], '', $matches[1]));
+            $searchQuery = trim(preg_replace('/\\b' . preg_quote($matches[0], '/') . '\\b$/i', '', $searchQuery));
         }
 
-        $hasNameAndExpansion = !empty($nameTerms) && !empty($expansionTerms);
-        $nameQuery = implode(' ', $nameTerms);
-        $expansionQuery = implode(' ', $expansionTerms);
+        // Build the main query part
+        $mustClauses = [];
+        if (!empty($searchQuery)) {
+            $mustClauses[] = [
+                'multi_match' => [
+                    'query' => $searchQuery,
+                    'fields' => ['name^3', 'expansion.name'],
+                    'type' => 'best_fields',
+                    'fuzziness' => 'AUTO',
+                ],
+            ];
+        }
+
+        // Build the filter part
+        $filterClauses = [];
+        if ($language) {
+            $filterClauses[] = ['term' => ['latest_price.language' => $language]];
+        }
+
+        if ($expansionId) {
+            $filterClauses[] = ['term' => ['expansion.id' => $expansionId]];
+        } elseif ($expansionCode) {
+            // This part is tricky because the field is analyzed.
+            // Using a match query on the normalized field.
+            $filterClauses[] = ['match' => ['expansion.code.normalized' => $expansionCode]];
+        }
+
+        if ($categoryId) {
+            $filterClauses[] = ['term' => ['category.id' => $categoryId]];
+        }
 
         $params = [
             'index' => $this->indexName,
             'body' => [
-                'size' => $size,
                 'from' => $from,
+                'size' => $size,
                 'query' => [
                     'bool' => [
-                        'should' => [
-                            // HIGHEST PRIORITY: Combined name + expansion match
-                            ...(($hasNameAndExpansion) ? [
-                                [
-                                    'bool' => [
-                                        'must' => [
-                                            [
-                                                'bool' => [
-                                                    'should' => [
-                                                        // Exact phrase match for name
-                                                        [
-                                                            'match_phrase' => [
-                                                                'name' => [
-                                                                    'query' => $nameQuery,
-                                                                    'boost' => 2.0
-                                                                ]
-                                                            ]
-                                                        ],
-                                                        // Fuzzy match for name with higher fuzziness
-                                                        [
-                                                            'match' => [
-                                                                'name' => [
-                                                                    'query' => $nameQuery,
-                                                                    'fuzziness' => '2',
-                                                                    'boost' => 1.5
-                                                                ]
-                                                            ]
-                                                        ],
-                                                        // Partial match for name (contains)
-                                                        [
-                                                            'wildcard' => [
-                                                                'name.keyword' => [
-                                                                    'value' => "*{$nameQuery}*",
-                                                                    'boost' => 1.0,
-                                                                    'case_insensitive' => true
-                                                                ]
-                                                            ]
-                                                        ]
-                                                    ],
-                                                    'minimum_should_match' => 1
-                                                ]
-                                            ],
-                                            [
-                                                'bool' => [
-                                                    'should' => [
-                                                        // Normalized expansion code match (removes dashes/dots)
-                                                        [
-                                                            'match' => [
-                                                                'expansion.code.normalized' => [
-                                                                    'query' => str_replace(['-', '.', '_'], '', $expansionQuery),
-                                                                    'boost' => 2.0
-                                                                ]
-                                                            ]
-                                                        ],
-                                                        // Exact keyword match for expansion code
-                                                        [
-                                                            'term' => [
-                                                                'expansion.code.keyword' => [
-                                                                    'value' => strtolower($expansionQuery),
-                                                                    'boost' => 1.8
-                                                                ]
-                                                            ]
-                                                        ],
-                                                        // Wildcard match for expansion codes
-                                                        [
-                                                            'wildcard' => [
-                                                                'expansion.code.keyword' => [
-                                                                    'value' => "*{$expansionQuery}*",
-                                                                    'boost' => 1.5,
-                                                                    'case_insensitive' => true
-                                                                ]
-                                                            ]
-                                                        ]
-                                                    ],
-                                                    'minimum_should_match' => 1
-                                                ]
-                                            ]
-                                        ],
-                                        'boost' => 15.0  // Much higher boost for combined matches
-                                    ]
-                                ]
-                            ] : []),
-
-                            // SUPER HIGH PRIORITY: Exact word match in name (case insensitive)
-                            [
-                                'bool' => [
-                                    'should' => [
-                                        // Full name exact match (highest priority)
-                                        [
-                                            'match' => [
-                                                'name.keyword' => [
-                                                    'query' => $query,
-                                                    'boost' => 20.0
-                                                ]
-                                            ]
-                                        ],
-                                        // Case insensitive exact match
-                                        [
-                                            'term' => [
-                                                'name.keyword' => [
-                                                    'value' => $query,
-                                                    'boost' => 18.0,
-                                                    'case_insensitive' => true
-                                                ]
-                                            ]
-                                        ],
-                                        // Word-level exact match within name
-                                        [
-                                            'match' => [
-                                                'name' => [
-                                                    'query' => $query,
-                                                    'operator' => 'and',
-                                                    'boost' => 15.0
-                                                ]
-                                            ]
-                                        ]
-                                    ]
-                                ]
-                            ],
-
-                            // HIGH PRIORITY: Exact phrase match on name
-                            [
-                                'match_phrase' => [
-                                    'name' => [
-                                        'query' => $query,
-                                        'boost' => 12.0
-                                    ]
-                                ]
-                            ],
-
-                            // MEDIUM-HIGH PRIORITY: Contains exact word (wildcard with word boundaries)
-                            [
-                                'bool' => [
-                                    'should' => [
-                                        // Start of name match
-                                        [
-                                            'wildcard' => [
-                                                'name.keyword' => [
-                                                    'value' => "{$query}*",
-                                                    'boost' => 8.0,
-                                                    'case_insensitive' => true
-                                                ]
-                                            ]
-                                        ],
-                                        // Contains word (with spaces around)
-                                        [
-                                            'wildcard' => [
-                                                'name.keyword' => [
-                                                    'value' => "* {$query} *",
-                                                    'boost' => 10.0,
-                                                    'case_insensitive' => true
-                                                ]
-                                            ]
-                                        ],
-                                        // Contains as part of compound word
-                                        [
-                                            'wildcard' => [
-                                                'name.keyword' => [
-                                                    'value' => "*{$query}*",
-                                                    'boost' => 6.0,
-                                                    'case_insensitive' => true
-                                                ]
-                                            ]
-                                        ]
-                                    ]
-                                ]
-                            ],
-
-                            // MEDIUM PRIORITY: Fuzzy match on name
-                            [
-                                'match' => [
-                                    'name' => [
-                                        'query' => $query,
-                                        'fuzziness' => '1',  // Reduced fuzziness to prevent wrong matches
-                                        'boost' => 4.0
-                                    ]
-                                ]
-                            ],
-
-                            // Expansion name match
-                            [
-                                'match' => [
-                                    'expansion.name' => [
-                                        'query' => $query,
-                                        'fuzziness' => 'AUTO',
-                                        'boost' => 3.0
-                                    ]
-                                ]
-                            ],
-
-                            // Expansion code exact match (original format)
-                            [
-                                'term' => [
-                                    'expansion.code.keyword' => [
-                                        'value' => strtolower($query),
-                                        'boost' => 5.0
-                                    ]
-                                ]
-                            ],
-
-                            // Expansion code normalized match (op01 = op-01)
-                            [
-                                'match' => [
-                                    'expansion.code.normalized' => [
-                                        'query' => $normalizedQuery,
-                                        'boost' => 4.8
-                                    ]
-                                ]
-                            ],
-
-                            // Expansion code case-insensitive match
-                            [
-                                'match' => [
-                                    'expansion.code' => [
-                                        'query' => $query,
-                                        'fuzziness' => '1',
-                                        'boost' => 4.5
-                                    ]
-                                ]
-                            ],
-
-                            // Wildcard search for expansion codes (handles both op01 and op-01)
-                            [
-                                'bool' => [
-                                    'should' => [
-                                        [
-                                            'wildcard' => [
-                                                'expansion.code.keyword' => [
-                                                    'value' => "*{$query}*",
-                                                    'boost' => 4.0,
-                                                    'case_insensitive' => true
-                                                ]
-                                            ]
-                                        ],
-                                        [
-                                            'wildcard' => [
-                                                'expansion.code.keyword' => [
-                                                    'value' => "*{$normalizedQuery}*",
-                                                    'boost' => 3.8,
-                                                    'case_insensitive' => true
-                                                ]
-                                            ]
-                                        ]
-                                    ]
-                                ]
-                            ],
-
-                            // LOW PRIORITY: Very fuzzy match (last resort)
-                            [
-                                'match' => [
-                                    'name' => [
-                                        'query' => $query,
-                                        'fuzziness' => '2',
-                                        'boost' => 1.0  // Very low boost for fuzzy matches
-                                    ]
-                                ]
-                            ]
-                        ],
-                        'minimum_should_match' => 1
-                    ]
+                        'must' => !empty($mustClauses) ? $mustClauses : [['match_all' => new \stdClass()]],
+                        'filter' => $filterClauses,
+                    ],
                 ],
-                'highlight' => [
-                    'fields' => [
-                        'name' => ['fragment_size' => 100],
-                        'expansion.name' => ['fragment_size' => 50],
-                        'expansion.code' => ['fragment_size' => 20]
-                    ]
-                ],
-                'sort' => [
-                    '_score' => ['order' => 'desc'],
-                    'name.keyword' => ['order' => 'asc']
-                ]
-            ]
+            ],
         ];
 
+        // If there's no text query, sort by name. Otherwise, rely on relevance score.
+        if (empty($searchQuery)) {
+            $params['body']['sort'] = [
+                ['name.keyword' => 'asc']
+            ];
+        }
+
         try {
-            $response = $this->client->search($params);
-            return $this->formatSearchResponse($response->asArray());
+            $response = $this->client->search($params)->asArray();
+            return $this->formatSearchResponse($response);
         } catch (\Exception $e) {
             \Log::error('Elasticsearch search failed', [
                 'error' => $e->getMessage(),
-                'query' => $query,
-                'normalized_query' => $normalizedQuery,
-                'has_name_and_expansion' => $hasNameAndExpansion,
-                'name_query' => $nameQuery ?? null,
-                'expansion_query' => $expansionQuery ?? null
+                'query' => $params
             ]);
-            return ['hits' => [], 'total' => 0];
+            throw $e; // Re-throw to be handled by the controller
         }
     }
 

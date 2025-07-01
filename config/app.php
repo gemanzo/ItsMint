@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Alpha Mode
+    |--------------------------------------------------------------------------
+    |
+    | When alpha mode is enabled, registration will require a valid invitation
+    | code. This is useful for limiting access during alpha/beta testing phases.
+    |
+    */
+
+    'alpha_mode' => env('ALPHA_MODE', true),
+
 ];
