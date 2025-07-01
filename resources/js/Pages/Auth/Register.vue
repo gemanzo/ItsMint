@@ -4,15 +4,33 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import Checkbox from '@/Components/Checkbox.vue';
+
+interface Props {
+    invite_code?: string;
+    requires_invite?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+    invite_code: '',
+    requires_invite: true,
+});
 
 const form = useForm({
     name: '',
     email: '',
     password: '',
     password_confirmation: '',
+    invite_code: props.invite_code || '',
     terms_accepted: false,
+});
+
+// Set invite code from URL on mount
+onMounted(() => {
+    if (props.invite_code) {
+        form.invite_code = props.invite_code;
+    }
 });
 
 const showPassword = ref(false);
@@ -93,11 +111,18 @@ const togglePasswordConfirmationVisibility = () => {
                 <!-- Welcome Message -->
                 <div class="space-y-2">
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-                        Join ItsMint Today!
+                        {{ requires_invite ? 'Join the Alpha!' : 'Join ItsMint Today!' }}
                     </h2>
                     <p class="text-gray-600 dark:text-gray-400">
-                        Start your One Piece TCG collection journey
+                        {{ requires_invite ? 'You\'ve been invited to test our alpha version' : 'Start your One Piece TCG collection journey' }}
                     </p>
+                    <!-- Alpha Badge -->
+                    <div v-if="requires_invite" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-red-100 to-orange-100 text-red-800 dark:from-red-900 dark:to-orange-900 dark:text-red-200">
+                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                        </svg>
+                        Alpha Tester
+                    </div>
                 </div>
             </div>
 
@@ -105,6 +130,32 @@ const togglePasswordConfirmationVisibility = () => {
             <div class="bg-white dark:bg-gray-800 py-8 px-6 shadow-2xl rounded-2xl border border-gray-200 dark:border-gray-700 backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
                 
                 <form @submit.prevent="submit" class="space-y-6">
+                    <!-- Invitation Code Field (if required) -->
+                    <div v-if="requires_invite">
+                        <InputLabel for="invite_code" value="Invitation Code" class="text-sm font-medium text-gray-700 dark:text-gray-300" />
+                        <div class="mt-2 relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                            </div>
+                            <TextInput
+                                id="invite_code"
+                                type="text"
+                                class="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm bg-white dark:bg-gray-700 uppercase tracking-wider font-mono"
+                                v-model="form.invite_code"
+                                :required="requires_invite"
+                                placeholder="XXXXXXXX"
+                                maxlength="8"
+                                style="text-transform: uppercase;"
+                            />
+                        </div>
+                        <InputError class="mt-2" :message="form.errors.invite_code" />
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Enter the 8-character invitation code you received
+                        </p>
+                    </div>
+
                     <!-- Name Field -->
                     <div>
                         <InputLabel for="name" value="Full Name" class="text-sm font-medium text-gray-700 dark:text-gray-300" />
@@ -120,7 +171,7 @@ const togglePasswordConfirmationVisibility = () => {
                                 class="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm bg-white dark:bg-gray-700"
                                 v-model="form.name"
                                 required
-                                autofocus
+                                :autofocus="!requires_invite"
                                 autocomplete="name"
                                 placeholder="Enter your full name"
                             />
@@ -260,10 +311,27 @@ const togglePasswordConfirmationVisibility = () => {
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                             <span v-if="form.processing">Creating account...</span>
-                            <span v-else>Create Account</span>
+                            <span v-else>{{ requires_invite ? 'Join Alpha Test' : 'Create Account' }}</span>
                         </PrimaryButton>
                     </div>
                 </form>
+
+                <!-- Alpha Notice -->
+                <div v-if="requires_invite" class="mt-6 p-4 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                    <div class="flex items-start">
+                        <svg class="flex-shrink-0 w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
+                                Alpha Testing Version
+                            </h3>
+                            <p class="mt-1 text-sm text-red-700 dark:text-red-300">
+                                This is an early version of ItsMint. You may encounter bugs or incomplete features. Your feedback is invaluable!
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Terms Notice -->
                 <div class="mt-6 text-center">
