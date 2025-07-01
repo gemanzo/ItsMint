@@ -21,22 +21,36 @@ final class BlueprintSearchController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        $request->validate([
-            'q' => 'required|string|min:1|max:255',
-            'size' => 'integer|min:1|max:100',
-            'from' => 'integer|min:0',
+        $validated = $request->validate([
+            'q' => 'required|string|min:2',
+            'from' => 'sometimes|integer|min:0',
+            'size' => 'sometimes|integer|min:1|max:100',
+            'language' => 'nullable|string|in:en,jp,it,fr,de,es,ko,zh,zh-cn',
+            'expansion_id' => 'nullable|integer|exists:expansions,id',
+            'category_id' => 'nullable|integer|exists:blueprints,ct_category_id',
         ]);
 
-        $query = $request->input('q');
-        $size = $request->input('size', 20);
-        $from = $request->input('from', 0);
+        $query = $validated['q'];
+        $from = $validated['from'] ?? 0;
+        $size = $validated['size'] ?? 30;
+        $language = $validated['language'] ?? null;
+        $expansionId = $validated['expansion_id'] ?? null;
+        $categoryId = $validated['category_id'] ?? null;
 
         try {
-            $results = $this->elasticsearch->searchBlueprints($query, $size, $from);
+            $results = $this->elasticsearch->searchBlueprints(
+                $query,
+                $from,
+                $size,
+                $language,
+                $expansionId,
+                $categoryId
+            );
 
             return response()->json([
                 'success' => true,
                 'query' => $query,
+                'language' => $language,
                 'pagination' => [
                     'total' => $results['total'],
                     'size' => $size,
