@@ -20,10 +20,12 @@ class BlueprintController extends Controller
         $request->validate([
             'category_id' => 'nullable|integer|exists:blueprints,ct_category_id',
             'expansion_id' => 'nullable|integer|exists:expansions,id', // Validate expansion_id
+            'language' => 'nullable|string|in:en,jp,zh-cn,fr',
         ]);
 
         $selectedCategoryId = $request->input('category_id');
         $selectedExpansionId = $request->input('expansion_id'); // Get expansion_id from request
+        $selectedLanguage = $request->input('language');
         $defaultCategoryId = 192;
 
         $blueprints = Blueprint::with(['expansion', 'latestPrice'])
@@ -34,6 +36,11 @@ class BlueprintController extends Controller
             })
             ->when($selectedExpansionId, function ($query, $expansionId) { // Add when clause for expansion_id
                 return $query->where('expansion_id', $expansionId);
+            })
+            ->when($selectedLanguage, function ($query, $language) {
+                return $query->whereHas('latestPrice', function ($q) use ($language) {
+                    $q->where('language', $language);
+                });
             })
             ->orderBy('name')
             ->paginate(30)
@@ -74,6 +81,7 @@ class BlueprintController extends Controller
             'filters' => [
                 'category_id' => $selectedCategoryId ?? $defaultCategoryId,
                 'expansion_id' => $selectedExpansionId, // Pass current expansion filter
+                'language' => $selectedLanguage,
             ],
             'availableCategories' => $availableCategories,
             'availableExpansions' => $availableExpansions, // Pass available expansions
@@ -100,7 +108,6 @@ class BlueprintController extends Controller
         ]);
 
         $searchQuery = trim($validated['query']);
-        $expansionCodeQuery = null;
         $normalizedExpansionCodeForQuery = null;
 
         // Regex updated to better capture expansion codes like OP04, OP-04, ST1, ST-1 at the end of the query.
@@ -116,7 +123,6 @@ class BlueprintController extends Controller
 
             if ($expansion) {
                 $normalizedExpansionCodeForQuery = $normalizedParsedCode; // Store the normalized code for the main query
-                // Remove the identified code segment (original form, $matches[1]) from the search query
                 $searchQuery = trim(str_ireplace($matches[1], '', $searchQuery));
                 // If searchQuery becomes empty, it means the user only searched for an expansion code.
                 // The Blueprint query will then fetch all blueprints for that expansion.
