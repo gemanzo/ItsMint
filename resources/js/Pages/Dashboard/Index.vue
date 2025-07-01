@@ -11,20 +11,6 @@
                         <p class="text-gray-600 dark:text-gray-400 mt-1">Welcome back! Here's your portfolio overview.</p>
                     </div>
                     <div class="flex space-x-3">
-                        <button 
-                            @click="syncPrices"
-                            :disabled="isSyncing"
-                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors flex items-center space-x-2"
-                        >
-                            <svg v-if="isSyncing" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                            </svg>
-                            <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                            </svg>
-                            <span>{{ isSyncing ? 'Syncing...' : 'Sync Prices' }}</span>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -333,19 +319,6 @@ const formatCurrency = (value: number | null | undefined, currency = 'EUR') => {
     return new Intl.NumberFormat('it-IT', { style: 'currency', currency: currency }).format(value);
 };
 
-const syncPrices = async () => {
-    isSyncing.value = true;
-    try {
-        // Simulate price sync - in real implementation this would call an API
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        // TODO: Implement actual price sync logic
-        console.log('Price sync completed');
-    } catch (error) {
-        console.error('Price sync failed:', error);
-    } finally {
-        isSyncing.value = false;
-    }
-};
 
 const handlePortfolioCreated = () => {
     console.log('Portfolio created event received on dashboard');
