@@ -89,6 +89,9 @@ class BlueprintObserver
                 'latest_price' => $blueprint->latestPrice ? [
                     'price_cents' => $blueprint->latestPrice->price_cents,
                     'currency' => $blueprint->latestPrice->currency,
+                    'language' => strtolower($blueprint->latestPrice->language ?? 'en'),
+                    'condition' => $blueprint->latestPrice->condition,
+                    'is_foil' => $blueprint->latestPrice->is_foil ?? false,
                     'fetched_at' => $this->formatDateForElasticsearch($blueprint->latestPrice->fetched_at),
                 ] : null,
                 'properties' => $blueprint->properties,

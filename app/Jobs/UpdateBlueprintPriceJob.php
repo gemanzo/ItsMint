@@ -91,10 +91,10 @@ class UpdateBlueprintPriceJob implements ShouldQueue
                     'condition' => $condition,
                 ], [
                     'price_cents' => $priceData['price_cents'],
-                    'currency' => $priceData['currency'],
-                    'language' => $priceData['language'],
-                    'is_foil' => $priceData['is_foil'],
-                    'source' => $priceData['source'],
+                    'currency' => $priceData['currency'] ?? 'EUR',
+                    'language' => $priceData['language'] ?? 'en',
+                    'is_foil' => $priceData['is_foil'] ?? false,
+                    'source' => $priceData['source'] ?? 'Default Source',
                     'fetched_at' => $priceData['fetched_at'],
                 ]);
                 Log::info('Saved/Updated price for blueprint by condition (from service).', [
