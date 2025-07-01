@@ -12,8 +12,9 @@ export interface Blueprint {
     };
     latest_price?: {
         price_cents: number;
+        is_foil?: boolean;
+        language?: string;
     };
-    // Add other blueprint fields as needed
 }
 
 export interface UserCard {

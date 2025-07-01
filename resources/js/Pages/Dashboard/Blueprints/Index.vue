@@ -19,8 +19,8 @@ interface Blueprint {
         price_cents: number;
         currency: string;
         condition: string;
-        language: string;
-        is_foil: boolean;
+        language?: string;
+        is_foil?: boolean;
     };
 }
 
