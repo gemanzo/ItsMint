@@ -67,35 +67,100 @@
                                                 Scan Card
                                             </button>
                                         </div>
-                                        <div class="relative">
+                                        <div class="relative mt-1 rounded-md shadow-sm">
                                             <input 
                                                 type="text" 
                                                 id="searchBlueprint" 
                                                 v-model="blueprintSearchQuery"
                                                 @input="handleSearchInput"
                                                 placeholder="Type to search... e.g., Luffy OP01-001"
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 pl-3 pr-24"
+                                                autocomplete="off"
                                             />
-                                            <ul v-if="blueprintSearchResults.length > 0 && blueprintSearchQuery.length > 1 && !selectedBlueprint" class="absolute z-10 mt-1 max-h-72 w-full overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                                                <li 
-                                                    v-for="bp in blueprintSearchResults" 
-                                                    :key="bp.id" 
-                                                    @click="selectBlueprint(bp)"
-                                                    class="cursor-pointer select-none relative p-2 text-gray-900 dark:text-gray-200 hover:bg-indigo-600 hover:text-white flex items-center space-x-3"
-                                                >
-                                                    <img v-if="bp.image_url" :src="bp.image_url" alt="Card image" class="h-16 w-auto object-contain rounded-sm" />
-                                                    <span v-else class="h-16 w-12 flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded-sm text-xs text-gray-500 dark:text-gray-400">No Img</span>
-                                                    <div>
-                                                        <p class="font-medium">{{ bp.name }}</p>
-                                                        <p class="text-xs">{{ bp.expansion?.name }} ({{ bp.expansion?.code }})</p>
-                                                    </div>
-                                                </li>
-                                                <li v-if="hasMoreResults" class="p-2 text-center">
-                                                    <button @click="loadMoreBlueprints" :disabled="isSearching" class="text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50">
-                                                        {{ isSearching ? 'Loading...' : 'Load More' }}
-                                                    </button>
-                                                </li>
-                                            </ul>
+                                            <div class="absolute inset-y-0 right-0 flex items-center">
+                                                <Listbox v-model="selectedLanguageObject" as="div" class="relative">
+                                                    <ListboxButton class="relative flex h-full items-center justify-center rounded-md border-0 bg-transparent py-0 pl-2 pr-8 text-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:text-gray-400 sm:text-sm">
+                                                        <span v-if="selectedLanguageObject.countryCode" :class="['fi', `fi-${selectedLanguageObject.countryCode}`]" class="mr-2 h-4 w-6"></span>
+                                                        <svg v-else class="h-5 w-5 text-gray-400 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 21l-5.25-11.25L.75 21m10.5 0H22.5M3.75 12h15M12 12V5.25M15 5.25H9" />
+                                                        </svg>
+                                                        <span class="block truncate">{{ selectedLanguageObject.name }}</span>
+                                                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                                                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                                <path fill-rule="evenodd" d="M10 3a.75.75 0 01.53.22l3.5 3.5a.75.75 0 01-1.06 1.06L10 4.81 7.53 7.28a.75.75 0 01-1.06-1.06l3.5-3.5A.75.75 0 0110 3zM10 17a.75.75 0 01-.53-.22l-3.5-3.5a.75.75 0 011.06-1.06L10 15.19l2.47-2.47a.75.75 0 011.06 1.06l-3.5 3.5A.75.75 0 0110 17z" clip-rule="evenodd" />
+                                                            </svg>
+                                                        </span>
+                                                    </ListboxButton>
+                                                    <transition leave-active-class="transition ease-in duration-100" leave-from-class="opacity-100" leave-to-class="opacity-0">
+                                                        <ListboxOptions class="absolute right-0 z-20 mt-1 w-32 origin-top-right overflow-hidden rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                                            <ListboxOption
+                                                                v-for="lang in languages"
+                                                                :key="lang.code"
+                                                                :value="lang"
+                                                                as="template"
+                                                                v-slot="{ active, selected }"
+                                                            >
+                                                                <li :class="[active ? 'bg-indigo-600 text-white' : 'text-gray-900 dark:text-gray-200', 'relative cursor-default select-none py-2 pl-3 pr-9']">
+                                                                    <div class="flex items-center">
+                                                                        <span v-if="lang.countryCode" :class="['fi', `fi-${lang.countryCode}`]" class="mr-2 h-4 w-6"></span>
+                                                                        <svg v-else class="h-5 w-5 text-gray-400 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 21l-5.25-11.25L.75 21m10.5 0H22.5M3.75 12h15M12 12V5.25M15 5.25H9" />
+                                                                        </svg>
+                                                                        <span :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']">{{ lang.name }}</span>
+                                                                    </div>
+                                                                </li>
+                                                            </ListboxOption>
+                                                        </ListboxOptions>
+                                                    </transition>
+                                                </Listbox>
+                                            </div>
+                                        </div>
+                                        <div class="relative">
+                                            <div v-if="blueprintSearchQuery.length > 1 && !selectedBlueprint" class="absolute z-10 mt-1 w-full max-h-72 overflow-auto rounded-md bg-white dark:bg-gray-700 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                                                <!-- Loading State -->
+                                                <div v-if="isSearching && blueprintSearchResults.length === 0" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                    Searching for cards...
+                                                </div>
+
+                                                <!-- No Results -->
+                                                <div v-else-if="!isSearching && blueprintSearchResults.length === 0" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                    No cards found for "{{ blueprintSearchQuery }}".
+                                                </div>
+
+                                                <!-- Search Results -->
+                                                <ul v-else class="py-1">
+                                                    <li
+                                                        v-for="bp in blueprintSearchResults"
+                                                        :key="bp.id"
+                                                        @click="selectBlueprint(bp)"
+                                                        class="group cursor-pointer select-none relative p-3 text-gray-900 dark:text-gray-200 hover:bg-indigo-600 hover:text-white flex items-center space-x-3 transition-colors duration-150"
+                                                    >
+                                                        <img v-if="bp.image_url" :src="bp.image_url" alt="Card image" class="h-20 w-auto flex-shrink-0 object-contain rounded-sm" />
+                                                        <span v-else class="h-20 w-14 flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded-sm text-xs text-gray-500 dark:text-gray-400">No Img</span>
+                                                        
+                                                        <div class="flex-1 min-w-0">
+                                                            <p class="font-medium truncate" :title="bp.name">{{ bp.name }}</p>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400 group-hover:text-indigo-200 truncate" :title="`${bp.expansion?.name} (${bp.expansion?.code})`">{{ bp.expansion?.name }} ({{ bp.expansion?.code }})</p>
+                                                            <span v-if="bp.latest_price?.is_foil" class="text-xs text-yellow-500 font-bold">✨ Foil</span>
+                                                        </div>
+
+                                                        <div v-if="bp.latest_price?.price_cents" class="text-right flex-shrink-0 pl-2">
+                                                            <p class="font-semibold text-sm text-green-600 dark:text-green-400">
+                                                                {{ formatCurrency(bp.latest_price.price_cents / 100) }}
+                                                            </p>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400 group-hover:text-indigo-200">Market</p>
+                                                        </div>
+                                                        <div v-else class="text-right flex-shrink-0 pl-2">
+                                                            <p class="text-xs text-gray-400 dark:text-gray-500">No price</p>
+                                                        </div>
+                                                    </li>
+                                                    <li v-if="hasMoreResults" class="p-2 text-center sticky bottom-0 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm">
+                                                        <button @click="loadMoreBlueprints" :disabled="isSearching" class="w-full text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50 py-2">
+                                                            {{ isSearching ? 'Loading...' : 'Load More' }}
+                                                        </button>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </div>
                                         <div v-if="selectedBlueprint" class="mt-2 p-3 border rounded-md dark:border-gray-600 flex items-center space-x-4">
                                             <img v-if="selectedBlueprint.image_url" :src="selectedBlueprint.image_url" alt="Selected card image" class="h-24 w-auto object-contain rounded-md" />
@@ -120,12 +185,6 @@
                                          <p v-if="!cardDetails.condition && formErrors.condition" class="text-xs text-red-500 mt-1">{{ formErrors.condition }}</p>
                                     </div>
                                     
-                                    <div>
-                                        <label for="language" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Language</label>
-                                        <input type="text" id="language" v-model="cardDetails.language" placeholder="e.g., EN, JP, IT" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
-                                        <p v-if="!cardDetails.language && formErrors.language" class="text-xs text-red-500 mt-1">{{ formErrors.language }}</p>
-                                    </div>
-
                                     <div>
                                         <label for="quantity" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</label>
                                         <input type="number" id="quantity" v-model.number="cardDetails.quantity" min="1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
@@ -190,12 +249,17 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted, computed } from 'vue';
+import "/node_modules/flag-icons/css/flag-icons.min.css";
 import {
     Dialog,
     DialogPanel,
     DialogTitle,
     TransitionRoot,
     TransitionChild,
+    Listbox,
+    ListboxButton,
+    ListboxOptions,
+    ListboxOption,
 } from '@headlessui/vue';
 import axios from 'axios';
 import { usePortfolioStore, Blueprint, UserCard } from '@/stores/portfolioStore';
@@ -217,6 +281,18 @@ const selectedPortfolioId = ref<number | null>(props.portfolioId || null);
 const blueprintSearchQuery = ref('');
 const blueprintSearchResults = ref<Blueprint[]>([]);
 const selectedBlueprint = ref<Blueprint | null>(null);
+
+const languages = [
+    { name: 'Any', code: '', countryCode: 'un' },
+    { name: 'EN', code: 'en', countryCode: 'us' },
+    { name: 'JP', code: 'jp', countryCode: 'jp' },
+    { name: 'FR', code: 'fr', countryCode: 'fr' },
+    { name: 'CHI', code: 'zh-cn', countryCode: 'cn' },
+];
+
+const selectedLanguageObject = ref(languages[0]);
+const searchLanguage = computed(() => selectedLanguageObject.value.code);
+
 const isSubmitting = ref(false);
 const searchPage = ref(1);
 const hasMoreResults = ref(false);
@@ -292,7 +368,8 @@ const searchBlueprints = async (loadMore = false) => {
             params: { 
                 q: blueprintSearchQuery.value,
                 from: (searchPage.value - 1) * 15,
-                size: 15 // Increase size for better experience
+                size: 15, // Increase size for better experience
+                language: searchLanguage.value || undefined,
             }
         });
         
@@ -324,6 +401,13 @@ const loadMoreBlueprints = () => {
     }
 };
 
+// Watch for language changes to re-trigger search
+watch(searchLanguage, () => {
+    if (blueprintSearchQuery.value.length >= 2) {
+        searchBlueprints(false); // Trigger a new search
+    }
+});
+
 // Watch for changes in search query to auto-clear selected blueprint
 watch(blueprintSearchQuery, (newValue, oldValue) => {
     // If user clears or significantly changes the search, deselect blueprint
@@ -353,6 +437,15 @@ const selectBlueprint = (blueprint: Blueprint) => {
     selectedBlueprint.value = blueprint;
     blueprintSearchQuery.value = `${blueprint.name} - ${blueprint.expansion?.code}`;
     blueprintSearchResults.value = []; // Clear results
+
+    // Auto-set language based on selection context
+    if (blueprint.latest_price?.language) {
+        cardDetails.language = blueprint.latest_price.language.toUpperCase();
+    } else if (searchLanguage.value) { // from the search filter
+        cardDetails.language = searchLanguage.value.toUpperCase();
+    } else {
+        cardDetails.language = 'EN'; // Fallback default
+    }
 };
 
 const validateForm = (): boolean => {
@@ -369,10 +462,6 @@ const validateForm = (): boolean => {
     }
     if (!cardDetails.condition) {
         formErrors.condition = 'Condition is required.';
-        isValid = false;
-    }
-    if (!cardDetails.language) {
-        formErrors.language = 'Language is required.';
         isValid = false;
     }
     if (!cardDetails.quantity || cardDetails.quantity < 1) {
