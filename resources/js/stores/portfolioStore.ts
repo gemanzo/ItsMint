@@ -152,19 +152,16 @@ export const usePortfolioStore = defineStore('portfolio', {
 
         let portfolioData: Portfolio | null = null;
 
+        // Type guard to check if response has data property
         if (
-          response.data &&
+          'data' in response.data &&
           response.data.data &&
           typeof response.data.data === 'object'
         ) {
           // Standard Laravel API Resource for a single item
           portfolioData = response.data.data;
-        } else if (
-          response.data &&
-          typeof response.data === 'object' &&
-          !response.data.data
-        ) {
-          // Might be a direct object if not using API resource wrapping
+        } else if ('id' in response.data && typeof response.data === 'object') {
+          // Direct object if not using API resource wrapping
           portfolioData = response.data;
         } else {
           console.error(

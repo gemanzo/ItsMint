@@ -180,7 +180,7 @@
                               class="absolute right-0 z-20 mt-1 w-32 origin-top-right overflow-hidden rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                             >
                               <ListboxOption
-                                v-for="lang in languages"
+                                v-for="lang in CARD_LANGUAGES"
                                 :key="lang.code"
                                 v-slot="{ active, selected }"
                                 :value="lang"

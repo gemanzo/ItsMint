@@ -217,7 +217,7 @@ const formData = reactive({
 });
 
 // Use pricing composable
-const blueprintRef = computed(() => props.userCard.blueprint);
+const blueprintRef = computed(() => props.userCard.blueprint || null);
 const conditionRef = computed(() => formData.condition);
 const { estimatedPrice } = useCardPricing(blueprintRef, conditionRef);
 
