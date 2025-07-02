@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# We need to execute lint-staged inside the container
+# because all dependencies are installed there, not on the host.
+#
+# Note: This requires the 'node_itsmint' container to be running.
+#
+docker exec node_itsmint npx lint-staged
