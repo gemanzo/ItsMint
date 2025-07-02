@@ -44,11 +44,15 @@ class UserCardController extends Controller
 
         $quantity = $validated['quantity'];
 
-        // Auto-populate purchase_price if not provided
+        // Auto-populate purchase_price if not provided, using estimated value with condition adjustments
         if (! isset($validated['purchase_price']) || is_null($validated['purchase_price'])) {
             $blueprint = Blueprint::with('latestPrice')->find($validated['blueprint_id']);
             if ($blueprint && $blueprint->latestPrice && ! is_null($blueprint->latestPrice->price_cents)) {
-                $validated['purchase_price'] = $blueprint->latestPrice->price_cents / 100; // Convert to euros
+                $adjustedPriceCents = UserCard::calculateEstimatedPriceCents(
+                    $blueprint->latestPrice->price_cents,
+                    $validated['condition']
+                );
+                $validated['purchase_price'] = $adjustedPriceCents / 100; // Convert to euros
             }
         }
 

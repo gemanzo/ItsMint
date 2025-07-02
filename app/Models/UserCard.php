@@ -42,6 +42,7 @@ class UserCard extends Model
 
     // Helper for price condition adjustments
     // NM: 0%, LP: -10%, MP: -25%, HP: -50%, DMG: -75%
+    // Note: These values should match the frontend constants in resources/js/constants/cardConditions.ts
     protected static array $conditionPriceAdjustments = [
         'NM' => 1.00,  // No change
         'LP' => 0.90,  // -10%
@@ -49,6 +50,24 @@ class UserCard extends Model
         'HP' => 0.50,  // -50%
         'DMG' => 0.25, // -75%
     ];
+
+    /**
+     * Get condition-based price adjustments array
+     */
+    public static function getConditionPriceAdjustments(): array
+    {
+        return self::$conditionPriceAdjustments;
+    }
+
+    /**
+     * Calculate estimated price in cents for a given condition and base price
+     */
+    public static function calculateEstimatedPriceCents(int $basePriceCents, string $condition): int
+    {
+        $adjustmentFactor = self::$conditionPriceAdjustments[$condition] ?? 1.00;
+
+        return (int) round($basePriceCents * $adjustmentFactor);
+    }
 
     public function user(): BelongsTo
     {
@@ -105,9 +124,7 @@ class UserCard extends Model
             return null;
         }
 
-        $adjustmentFactor = self::$conditionPriceAdjustments[$this->condition] ?? 1.00; // Default to 1.00 if condition not in map
-
-        return (int) round($basePriceCents * $adjustmentFactor);
+        return self::calculateEstimatedPriceCents($basePriceCents, $this->condition);
     }
 
     /**
