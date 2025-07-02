@@ -536,6 +536,10 @@ import { usePortfolioStore, Blueprint } from '@/stores/portfolioStore';
 import debounce from 'lodash/debounce';
 import CardScanModal from '@/Components/CardScanModal.vue';
 import ScanResultsModal from '@/Components/ScanResultsModal.vue';
+import { useCurrency } from '@/composables/useCurrency';
+import { useCardPricing } from '@/composables/useCardPricing';
+import { useApiError } from '@/composables/useApiError';
+import { CARD_LANGUAGES } from '@/constants/cardLanguages';
 
 interface ScanResult {
   blueprint?: Blueprint;
@@ -550,6 +554,8 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'card-added']);
 
 const portfolioStore = usePortfolioStore();
+const { formatCurrency } = useCurrency();
+const { isLoading: isSubmitting } = useApiError();
 
 const isOpen = ref(true); // Modal is open by default when component is rendered
 const selectedPortfolioId = ref<number | null>(props.portfolioId || null);
@@ -557,18 +563,9 @@ const blueprintSearchQuery = ref('');
 const blueprintSearchResults = ref<Blueprint[]>([]);
 const selectedBlueprint = ref<Blueprint | null>(null);
 
-const languages = [
-  { name: 'Any', code: '', countryCode: 'un' },
-  { name: 'EN', code: 'en', countryCode: 'us' },
-  { name: 'JP', code: 'jp', countryCode: 'jp' },
-  { name: 'FR', code: 'fr', countryCode: 'fr' },
-  { name: 'CHI', code: 'zh-cn', countryCode: 'cn' },
-];
-
-const selectedLanguageObject = ref(languages[0]);
+const selectedLanguageObject = ref(CARD_LANGUAGES[0]);
 const searchLanguage = computed(() => selectedLanguageObject.value.code);
 
-const isSubmitting = ref(false);
 const searchPage = ref(1);
 const hasMoreResults = ref(false);
 const isSearching = ref(false);
@@ -588,6 +585,12 @@ const cardDetails = reactive({
 });
 
 const formErrors = reactive<Record<string, string>>({});
+
+// Use pricing composable
+const { estimatedPrice } = useCardPricing(
+  selectedBlueprint,
+  computed(() => cardDetails.condition)
+);
 
 // Computed property to get the selected portfolio name
 const selectedPortfolioName = computed(() => {
@@ -617,33 +620,7 @@ const closeModal = () => {
   setTimeout(() => emit('close'), 300); // Allow time for transition
 };
 
-const estimatedPrice = computed(() => {
-  if (selectedBlueprint.value?.latest_price?.price_cents) {
-    // Apply condition-based price adjustments (same logic as backend)
-    const conditionAdjustments: Record<string, number> = {
-      NM: 1.0, // No change
-      LP: 0.9, // -10%
-      MP: 0.75, // -25%
-      HP: 0.5, // -50%
-      DMG: 0.25, // -75%
-    };
-
-    const adjustmentFactor = conditionAdjustments[cardDetails.condition] ?? 1.0;
-    const adjustedPriceCents = Math.round(
-      selectedBlueprint.value.latest_price.price_cents * adjustmentFactor
-    );
-    return adjustedPriceCents / 100;
-  }
-  return null;
-});
-
-const formatCurrency = (value: number | null | undefined, currency = 'EUR') => {
-  if (value === null || typeof value === 'undefined') return 'N/A';
-  return new Intl.NumberFormat('it-IT', {
-    style: 'currency',
-    currency: currency,
-  }).format(value);
-};
+// estimatedPrice and formatCurrency now provided by composables
 
 const searchBlueprints = async (loadMore = false) => {
   if (blueprintSearchQuery.value.length < 2) {

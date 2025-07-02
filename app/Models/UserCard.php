@@ -42,6 +42,7 @@ class UserCard extends Model
 
     // Helper for price condition adjustments
     // NM: 0%, LP: -10%, MP: -25%, HP: -50%, DMG: -75%
+    // Note: These values should match the frontend constants in resources/js/constants/cardConditions.ts
     protected static array $conditionPriceAdjustments = [
         'NM' => 1.00,  // No change
         'LP' => 0.90,  // -10%
