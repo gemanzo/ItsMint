@@ -95,7 +95,8 @@ final class OneLogCard extends Model
     public function getPrimaryColorAttribute(): ?string
     {
         $colors = $this->colors;
-        return !empty($colors) ? $colors[0] : null;
+
+        return ! empty($colors) ? $colors[0] : null;
     }
 
     /**
@@ -104,6 +105,7 @@ final class OneLogCard extends Model
     public function getIsMulticolorAttribute(): bool
     {
         $colors = $this->colors;
+
         return is_array($colors) && count($colors) > 1;
     }
 }

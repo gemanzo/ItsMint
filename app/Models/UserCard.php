@@ -76,7 +76,7 @@ class UserCard extends Model
     // Mutator for purchase_price (converts float to cents)
     public function setPurchasePriceAttribute(?float $value): void
     {
-        $this->attributes['purchase_price_cents'] = $value ? (int)($value * 100) : null;
+        $this->attributes['purchase_price_cents'] = $value ? (int) ($value * 100) : null;
     }
 
     // Accessor for sold_price (converts cents to float)
@@ -88,7 +88,7 @@ class UserCard extends Model
     // Mutator for sold_price (converts float to cents)
     public function setSoldPriceAttribute(?float $value): void
     {
-        $this->attributes['sold_price_cents'] = $value ? (int)($value * 100) : null;
+        $this->attributes['sold_price_cents'] = $value ? (int) ($value * 100) : null;
     }
 
     /**
@@ -119,7 +119,8 @@ class UserCard extends Model
         if ($valueCents === null) {
             return null; // Or 'N/A' or some other placeholder
         }
+
         // Assuming EUR, adapt if currency can vary and needs to be dynamic
-        return number_format($valueCents / 100, 2, ',', '.') . ' €';
+        return number_format($valueCents / 100, 2, ',', '.').' €';
     }
 }

@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Services\ElasticsearchService;
 use App\Models\Blueprint;
+use App\Services\ElasticsearchService;
+use Illuminate\Console\Command;
 
 class ElasticsearchIndexBlueprints extends Command
 {
@@ -40,16 +40,18 @@ class ElasticsearchIndexBlueprints extends Command
         // Handle fresh option
         if ($this->option('fresh') && $this->elasticsearch->indexExists()) {
             $this->warn('🗑️  Deleting existing index...');
-            if (!$this->elasticsearch->deleteIndex()) {
+            if (! $this->elasticsearch->deleteIndex()) {
                 $this->error('❌ Failed to delete existing index');
+
                 return Command::FAILURE;
             }
         }
 
         // Create index if it doesn't exist
-        if (!$this->elasticsearch->indexExists()) {
-            if (!$this->elasticsearch->createIndex()) {
+        if (! $this->elasticsearch->indexExists()) {
+            if (! $this->elasticsearch->createIndex()) {
                 $this->error('❌ Failed to create Elasticsearch index');
+
                 return Command::FAILURE;
             }
         }
@@ -59,6 +61,7 @@ class ElasticsearchIndexBlueprints extends Command
 
         if ($totalBlueprints === 0) {
             $this->warn('⚠️  No blueprints found to index');
+
             return Command::SUCCESS;
         }
 
@@ -83,12 +86,12 @@ class ElasticsearchIndexBlueprints extends Command
                 }
 
                 // Bulk index this batch
-                if (!empty($batchData)) {
+                if (! empty($batchData)) {
                     if ($this->elasticsearch->bulkIndexBlueprints($batchData)) {
                         $indexedCount += count($batchData);
                     } else {
                         $errorCount += count($batchData);
-                        $this->error("\n❌ Failed to index batch of " . count($batchData) . " blueprints");
+                        $this->error("\n❌ Failed to index batch of ".count($batchData).' blueprints');
                     }
                 }
             });
@@ -103,12 +106,13 @@ class ElasticsearchIndexBlueprints extends Command
                 ['Total Blueprints', $totalBlueprints],
                 ['Successfully Indexed', $indexedCount],
                 ['Errors', $errorCount],
-                ['Success Rate', $totalBlueprints > 0 ? round(($indexedCount / $totalBlueprints) * 100, 2) . '%' : '0%']
+                ['Success Rate', $totalBlueprints > 0 ? round(($indexedCount / $totalBlueprints) * 100, 2).'%' : '0%'],
             ]
         );
 
         if ($errorCount > 0) {
             $this->warn("⚠️  {$errorCount} blueprints failed to index. Check logs for details.");
+
             return Command::FAILURE;
         }
 

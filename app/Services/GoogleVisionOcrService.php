@@ -5,25 +5,26 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Exceptions\GoogleVisionOcrException;
-use Google\Cloud\Vision\V1\Client\ImageAnnotatorClient;
-use Illuminate\Support\Facades\Log;
-use Google\Cloud\Vision\V1\Feature;
-use Google\Cloud\Vision\V1\Image;
-use Google\Cloud\Vision\V1\Feature\Type;
+use Exception;
 use Google\Cloud\Vision\V1\AnnotateImageRequest;
 use Google\Cloud\Vision\V1\BatchAnnotateImagesRequest;
-use Exception;
+use Google\Cloud\Vision\V1\Client\ImageAnnotatorClient;
+use Google\Cloud\Vision\V1\Feature;
+use Google\Cloud\Vision\V1\Feature\Type;
+use Google\Cloud\Vision\V1\Image;
+use Illuminate\Support\Facades\Log;
 
 final class GoogleVisionOcrService
 {
     private readonly ImageAnnotatorClient $client;
+
     private readonly array $config;
 
     public function __construct()
     {
         $this->config = config('services.google.vision');
 
-        if (!$this->config['enabled']) {
+        if (! $this->config['enabled']) {
             throw new GoogleVisionOcrException('Google Vision API is not enabled');
         }
 
@@ -46,28 +47,28 @@ final class GoogleVisionOcrService
             }
 
             // Create image object
-            $image = new Image();
+            $image = new Image;
             $image->setContent($imageContent);
 
             // Configure features for text detection
             $features = [
                 // TEXT_DETECTION for general text
-                (new Feature())->setType(Type::TEXT_DETECTION),
+                (new Feature)->setType(Type::TEXT_DETECTION),
                 // DOCUMENT_TEXT_DETECTION for better structured text
-                (new Feature())->setType(Type::DOCUMENT_TEXT_DETECTION),
+                (new Feature)->setType(Type::DOCUMENT_TEXT_DETECTION),
             ];
 
             // Create annotation request
             $requests = [];
             foreach ($features as $feature) {
-                $request = new AnnotateImageRequest();
+                $request = new AnnotateImageRequest;
                 $request->setImage($image);
                 $request->setFeatures([$feature]);
                 $requests[] = $request;
             }
 
             // Batch process requests
-            $batchRequest = new BatchAnnotateImagesRequest();
+            $batchRequest = new BatchAnnotateImagesRequest;
             $batchRequest->setRequests($requests);
 
             // Make API call
@@ -90,7 +91,7 @@ final class GoogleVisionOcrService
                 'error' => $e->getMessage(),
             ]);
 
-            throw new GoogleVisionOcrException('Google Vision OCR failed: ' . $e->getMessage(), 0, $e);
+            throw new GoogleVisionOcrException('Google Vision OCR failed: '.$e->getMessage(), 0, $e);
         } finally {
             // Clean up client
             $this->client->close();
@@ -115,7 +116,7 @@ final class GoogleVisionOcrService
             // Check for errors
             if ($imageResponse->hasError()) {
                 $error = $imageResponse->getError();
-                throw new GoogleVisionOcrException("Vision API error: " . $error->getMessage());
+                throw new GoogleVisionOcrException('Vision API error: '.$error->getMessage());
             }
 
             // Process text annotations
@@ -156,7 +157,7 @@ final class GoogleVisionOcrService
                                     $wordText .= $symbol->getText();
                                 }
 
-                                $paragraphText .= $wordText . ' ';
+                                $paragraphText .= $wordText.' ';
 
                                 // Accumulate confidence
                                 if ($word->getConfidence() > 0) {
@@ -165,10 +166,10 @@ final class GoogleVisionOcrService
                                 }
                             }
 
-                            $blockText .= trim($paragraphText) . "\n";
+                            $blockText .= trim($paragraphText)."\n";
                         }
 
-                        if (!empty(trim($blockText))) {
+                        if (! empty(trim($blockText))) {
                             $blocks[] = [
                                 'text' => trim($blockText),
                                 'confidence' => $paragraphCount > 0 ? ($blockConfidence / $paragraphCount) * 100 : 0,
@@ -197,7 +198,7 @@ final class GoogleVisionOcrService
      */
     private function extractBoundingBox($boundingBox): array
     {
-        if (!$boundingBox) {
+        if (! $boundingBox) {
             return [];
         }
 
@@ -281,7 +282,7 @@ final class GoogleVisionOcrService
             }
 
             // Pattern 2: Codes with leading zeros that might be misread (like OP09-0013 -> OP09-001)
-            // This catches patterns like "OP 09-0013" where the "13" might actually be "001" 
+            // This catches patterns like "OP 09-0013" where the "13" might actually be "001"
             if (preg_match_all('/\b([A-Z]{2,3}\s?\d{2,3}[\-\.]\s?0+(\d{1,3}))\b/', $text, $matches)) {
                 foreach ($matches[0] as $index => $match) {
                     $fullMatch = trim($match);
@@ -291,15 +292,15 @@ final class GoogleVisionOcrService
                     Log::info('=== OCR DEBUG: Pattern 2 match ===', [
                         'full_match' => $fullMatch,
                         'number_part' => $numberPart,
-                        'original_text' => $text
+                        'original_text' => $text,
                     ]);
 
                     // Special case: if we detect "OP09-0013" or similar, interpret "13" as "001"
                     if (strlen($numberPart) <= 2) {
-                        // Create version with number padded to 3 digits with leading zeros  
+                        // Create version with number padded to 3 digits with leading zeros
                         // For "OP 09-0013", extract "OP 09" and add "001"
                         $prefixPart = preg_replace('/([A-Z]{2,3}\s?\d{2,3}[\-\.]\s?)0+\d+/', '$1', $fullMatch);
-                        $interpretedAs001 = $prefixPart . str_pad($numberPart, 3, '0', STR_PAD_LEFT);
+                        $interpretedAs001 = $prefixPart.str_pad($numberPart, 3, '0', STR_PAD_LEFT);
                         $normalizedAs001 = $this->normalizeCardCode($interpretedAs001);
 
                         $cardInfo['potential_codes'][] = [
@@ -307,16 +308,16 @@ final class GoogleVisionOcrService
                             'confidence' => $confidence * 1.2, // High confidence for this interpretation
                             'original' => $fullMatch,
                             'pattern' => 'leading_zero_correction',
-                            'interpretation' => "Interpreted '{$numberPart}' as '00{$numberPart}' in context '{$fullMatch}'"
+                            'interpretation' => "Interpreted '{$numberPart}' as '00{$numberPart}' in context '{$fullMatch}'",
                         ];
                     }
 
                     // Also add the literal interpretation (lower confidence)
-                    $literalCode = preg_replace('/([A-Z]{2,3}\s?\d{2,3}[\-\.]\s?)0*(\d+)/', '$1' . str_pad($numberPart, 3, '0', STR_PAD_LEFT), $fullMatch);
+                    $literalCode = preg_replace('/([A-Z]{2,3}\s?\d{2,3}[\-\.]\s?)0*(\d+)/', '$1'.str_pad($numberPart, 3, '0', STR_PAD_LEFT), $fullMatch);
                     $normalizedLiteral = $this->normalizeCardCode($literalCode);
 
                     // Only add if different from the corrected version
-                    if (!isset($normalizedAs001) || $normalizedLiteral !== $normalizedAs001) {
+                    if (! isset($normalizedAs001) || $normalizedLiteral !== $normalizedAs001) {
                         $cardInfo['potential_codes'][] = [
                             'code' => $normalizedLiteral,
                             'confidence' => $confidence * 0.6,
@@ -339,7 +340,7 @@ final class GoogleVisionOcrService
                         }
                     }
 
-                    if (!$found) {
+                    if (! $found) {
                         $normalizedCode = $this->normalizeCardCode(trim($match));
                         $cardInfo['potential_codes'][] = [
                             'code' => $normalizedCode,
@@ -376,7 +377,7 @@ final class GoogleVisionOcrService
 
         // Sort by confidence
         foreach ($cardInfo as $key => $items) {
-            if (is_array($items) && !empty($items)) {
+            if (is_array($items) && ! empty($items)) {
                 usort($cardInfo[$key], function ($a, $b) {
                     return $b['confidence'] <=> $a['confidence'];
                 });
@@ -401,7 +402,7 @@ final class GoogleVisionOcrService
         if (preg_match('/([A-Z]{2,3}\d{2,3})-0*(\d+)/', $code, $matches)) {
             $prefix = $matches[1];
             $number = str_pad($matches[2], 3, '0', STR_PAD_LEFT);
-            $code = $prefix . '-' . $number;
+            $code = $prefix.'-'.$number;
         }
 
         return strtoupper($code);
@@ -444,8 +445,8 @@ final class GoogleVisionOcrService
     public function isAvailable(): bool
     {
         return $this->config['enabled'] &&
-            !empty($this->config['project_id']) &&
-            !empty($this->config['key_path']) &&
+            ! empty($this->config['project_id']) &&
+            ! empty($this->config['key_path']) &&
             file_exists($this->config['key_path']);
     }
 }

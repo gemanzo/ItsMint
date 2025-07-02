@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 final class Invitation extends Model
 {
@@ -51,13 +51,13 @@ final class Invitation extends Model
     public function isUsable(): bool
     {
         return $this->is_active
-            && !$this->isExpired()
+            && ! $this->isExpired()
             && $this->used_count < $this->max_uses;
     }
 
     public function canBeUsedBy(?string $email = null): bool
     {
-        if (!$this->isUsable()) {
+        if (! $this->isUsable()) {
             return false;
         }
 

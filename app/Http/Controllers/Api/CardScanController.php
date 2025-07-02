@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\CardOcrService;
 use App\Models\CardScan;
-use Illuminate\Http\Request;
+use App\Services\CardOcrService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rules\File;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\File;
 
 final class CardScanController extends Controller
 {
@@ -36,9 +36,9 @@ final class CardScanController extends Controller
                         Rule::dimensions()
                             ->minWidth($ocrConfig['upload']['min_width'])
                             ->minHeight($ocrConfig['upload']['min_height'])
-                    )
+                    ),
             ],
-            'source' => 'sometimes|string|in:' . implode(',', $ocrConfig['upload']['allowed_sources']),
+            'source' => 'sometimes|string|in:'.implode(',', $ocrConfig['upload']['allowed_sources']),
         ]);
 
         try {
@@ -56,7 +56,7 @@ final class CardScanController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to process image: ' . $e->getMessage(),
+                'message' => 'Failed to process image: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -70,7 +70,7 @@ final class CardScanController extends Controller
 
         $validated = $request->validate([
             'status' => 'sometimes|string|in:pending,processing,completed,failed',
-            'per_page' => 'sometimes|integer|min:1|max:' . $ocrConfig['pagination']['max_per_page'],
+            'per_page' => 'sometimes|integer|min:1|max:'.$ocrConfig['pagination']['max_per_page'],
         ]);
 
         $query = CardScan::with(['blueprint.expansion', 'blueprint.latestPrice'])
@@ -94,7 +94,7 @@ final class CardScanController extends Controller
     {
         $scan = $this->cardOcrService->getScanWithDetails($id, Auth::id());
 
-        if (!$scan) {
+        if (! $scan) {
             return response()->json([
                 'success' => false,
                 'message' => 'Scan not found or unauthorized',
@@ -116,14 +116,14 @@ final class CardScanController extends Controller
             ->where('user_id', Auth::id())
             ->first();
 
-        if (!$scan) {
+        if (! $scan) {
             return response()->json([
                 'success' => false,
                 'message' => 'Scan not found or unauthorized',
             ], 404);
         }
 
-        if (!$scan->isFailed()) {
+        if (! $scan->isFailed()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Can only retry failed scans',
@@ -140,7 +140,7 @@ final class CardScanController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retry scan: ' . $e->getMessage(),
+                'message' => 'Failed to retry scan: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -158,7 +158,7 @@ final class CardScanController extends Controller
             ->where('user_id', Auth::id())
             ->first();
 
-        if (!$scan) {
+        if (! $scan) {
             return response()->json([
                 'success' => false,
                 'message' => 'Scan not found or unauthorized',
@@ -182,7 +182,7 @@ final class CardScanController extends Controller
             ->where('user_id', Auth::id())
             ->first();
 
-        if (!$scan) {
+        if (! $scan) {
             return response()->json([
                 'success' => false,
                 'message' => 'Scan not found or unauthorized',
@@ -211,7 +211,7 @@ final class CardScanController extends Controller
             ->where('user_id', Auth::id())
             ->first();
 
-        if (!$scan || !$scan->file_path) {
+        if (! $scan || ! $scan->file_path) {
             return response()->json([
                 'success' => false,
                 'message' => 'Image not found',
@@ -219,7 +219,7 @@ final class CardScanController extends Controller
         }
 
         // Check if file exists on public disk
-        if (!Storage::disk('public')->exists($scan->file_path)) {
+        if (! Storage::disk('public')->exists($scan->file_path)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Image file not found on disk',
@@ -232,7 +232,7 @@ final class CardScanController extends Controller
 
         return response($file, 200, [
             'Content-Type' => $mimeType,
-            'Content-Disposition' => 'inline; filename="' . basename($scan->file_path) . '"',
+            'Content-Disposition' => 'inline; filename="'.basename($scan->file_path).'"',
             'Cache-Control' => 'public, max-age=3600',
         ]);
     }
@@ -255,14 +255,14 @@ final class CardScanController extends Controller
             ->with('blueprint')
             ->first();
 
-        if (!$scan) {
+        if (! $scan) {
             return response()->json([
                 'success' => false,
                 'message' => 'Scan not found or unauthorized',
             ], 404);
         }
 
-        if (!$scan->blueprint_id) {
+        if (! $scan->blueprint_id) {
             return response()->json([
                 'success' => false,
                 'message' => 'No blueprint assigned to this scan',
@@ -280,7 +280,7 @@ final class CardScanController extends Controller
             ];
 
             // Use existing UserCardController logic
-            $userCardController = new \App\Http\Controllers\UserCardController();
+            $userCardController = new \App\Http\Controllers\UserCardController;
             $request->merge($userCardData);
 
             $response = $userCardController->store($request);
@@ -294,7 +294,7 @@ final class CardScanController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create user card: ' . $e->getMessage(),
+                'message' => 'Failed to create user card: '.$e->getMessage(),
             ], 500);
         }
     }

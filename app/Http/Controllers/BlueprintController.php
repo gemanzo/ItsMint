@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Blueprint;
 use App\Models\Expansion;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
-use Illuminate\Support\Str; // Added for Str::title
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Inertia\Inertia; // Added for Str::title
+use Inertia\Response;
 
 class BlueprintController extends Controller
 {
@@ -55,7 +55,7 @@ class BlueprintController extends Controller
                     // Extract a readable name from the key
                     // e.g., 'one_piece_single_card_category_id' becomes 'Single Card'
                     $name = Str::title(str_replace('_', ' ', Str::remove('_category_id', Str::remove('one_piece_', $key))));
-                    $categoryNameMapping[(int)$value] = $name;
+                    $categoryNameMapping[(int) $value] = $name;
                 }
             }
         }
@@ -67,7 +67,7 @@ class BlueprintController extends Controller
             ->map(function ($id) use ($categoryNameMapping) {
                 return [
                     'id' => $id,
-                    'name' => $categoryNameMapping[$id] ?? (string) $id // Use mapped name or default to ID
+                    'name' => $categoryNameMapping[$id] ?? (string) $id, // Use mapped name or default to ID
                 ];
             });
 
@@ -131,8 +131,8 @@ class BlueprintController extends Controller
 
         $query = Blueprint::query()->with(['expansion', 'latestPrice']);
 
-        if (!empty($searchQuery)) {
-            $query->where('name', 'ILIKE', '%' . $searchQuery . '%');
+        if (! empty($searchQuery)) {
+            $query->where('name', 'ILIKE', '%'.$searchQuery.'%');
         }
 
         // Use the normalized expansion code for querying the relationship
@@ -141,7 +141,7 @@ class BlueprintController extends Controller
                 // Compare against the normalized code in the database
                 $q->whereRaw('UPPER(REPLACE(REPLACE(code, \'-\', \'\'), \'.\', \'\')) = ?', [$normalizedExpansionCodeForQuery]);
             });
-        } elseif ($request->filled('expansion_id') && !$normalizedExpansionCodeForQuery) {
+        } elseif ($request->filled('expansion_id') && ! $normalizedExpansionCodeForQuery) {
             // Fallback to expansion_id if provided and no code was parsed from the query string
             $query->where('expansion_id', $validated['expansion_id']);
         }

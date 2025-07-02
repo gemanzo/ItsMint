@@ -76,7 +76,7 @@ final class CardScan extends Model
      */
     public function getConfidencePercentageAttribute(): ?string
     {
-        return $this->confidence_score ? $this->confidence_score . '%' : null;
+        return $this->confidence_score ? $this->confidence_score.'%' : null;
     }
 
     /**
@@ -84,7 +84,7 @@ final class CardScan extends Model
      */
     public function getBestMatchAttribute(): ?array
     {
-        if (!$this->detected_cards || empty($this->detected_cards)) {
+        if (! $this->detected_cards || empty($this->detected_cards)) {
             return null;
         }
 

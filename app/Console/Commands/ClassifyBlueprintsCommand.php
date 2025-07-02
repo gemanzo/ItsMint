@@ -125,8 +125,9 @@ final class ClassifyBlueprintsCommand extends Command
     private function saveClassifications(BlueprintClassificationService $classificationService): int
     {
         // Check if columns exist
-        if (!$this->columnExists('blueprints', 'product_type')) {
+        if (! $this->columnExists('blueprints', 'product_type')) {
             $this->error('Column product_type does not exist. Please run the migration first.');
+
             return Command::FAILURE;
         }
 
@@ -219,18 +220,26 @@ final class ClassifyBlueprintsCommand extends Command
         foreach ($results as $result) {
             $analysis = $result['analysis'];
 
-            if ($analysis['has_collector_number']) $withCollectorNumber++;
-            if ($analysis['matches_non_card_patterns']) $productPatterns++;
-            if ($analysis['has_card_ability_pattern']) $abilityPatterns++;
-            if ($analysis['looks_like_character_name']) $characterNames++;
+            if ($analysis['has_collector_number']) {
+                $withCollectorNumber++;
+            }
+            if ($analysis['matches_non_card_patterns']) {
+                $productPatterns++;
+            }
+            if ($analysis['has_card_ability_pattern']) {
+                $abilityPatterns++;
+            }
+            if ($analysis['looks_like_character_name']) {
+                $characterNames++;
+            }
         }
 
         $total = count($results);
 
-        $this->line("  With collector numbers: {$withCollectorNumber} (" . round(($withCollectorNumber / $total) * 100, 1) . "%)");
-        $this->line("  Match product patterns: {$productPatterns} (" . round(($productPatterns / $total) * 100, 1) . "%)");
-        $this->line("  Have ability patterns: {$abilityPatterns} (" . round(($abilityPatterns / $total) * 100, 1) . "%)");
-        $this->line("  Look like character names: {$characterNames} (" . round(($characterNames / $total) * 100, 1) . "%)");
+        $this->line("  With collector numbers: {$withCollectorNumber} (".round(($withCollectorNumber / $total) * 100, 1).'%)');
+        $this->line("  Match product patterns: {$productPatterns} (".round(($productPatterns / $total) * 100, 1).'%)');
+        $this->line("  Have ability patterns: {$abilityPatterns} (".round(($abilityPatterns / $total) * 100, 1).'%)');
+        $this->line("  Look like character names: {$characterNames} (".round(($characterNames / $total) * 100, 1).'%)');
     }
 
     /**
@@ -245,7 +254,7 @@ final class ClassifyBlueprintsCommand extends Command
         $grouped = [];
         foreach ($results as $result) {
             $classification = $result['classification'];
-            if (!isset($grouped[$classification])) {
+            if (! isset($grouped[$classification])) {
                 $grouped[$classification] = [];
             }
             $grouped[$classification][] = $result;
@@ -253,14 +262,14 @@ final class ClassifyBlueprintsCommand extends Command
 
         foreach ($grouped as $classification => $items) {
             $this->newLine();
-            $this->info("=== {$classification} ({" . count($items) . "}) ===");
+            $this->info("=== {$classification} ({".count($items).'}) ===');
 
             foreach (array_slice($items, 0, 5) as $item) { // Show max 5 examples
-                $this->line("  {$item['name']} (Score: " . number_format($item['analysis']['analysis_score'], 2) . ")");
+                $this->line("  {$item['name']} (Score: ".number_format($item['analysis']['analysis_score'], 2).')');
             }
 
             if (count($items) > 5) {
-                $this->line("  ... and " . (count($items) - 5) . " more");
+                $this->line('  ... and '.(count($items) - 5).' more');
             }
         }
     }
@@ -273,13 +282,11 @@ final class ClassifyBlueprintsCommand extends Command
         return DB::getSchemaBuilder()->hasColumn($table, $column);
     }
 
-
-
     /**
      * Truncate string for display.
      */
     private function truncate(string $text, int $length): string
     {
-        return strlen($text) > $length ? substr($text, 0, $length - 3) . '...' : $text;
+        return strlen($text) > $length ? substr($text, 0, $length - 3).'...' : $text;
     }
 }

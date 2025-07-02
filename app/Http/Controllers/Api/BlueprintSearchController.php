@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\ElasticsearchService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 final class BlueprintSearchController extends Controller
 {
@@ -55,22 +55,22 @@ final class BlueprintSearchController extends Controller
                     'total' => $results['total'],
                     'size' => $size,
                     'from' => $from,
-                    'has_more' => ($from + $size) < $results['total']
+                    'has_more' => ($from + $size) < $results['total'],
                 ],
                 'max_score' => $results['max_score'],
                 'data' => $results['hits'],
-                'took' => microtime(true) - LARAVEL_START
+                'took' => microtime(true) - LARAVEL_START,
             ]);
         } catch (\Exception $e) {
             \Log::error('Blueprint search failed', [
                 'query' => $query,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Search temporarily unavailable',
-                'error' => app()->isLocal() ? $e->getMessage() : null
+                'error' => app()->isLocal() ? $e->getMessage() : null,
             ], 500);
         }
     }
@@ -82,7 +82,7 @@ final class BlueprintSearchController extends Controller
     {
         $request->validate([
             'q' => 'required|string|min:1|max:100',
-            'limit' => 'integer|min:1|max:10'
+            'limit' => 'integer|min:1|max:10',
         ]);
 
         $query = $request->input('q');
@@ -105,17 +105,17 @@ final class BlueprintSearchController extends Controller
 
             return response()->json([
                 'success' => true,
-                'suggestions' => $suggestions
+                'suggestions' => $suggestions,
             ]);
         } catch (\Exception $e) {
             \Log::error('Blueprint suggestions failed', [
                 'query' => $query,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'suggestions' => []
+                'suggestions' => [],
             ]);
         }
     }
@@ -134,16 +134,16 @@ final class BlueprintSearchController extends Controller
                 'elasticsearch' => [
                     'available' => true,
                     'index_exists' => $indexExists,
-                    'index_name' => $this->elasticsearch->getIndexName()
-                ]
+                    'index_name' => $this->elasticsearch->getIndexName(),
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'elasticsearch' => [
                     'available' => false,
-                    'error' => app()->isLocal() ? $e->getMessage() : 'Service unavailable'
-                ]
+                    'error' => app()->isLocal() ? $e->getMessage() : 'Service unavailable',
+                ],
             ], 503);
         }
     }

@@ -2,15 +2,15 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Blueprint;
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
 use App\Jobs\UpdateBlueprintPriceJob;
+use App\Models\Blueprint;
 use App\Services\BlueprintPriceService;
-use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
-use Throwable;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Throwable;
 
 class QueuePriceUpdatesCommand extends Command
 {
@@ -32,8 +32,6 @@ class QueuePriceUpdatesCommand extends Command
 
     /**
      * Create a new command instance.
-     *
-     * @param BlueprintPriceService $blueprintPriceService
      */
     public function __construct(BlueprintPriceService $blueprintPriceService)
     {
@@ -57,6 +55,7 @@ class QueuePriceUpdatesCommand extends Command
                 UpdateBlueprintPriceJob::dispatch($blueprint, $this->blueprintPriceService)->onQueue('price-updates');
             } else {
                 $this->error("Blueprint with CardTrader ID: {$blueprintCtIdOpt} not found.");
+
                 return Command::FAILURE;
             }
         } else {
@@ -87,7 +86,7 @@ class QueuePriceUpdatesCommand extends Command
                 }
             });
 
-            if (!empty($jobsForCurrentBatch)) {
+            if (! empty($jobsForCurrentBatch)) {
                 $this->dispatchBatch($jobsForCurrentBatch, 'price-updates');
                 $dispatchedBatchCount++;
             }
@@ -105,7 +104,9 @@ class QueuePriceUpdatesCommand extends Command
      */
     private function dispatchBatch(array $jobs, string $queueName): void
     {
-        if (empty($jobs)) return;
+        if (empty($jobs)) {
+            return;
+        }
 
         Bus::batch($jobs)
             ->catch(function (Batch $batch, Throwable $e) {
@@ -113,11 +114,11 @@ class QueuePriceUpdatesCommand extends Command
                     'batch_id' => $batch->id,
                     'error' => $e->getMessage(),
                     'failed_jobs_count' => $batch->failedJobs,
-                    'first_failed_job_id' => $batch->failedJobIds[0] ?? 'N/A'
+                    'first_failed_job_id' => $batch->failedJobIds[0] ?? 'N/A',
                 ]);
-                echo "Sub-Batch [{$batch->id}] FAILED. Error: {$e->getMessage()}. Failed jobs: {$batch->failedJobs}" . PHP_EOL;
+                echo "Sub-Batch [{$batch->id}] FAILED. Error: {$e->getMessage()}. Failed jobs: {$batch->failedJobs}".PHP_EOL;
             })
-            ->name('Update Blueprint Prices Batch - Part - ' . now()->toDateTimeString() . '-' . Str::random(4))
+            ->name('Update Blueprint Prices Batch - Part - '.now()->toDateTimeString().'-'.Str::random(4))
             ->onQueue($queueName)
             ->dispatch();
     }

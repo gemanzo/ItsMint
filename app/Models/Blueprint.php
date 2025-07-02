@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
+use App\Enums\ProductType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
-use App\Models\UserCard;
-use App\Enums\ProductType;
 
 class Blueprint extends Model
 {
@@ -85,8 +84,6 @@ class Blueprint extends Model
 
     /**
      * Get the category for the Blueprint.
-     *
-     * @return object|null
      */
     public function getCategoryAttribute(): ?object
     {
@@ -103,7 +100,7 @@ class Blueprint extends Model
                     // Example: 'one_piece_single_card_category_id' -> 'One Piece Single Card'
                     // It might need adjustment if config keys have different patterns.
                     $name = Str::title(str_replace('_', ' ', Str::remove('_category_id', $key)));
-                    $categoryNameMapping[(int)$value] = $name;
+                    $categoryNameMapping[(int) $value] = $name;
                 }
             }
         }
@@ -158,7 +155,7 @@ class Blueprint extends Model
     {
         $card = $this->getPrimaryOneLogCardAttribute();
 
-        if (!$card) {
+        if (! $card) {
             return null;
         }
 
@@ -183,7 +180,7 @@ class Blueprint extends Model
     public function getIsMultiColoredAttribute(): bool
     {
         $oneLogData = $this->getOneLogDataAttribute();
-        if (!$oneLogData || !$oneLogData->colors) {
+        if (! $oneLogData || ! $oneLogData->colors) {
             return false;
         }
 
@@ -196,13 +193,12 @@ class Blueprint extends Model
     public function getPrimaryColorAttribute(): ?string
     {
         $oneLogData = $this->getOneLogDataAttribute();
-        if (!$oneLogData || !$oneLogData->colors || !is_array($oneLogData->colors) || empty($oneLogData->colors)) {
+        if (! $oneLogData || ! $oneLogData->colors || ! is_array($oneLogData->colors) || empty($oneLogData->colors)) {
             return null;
         }
 
         return $oneLogData->colors[0];
     }
-
 
     public function userCards(): HasMany
     {
@@ -214,7 +210,7 @@ class Blueprint extends Model
      */
     public function getProductTypeEnumAttribute(): ?ProductType
     {
-        if (!$this->product_type) {
+        if (! $this->product_type) {
             return null;
         }
 
@@ -229,6 +225,7 @@ class Blueprint extends Model
         // Use product_type first, fallback to enum mapping if available
         if ($this->product_type) {
             $enum = $this->getProductTypeEnumAttribute();
+
             return $enum ? $enum->isSingleCard() : false;
         }
 

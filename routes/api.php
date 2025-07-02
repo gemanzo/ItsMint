@@ -1,13 +1,13 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\PortfolioController;
-use App\Http\Controllers\UserCardController;
+use App\Http\Controllers\Api\BlueprintController;
 use App\Http\Controllers\Api\BlueprintSearchController;
 use App\Http\Controllers\Api\CardScanController;
 use App\Http\Controllers\Api\ImageProxyController;
-use App\Http\Controllers\Api\BlueprintController;
+use App\Http\Controllers\PortfolioController;
+use App\Http\Controllers\UserCardController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -22,7 +22,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 // Removed route for live price, as it's handled by background jobs now
 // Route::get('/blueprints/{blueprint_ct_id}/price', [CardPriceController::class, 'fetchLivePrice'])
-//     ->middleware('auth:sanctum') 
+//     ->middleware('auth:sanctum')
 //     ->name('api.blueprints.price');
 
 Route::apiResource('portfolios', PortfolioController::class)->middleware('auth:sanctum')->names([

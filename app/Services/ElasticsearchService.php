@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
-use Elastic\Elasticsearch\ClientBuilder;
 use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\ClientBuilder;
 
 class ElasticsearchService
 {
     private Client $client;
+
     private string $indexName = 'blueprints';
 
     public function __construct()
@@ -43,13 +44,13 @@ class ElasticsearchService
                             'blueprint_analyzer' => [
                                 'type' => 'custom',
                                 'tokenizer' => 'standard',
-                                'filter' => ['lowercase', 'asciifolding', 'synonym_filter']
+                                'filter' => ['lowercase', 'asciifolding', 'synonym_filter'],
                             ],
                             'expansion_code_analyzer' => [
                                 'type' => 'custom',
                                 'tokenizer' => 'keyword',
-                                'filter' => ['lowercase', 'expansion_normalizer']
-                            ]
+                                'filter' => ['lowercase', 'expansion_normalizer'],
+                            ],
                         ],
                         'filter' => [
                             'synonym_filter' => [
@@ -59,16 +60,16 @@ class ElasticsearchService
                                     'lp,lightly played',
                                     'mp,moderately played',
                                     'hp,heavily played',
-                                    'dmg,damaged'
-                                ]
+                                    'dmg,damaged',
+                                ],
                             ],
                             'expansion_normalizer' => [
                                 'type' => 'pattern_replace',
                                 'pattern' => '[\\-\\.]',
-                                'replacement' => ''
-                            ]
-                        ]
-                    ]
+                                'replacement' => '',
+                            ],
+                        ],
+                    ],
                 ],
                 'mappings' => [
                     'properties' => [
@@ -80,9 +81,9 @@ class ElasticsearchService
                                 'keyword' => ['type' => 'keyword'],
                                 'completion' => [
                                     'type' => 'completion',
-                                    'analyzer' => 'simple'
-                                ]
-                            ]
+                                    'analyzer' => 'simple',
+                                ],
+                            ],
                         ],
                         'expansion' => [
                             'properties' => [
@@ -90,7 +91,7 @@ class ElasticsearchService
                                 'name' => [
                                     'type' => 'text',
                                     'analyzer' => 'blueprint_analyzer',
-                                    'fields' => ['keyword' => ['type' => 'keyword']]
+                                    'fields' => ['keyword' => ['type' => 'keyword']],
                                 ],
                                 'code' => [
                                     'type' => 'text',
@@ -99,17 +100,17 @@ class ElasticsearchService
                                         'keyword' => ['type' => 'keyword'],
                                         'normalized' => [
                                             'type' => 'text',
-                                            'analyzer' => 'expansion_code_analyzer'
-                                        ]
-                                    ]
-                                ]
-                            ]
+                                            'analyzer' => 'expansion_code_analyzer',
+                                        ],
+                                    ],
+                                ],
+                            ],
                         ],
                         'category' => [
                             'properties' => [
                                 'id' => ['type' => 'integer'],
-                                'name' => ['type' => 'keyword']
-                            ]
+                                'name' => ['type' => 'keyword'],
+                            ],
                         ],
                         'image_url' => ['type' => 'keyword', 'index' => false],
                         'latest_price' => [
@@ -119,26 +120,28 @@ class ElasticsearchService
                                 'language' => ['type' => 'keyword'],
                                 'condition' => ['type' => 'keyword'],
                                 'is_foil' => ['type' => 'boolean'],
-                                'fetched_at' => ['type' => 'date']
-                            ]
+                                'fetched_at' => ['type' => 'date'],
+                            ],
                         ],
                         'properties' => ['type' => 'object', 'enabled' => false],
                         'created_at' => ['type' => 'date'],
-                        'updated_at' => ['type' => 'date']
-                    ]
-                ]
-            ]
+                        'updated_at' => ['type' => 'date'],
+                    ],
+                ],
+            ],
         ];
 
         try {
             $response = $this->client->indices()->create($params);
             $result = $response->asArray();
+
             return isset($result['acknowledged']) && $result['acknowledged'];
         } catch (\Exception $e) {
             \Log::error('Failed to create Elasticsearch index', [
                 'error' => $e->getMessage(),
-                'index' => $this->indexName
+                'index' => $this->indexName,
             ]);
+
             return false;
         }
     }
@@ -152,14 +155,17 @@ class ElasticsearchService
             if ($this->indexExists()) {
                 $response = $this->client->indices()->delete(['index' => $this->indexName]);
                 $result = $response->asArray();
+
                 return isset($result['acknowledged']) && $result['acknowledged'];
             }
+
             return true;
         } catch (\Exception $e) {
             \Log::error('Failed to delete Elasticsearch index', [
                 'error' => $e->getMessage(),
-                'index' => $this->indexName
+                'index' => $this->indexName,
             ]);
+
             return false;
         }
     }
@@ -184,18 +190,20 @@ class ElasticsearchService
         $params = [
             'index' => $this->indexName,
             'id' => $blueprint['id'],
-            'body' => $blueprint
+            'body' => $blueprint,
         ];
 
         try {
             $response = $this->client->index($params);
             $result = $response->asArray();
+
             return isset($result['result']) && in_array($result['result'], ['created', 'updated']);
         } catch (\Exception $e) {
             \Log::error('Failed to index blueprint', [
                 'error' => $e->getMessage(),
-                'blueprint_id' => $blueprint['id'] ?? 'unknown'
+                'blueprint_id' => $blueprint['id'] ?? 'unknown',
             ]);
+
             return false;
         }
     }
@@ -215,8 +223,8 @@ class ElasticsearchService
             $params['body'][] = [
                 'index' => [
                     '_index' => $this->indexName,
-                    '_id' => $blueprint['id']
-                ]
+                    '_id' => $blueprint['id'],
+                ],
             ];
             $params['body'][] = $blueprint;
         }
@@ -233,20 +241,22 @@ class ElasticsearchService
                     })->map(function ($item) {
                         return [
                             'id' => $item['index']['_id'] ?? 'unknown',
-                            'error' => $item['index']['error'] ?? 'unknown error'
+                            'error' => $item['index']['error'] ?? 'unknown error',
                         ];
-                    })->take(5)->toArray() // Show first 5 errors
+                    })->take(5)->toArray(), // Show first 5 errors
                 ]);
+
                 return false;
             }
 
-            return !isset($result['errors']) || !$result['errors'];
+            return ! isset($result['errors']) || ! $result['errors'];
         } catch (\Exception $e) {
             \Log::error('Failed to bulk index blueprints', [
                 'error' => $e->getMessage(),
                 'count' => count($blueprints),
-                'first_blueprint_id' => $blueprints[0]['id'] ?? 'unknown'
+                'first_blueprint_id' => $blueprints[0]['id'] ?? 'unknown',
             ]);
+
             return false;
         }
     }
@@ -268,12 +278,12 @@ class ElasticsearchService
         // Extract expansion code from the query string
         if (preg_match('/\\b([A-Z]{2,3}-?[0-9]{1,2})\\b$/i', $searchQuery, $matches)) {
             $expansionCode = strtoupper(str_replace(['-', '.'], '', $matches[1]));
-            $searchQuery = trim(preg_replace('/\\b' . preg_quote($matches[0], '/') . '\\b$/i', '', $searchQuery));
+            $searchQuery = trim(preg_replace('/\\b'.preg_quote($matches[0], '/').'\\b$/i', '', $searchQuery));
         }
 
         // Build the main query part
         $mustClauses = [];
-        if (!empty($searchQuery)) {
+        if (! empty($searchQuery)) {
             $mustClauses[] = [
                 'multi_match' => [
                     'query' => $searchQuery,
@@ -309,7 +319,7 @@ class ElasticsearchService
                 'size' => $size,
                 'query' => [
                     'bool' => [
-                        'must' => !empty($mustClauses) ? $mustClauses : [['match_all' => new \stdClass()]],
+                        'must' => ! empty($mustClauses) ? $mustClauses : [['match_all' => new \stdClass]],
                         'filter' => $filterClauses,
                     ],
                 ],
@@ -319,17 +329,18 @@ class ElasticsearchService
         // If there's no text query, sort by name. Otherwise, rely on relevance score.
         if (empty($searchQuery)) {
             $params['body']['sort'] = [
-                ['name.keyword' => 'asc']
+                ['name.keyword' => 'asc'],
             ];
         }
 
         try {
             $response = $this->client->search($params)->asArray();
+
             return $this->formatSearchResponse($response);
         } catch (\Exception $e) {
             \Log::error('Elasticsearch search failed', [
                 'error' => $e->getMessage(),
-                'query' => $params
+                'query' => $params,
             ]);
             throw $e; // Re-throw to be handled by the controller
         }
@@ -359,7 +370,7 @@ class ElasticsearchService
         return [
             'hits' => $hits,
             'total' => $response['hits']['total']['value'] ?? 0,
-            'max_score' => $response['hits']['max_score'] ?? 0
+            'max_score' => $response['hits']['max_score'] ?? 0,
         ];
     }
 
@@ -370,18 +381,20 @@ class ElasticsearchService
     {
         $params = [
             'index' => $this->indexName,
-            'id' => $blueprintId
+            'id' => $blueprintId,
         ];
 
         try {
             $response = $this->client->delete($params);
             $result = $response->asArray();
+
             return isset($result['result']) && $result['result'] === 'deleted';
         } catch (\Exception $e) {
             \Log::error('Failed to delete blueprint from index', [
                 'error' => $e->getMessage(),
-                'blueprint_id' => $blueprintId
+                'blueprint_id' => $blueprintId,
             ]);
+
             return false;
         }
     }

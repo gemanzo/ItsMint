@@ -2,9 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\ElasticsearchService;
 use Closure;
 use Illuminate\Http\Request;
-use App\Services\ElasticsearchService;
 use Symfony\Component\HttpFoundation\Response;
 
 class ElasticsearchFallback
@@ -27,14 +27,15 @@ class ElasticsearchFallback
         if ($request->is('api/blueprints/search*')) {
             try {
                 // Test Elasticsearch availability
-                if (!$this->elasticsearch->indexExists()) {
+                if (! $this->elasticsearch->indexExists()) {
                     return $this->fallbackToDatabase($request);
                 }
             } catch (\Exception $e) {
                 \Log::warning('Elasticsearch unavailable, falling back to database', [
                     'error' => $e->getMessage(),
-                    'route' => $request->path()
+                    'route' => $request->path(),
                 ]);
+
                 return $this->fallbackToDatabase($request);
             }
         }
@@ -56,7 +57,7 @@ class ElasticsearchFallback
 
             // Create a new request with the expected format for legacy search
             $fallbackRequest = new Request([
-                'query' => $query
+                'query' => $query,
             ]);
 
             $response = $blueprintController->search($fallbackRequest);
@@ -70,18 +71,18 @@ class ElasticsearchFallback
                     'total' => count($data),
                     'size' => $size,
                     'from' => 0,
-                    'has_more' => false
+                    'has_more' => false,
                 ],
                 'max_score' => 1.0,
                 'data' => array_slice($data, 0, $size),
                 'fallback' => true,
-                'message' => 'Using database fallback (Elasticsearch unavailable)'
+                'message' => 'Using database fallback (Elasticsearch unavailable)',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Search service temporarily unavailable',
-                'error' => app()->isLocal() ? $e->getMessage() : null
+                'error' => app()->isLocal() ? $e->getMessage() : null,
             ], 503);
         }
     }

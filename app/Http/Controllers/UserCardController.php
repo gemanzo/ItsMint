@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\UserCard;
 use App\Models\Blueprint;
-use Illuminate\Http\Request;
+use App\Models\UserCard;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class UserCardController extends Controller
@@ -17,6 +17,7 @@ class UserCardController extends Controller
     public function index(Request $request): JsonResponse
     {
         $userCards = Auth::user()->userCards()->with(['blueprint.expansion', 'blueprint.latestPrice'])->latest()->get();
+
         return response()->json($userCards);
     }
 
@@ -37,16 +38,16 @@ class UserCardController extends Controller
         ]);
 
         $blueprint = Blueprint::find($validated['blueprint_id']);
-        if (!$blueprint) {
+        if (! $blueprint) {
             return response()->json(['message' => 'Blueprint not found.'], 404);
         }
 
         $quantity = $validated['quantity'];
 
         // Auto-populate purchase_price if not provided
-        if (!isset($validated['purchase_price']) || is_null($validated['purchase_price'])) {
+        if (! isset($validated['purchase_price']) || is_null($validated['purchase_price'])) {
             $blueprint = Blueprint::with('latestPrice')->find($validated['blueprint_id']);
-            if ($blueprint && $blueprint->latestPrice && !is_null($blueprint->latestPrice->price_cents)) {
+            if ($blueprint && $blueprint->latestPrice && ! is_null($blueprint->latestPrice->price_cents)) {
                 $validated['purchase_price'] = $blueprint->latestPrice->price_cents / 100; // Convert to euros
             }
         }
@@ -86,6 +87,7 @@ class UserCardController extends Controller
         if ($request->user()->id !== $userCard->user_id) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
+
         return response()->json($userCard->load(['blueprint.expansion', 'blueprint.latestPrice', 'portfolios']));
     }
 

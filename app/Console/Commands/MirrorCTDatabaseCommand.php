@@ -2,14 +2,14 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Game;
+use App\Jobs\UpdateBlueprintPriceJob;
 use App\Models\Blueprint;
 use App\Models\Expansion;
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
-use App\Jobs\UpdateBlueprintPriceJob;
+use App\Models\Game;
 use App\Services\BlueprintPriceService;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class MirrorCTDatabaseCommand extends Command
 {
@@ -36,33 +36,35 @@ class MirrorCTDatabaseCommand extends Command
         $baseApiUrl = config('services.cardtrader.api_base_url');
         $opGameID = config('services.cardtrader.one_piece_game_id');
 
-        $gamesUrl = $baseApiUrl . '/games';
-        $expansionsUrl = $baseApiUrl . '/expansions';
-        $blueprintsUrl = $baseApiUrl . '/blueprints/export';
+        $gamesUrl = $baseApiUrl.'/games';
+        $expansionsUrl = $baseApiUrl.'/expansions';
+        $blueprintsUrl = $baseApiUrl.'/blueprints/export';
 
         $httpClient = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
+            'Authorization' => 'Bearer '.$token,
             'Accept' => 'application/json',
         ]);
 
         if (empty($token) || empty($baseApiUrl)) {
             $this->error('CardTrader API token or base URL is not configured. Please check your .env and config/services.php.');
+
             return Command::FAILURE;
         }
 
-        if (!$this->option('quick')) {
+        if (! $this->option('quick')) {
             $response = $httpClient->get($gamesUrl);
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 $this->error("Failed to fetch games. Status: {$response->status()}");
                 Log::error('CardTrader API Error - Games', ['status' => $response->status(), 'body' => $response->body()]);
+
                 return Command::FAILURE;
             }
             $games = $response->json();
             foreach ($games['array'] as $gameData) {
-                //get only one piece game
+                // get only one piece game
                 if ($gameData['id'] == $opGameID) {
                     Game::updateOrCreate([
-                        'ct_id' => $gameData['id']
+                        'ct_id' => $gameData['id'],
                     ], [
                         'name' => $gameData['name'],
                         'display_name' => $gameData['display_name'],
@@ -71,9 +73,10 @@ class MirrorCTDatabaseCommand extends Command
             }
 
             $response = $httpClient->get($expansionsUrl);
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 $this->error("Failed to fetch expansions. Status: {$response->status()}");
                 Log::error('CardTrader API Error - Expansions', ['status' => $response->status(), 'body' => $response->body()]);
+
                 return Command::FAILURE;
             }
             $expansionsData = $response->json();
@@ -81,7 +84,7 @@ class MirrorCTDatabaseCommand extends Command
                 $localGame = Game::where('ct_id', $expData['game_id'])->first();
                 if ($localGame) {
                     Expansion::updateOrCreate([
-                        'ct_id' => $expData['id']
+                        'ct_id' => $expData['id'],
                     ], [
                         'name' => $expData['name'],
                         'code' => $expData['code'],
@@ -93,20 +96,22 @@ class MirrorCTDatabaseCommand extends Command
 
         // Process Blueprints for One Piece (or all expansions if $opGameID is not set)
         $expansionsToProcess = $opGameID ?
-            Expansion::whereHas('game', fn($query) => $query->where('ct_id', $opGameID))->get() :
+            Expansion::whereHas('game', fn ($query) => $query->where('ct_id', $opGameID))->get() :
             Expansion::all();
 
         if ($expansionsToProcess->isEmpty()) {
-            $this->warn("No expansions found to process for blueprints. If targeting One Piece, ensure CARDTRADER_ONE_PIECE_GAME_ID is correct and the game/expansions exist.");
+            $this->warn('No expansions found to process for blueprints. If targeting One Piece, ensure CARDTRADER_ONE_PIECE_GAME_ID is correct and the game/expansions exist.');
+
             return Command::SUCCESS;
         }
 
         foreach ($expansionsToProcess as $expansion) {
-            $response = $httpClient->get($blueprintsUrl . '?expansion_id=' . $expansion->ct_id);
+            $response = $httpClient->get($blueprintsUrl.'?expansion_id='.$expansion->ct_id);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 $this->error("Failed to fetch blueprints for expansion {$expansion->name}. Status: {$response->status()}");
                 Log::error('CardTrader API Error - Blueprints', ['expansion_ct_id' => $expansion->ct_id, 'status' => $response->status(), 'body' => $response->body()]);
+
                 continue; // Skip to next expansion
             }
 
@@ -117,7 +122,7 @@ class MirrorCTDatabaseCommand extends Command
 
             foreach ($blueprintsApiData as $bpData) {
                 $localBlueprint = Blueprint::updateOrCreate([
-                    'ct_id' => $bpData['id']
+                    'ct_id' => $bpData['id'],
                 ], [
                     'name' => $bpData['name'],
                     'version' => $bpData['version'] ?? null,
@@ -125,7 +130,7 @@ class MirrorCTDatabaseCommand extends Command
                     'expansion_id' => $expansion->id,
                     'properties' => [
                         'fixed_properties' => $bpData['fixed_properties'] ?? [],
-                        'editable_properties' => $bpData['editable_properties'] ?? []
+                        'editable_properties' => $bpData['editable_properties'] ?? [],
                     ],
                     'card_market_ids' => $bpData['card_market_ids'] ?? null,
                     'tcg_player_id' => $bpData['tcg_player_id'] ?? null,
@@ -134,7 +139,7 @@ class MirrorCTDatabaseCommand extends Command
                 ]);
 
                 // Dispatch the job to update the price for this blueprint
-                UpdateBlueprintPriceJob::dispatch($localBlueprint, new BlueprintPriceService());
+                UpdateBlueprintPriceJob::dispatch($localBlueprint, new BlueprintPriceService);
             }
         }
 

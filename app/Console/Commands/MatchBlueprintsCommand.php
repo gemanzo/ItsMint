@@ -10,7 +10,6 @@ use App\Services\BlueprintClassificationService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 final class MatchBlueprintsCommand extends Command
 {
@@ -61,6 +60,7 @@ final class MatchBlueprintsCommand extends Command
 
             if ($blueprints->isEmpty()) {
                 $this->warn('No blueprints to process');
+
                 return Command::SUCCESS;
             }
 
@@ -69,7 +69,7 @@ final class MatchBlueprintsCommand extends Command
             foreach ($blueprints as $blueprint) {
                 $matches = $this->findMatches($blueprint);
 
-                if (!empty($matches)) {
+                if (! empty($matches)) {
                     if ($this->option('detailed')) {
                         $this->newLine();
                         $this->line("Blueprint #{$blueprint->id}: {$blueprint->name} (collector: {$blueprint->collector_number})");
@@ -79,7 +79,7 @@ final class MatchBlueprintsCommand extends Command
                         }
                     }
 
-                    if (!$this->option('dry-run')) {
+                    if (! $this->option('dry-run')) {
                         $this->storeMatches($blueprint, $matches);
                     }
                     $totalMatches += count($matches);
@@ -94,6 +94,7 @@ final class MatchBlueprintsCommand extends Command
             return Command::SUCCESS;
         } catch (\Exception $e) {
             $this->error("❌ Matching failed: {$e->getMessage()}");
+
             return Command::FAILURE;
         }
     }
@@ -111,7 +112,7 @@ final class MatchBlueprintsCommand extends Command
             });
         }
 
-        if (!$this->option('force') && !$this->option('resync')) {
+        if (! $this->option('force') && ! $this->option('resync')) {
             // Only process blueprints without existing matches
             $query->whereDoesntHave('oneLogCards');
         }
@@ -132,7 +133,7 @@ final class MatchBlueprintsCommand extends Command
         $filtered = $query->get();
 
         // For any blueprints without product_type, do runtime classification
-        $withoutClassification = $filtered->filter(fn($bp) => is_null($bp->product_type));
+        $withoutClassification = $filtered->filter(fn ($bp) => is_null($bp->product_type));
 
         if ($withoutClassification->isNotEmpty()) {
             $this->warn("⚠️  Found {$withoutClassification->count()} blueprints without classification. Consider running: php artisan itsmint:classify-blueprints --save");
@@ -145,6 +146,7 @@ final class MatchBlueprintsCommand extends Command
 
                 if (is_null($blueprint->product_type)) {
                     $classification = $classificationService->classifyBlueprint($blueprint);
+
                     return in_array($classification, ['single_card', 'likely_single_card']);
                 }
 
@@ -188,7 +190,7 @@ final class MatchBlueprintsCommand extends Command
     {
         $collectorNumber = $blueprint->collector_number;
 
-        if (!$collectorNumber) {
+        if (! $collectorNumber) {
             return [];
         }
 
@@ -219,8 +221,8 @@ final class MatchBlueprintsCommand extends Command
                         'card_is_variant' => $card->is_variant,
                         'blueprint_version' => $blueprint->version,
                         'card_sets' => $card->card_sets,
-                        'score_breakdown' => $this->getScoreBreakdown($blueprint, $card, $blueprintRarity)
-                    ]
+                        'score_breakdown' => $this->getScoreBreakdown($blueprint, $card, $blueprintRarity),
+                    ],
                 ];
             }
         }
@@ -231,9 +233,10 @@ final class MatchBlueprintsCommand extends Command
         });
 
         // Return top match(es) - if multiple have the same high score, return all of them
-        if (!empty($matches)) {
+        if (! empty($matches)) {
             $topScore = $matches[0]['confidence'];
-            return array_filter($matches, fn($match) => $match['confidence'] >= $topScore - 0.05); // Allow small variance
+
+            return array_filter($matches, fn ($match) => $match['confidence'] >= $topScore - 0.05); // Allow small variance
         }
 
         return [];
@@ -286,7 +289,7 @@ final class MatchBlueprintsCommand extends Command
      */
     private function calculateRarityMatchScore(?string $blueprintRarity, string $cardRarity): float
     {
-        if (!$blueprintRarity) {
+        if (! $blueprintRarity) {
             return 0.5; // Neutral if unknown
         }
 
@@ -301,7 +304,7 @@ final class MatchBlueprintsCommand extends Command
             'Promo' => ['P', 'SR', 'C', 'R', 'L', 'SEC', 'UC'], // Promos can have various rarities
             'DON!!' => ['SR', 'L', 'R'], // DON tokens usually map to these
             'Alternate Art' => ['SR', 'C', 'R', 'L', 'P', 'SEC', 'UC', 'SP CARD'], // Alt arts can be any rarity
-            'Special' => ['L', 'SR', 'R', 'SP CARD', 'SEC', 'C'] // Special cards
+            'Special' => ['L', 'SR', 'R', 'SP CARD', 'SEC', 'C'], // Special cards
         ];
 
         $expectedRarities = $rarityMappings[$blueprintRarity] ?? [];
@@ -331,7 +334,7 @@ final class MatchBlueprintsCommand extends Command
     private function calculateVariantMatchScore(Blueprint $blueprint, OneLogCard $card): float
     {
         $blueprintVersion = trim($blueprint->version ?? '');
-        $hasSpecialVersion = !empty($blueprintVersion) && $blueprintVersion !== '';
+        $hasSpecialVersion = ! empty($blueprintVersion) && $blueprintVersion !== '';
 
         // If blueprint has special version info and card is variant/parallel
         if ($hasSpecialVersion && $card->is_variant) {
@@ -339,7 +342,7 @@ final class MatchBlueprintsCommand extends Command
         }
 
         // If blueprint has no special version and card is not variant (base version)
-        if (!$hasSpecialVersion && !$card->is_variant) {
+        if (! $hasSpecialVersion && ! $card->is_variant) {
             return 1.0;
         }
 
@@ -392,7 +395,7 @@ final class MatchBlueprintsCommand extends Command
         $significantWords = ['championship', 'promo', 'battle', 'pack', 'collection', 'tournament', 'anniversary', 'special', 'limited', 'edition'];
         $significantMatches = array_intersect($matchingWords, $significantWords);
 
-        if (!empty($significantMatches)) {
+        if (! empty($significantMatches)) {
             $matchScore += 0.2; // Bonus per parole chiave importanti
         }
 
@@ -429,7 +432,7 @@ final class MatchBlueprintsCommand extends Command
         $stopWords = ['the', 'and', 'or', 'vol', 'v', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by'];
 
         $keywords = array_filter($words, function ($word) use ($stopWords) {
-            return strlen($word) >= 3 && !in_array($word, $stopWords) && !is_numeric($word);
+            return strlen($word) >= 3 && ! in_array($word, $stopWords) && ! is_numeric($word);
         });
 
         return array_values($keywords);
@@ -449,7 +452,7 @@ final class MatchBlueprintsCommand extends Command
             'name_similarity' => $this->calculateNameSimilarity(
                 $this->normalizeName($blueprint->name),
                 $this->normalizeName($card->name)
-            )
+            ),
         ];
     }
 
@@ -460,7 +463,7 @@ final class MatchBlueprintsCommand extends Command
     {
         $collectorNumber = $blueprint->collector_number;
 
-        if (!$collectorNumber) {
+        if (! $collectorNumber) {
             return [];
         }
 
@@ -481,8 +484,8 @@ final class MatchBlueprintsCommand extends Command
                 'metadata' => [
                     'blueprint_serial' => $collectorNumber,
                     'matched_base_serial' => $baseSerial,
-                    'card_serial' => $card->serial
-                ]
+                    'card_serial' => $card->serial,
+                ],
             ];
         })->toArray();
     }
@@ -508,7 +511,7 @@ final class MatchBlueprintsCommand extends Command
                 'card' => $card,
                 'type' => 'exact_name',
                 'confidence' => 0.9,
-                'metadata' => ['matched_name' => $card->name]
+                'metadata' => ['matched_name' => $card->name],
             ];
         }
 
@@ -551,8 +554,8 @@ final class MatchBlueprintsCommand extends Command
                     'metadata' => [
                         'blueprint_name' => $blueprint->name,
                         'card_name' => $card->name,
-                        'similarity_score' => $similarity
-                    ]
+                        'similarity_score' => $similarity,
+                    ],
                 ];
             }
         }
@@ -563,7 +566,7 @@ final class MatchBlueprintsCommand extends Command
         });
 
         // Return only the best match to avoid false positives
-        return !empty($matches) ? [$matches[0]] : [];
+        return ! empty($matches) ? [$matches[0]] : [];
     }
 
     /**
@@ -585,7 +588,7 @@ final class MatchBlueprintsCommand extends Command
                     ->where('onelog_card_id', $match['card']->id)
                     ->exists();
 
-                if (!$existingRelation) {
+                if (! $existingRelation) {
                     $blueprint->oneLogCards()->attach($match['card']->id, [
                         'match_type' => $match['type'],
                         'confidence_score' => $match['confidence'],
@@ -600,7 +603,7 @@ final class MatchBlueprintsCommand extends Command
                         'onelog_card_id' => $match['card']->id,
                         'match_type' => $match['type'],
                         'confidence' => $match['confidence'],
-                        'action' => 'created'
+                        'action' => 'created',
                     ]);
                 } else {
                     // Update existing relationship with new data
@@ -617,14 +620,14 @@ final class MatchBlueprintsCommand extends Command
                         'onelog_card_id' => $match['card']->id,
                         'match_type' => $match['type'],
                         'confidence' => $match['confidence'],
-                        'action' => 'updated'
+                        'action' => 'updated',
                     ]);
                 }
             } catch (\Exception $e) {
                 Log::warning('Failed to store/update match', [
                     'blueprint_id' => $blueprint->id,
                     'onelog_card_id' => $match['card']->id,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
                 ]);
             }
         }
@@ -638,6 +641,7 @@ final class MatchBlueprintsCommand extends Command
         $normalized = strtolower($name);
         $normalized = str_replace(['.', ',', '!', '?', '"', "'", '(', ')'], '', $normalized);
         $normalized = preg_replace('/\s+/', ' ', $normalized);
+
         return trim($normalized);
     }
 
@@ -672,6 +676,7 @@ final class MatchBlueprintsCommand extends Command
         }
 
         $distance = levenshtein($name1, $name2);
+
         return 1.0 - ($distance / $maxLength);
     }
 
@@ -691,7 +696,7 @@ final class MatchBlueprintsCommand extends Command
         $this->info('📊 Matching Statistics:');
         $this->newLine();
 
-        $this->info("Blueprints:");
+        $this->info('Blueprints:');
         $this->info("  Total: {$totalBlueprints}");
         $this->info("  Matched: {$matchedBlueprints}");
         $this->info("  Unmatched: {$unmatchedBlueprints}");
@@ -703,7 +708,7 @@ final class MatchBlueprintsCommand extends Command
 
         $this->newLine();
 
-        $this->info("OneLog Cards:");
+        $this->info('OneLog Cards:');
         $this->info("  Total: {$totalOneLogCards}");
         $this->info("  Matched: {$matchedOneLogCards}");
         $this->info("  Unmatched: {$unmatchedOneLogCards}");
@@ -715,7 +720,7 @@ final class MatchBlueprintsCommand extends Command
 
         // Show match types distribution
         $this->newLine();
-        $this->info("Match Types:");
+        $this->info('Match Types:');
 
         $matchTypes = DB::table('blueprint_onelog_relations')
             ->select('match_type', DB::raw('count(*) as count'))
@@ -745,7 +750,7 @@ final class MatchBlueprintsCommand extends Command
             $this->info("💾 Using database classifications ({$withClassification}/{$totalBlueprints} classified)");
             $this->showDatabaseClassificationStats();
         } else {
-            $this->info("🔄 Using runtime classification (slower)");
+            $this->info('🔄 Using runtime classification (slower)');
             $this->showRuntimeClassificationStats($classificationService);
         }
 
@@ -777,7 +782,7 @@ final class MatchBlueprintsCommand extends Command
             ->get();
 
         if ($excludedBlueprints->isNotEmpty()) {
-            $this->info("📦 Excluded products (top examples by confidence):");
+            $this->info('📦 Excluded products (top examples by confidence):');
             foreach ($excludedBlueprints->take(5) as $blueprint) {
                 $confidence = $blueprint->ai_confidence_score ?? 'N/A';
                 $type = $blueprint->ai_classification ?? $blueprint->product_type;
@@ -785,12 +790,12 @@ final class MatchBlueprintsCommand extends Command
             }
 
             if ($excludedBlueprints->count() > 5) {
-                $this->line("  ... and " . ($excludedBlueprints->count() - 5) . " more");
+                $this->line('  ... and '.($excludedBlueprints->count() - 5).' more');
             }
         }
 
         $this->newLine();
-        $this->info("📊 Database Classification Summary:");
+        $this->info('📊 Database Classification Summary:');
         $this->info("  Single cards (will be matched): {$singleCards}");
         $this->info("  Products (excluded): {$products}");
 
@@ -806,7 +811,7 @@ final class MatchBlueprintsCommand extends Command
         $lowConfidence = Blueprint::where('ai_confidence_score', '<', 0.5)->whereNotNull('ai_confidence_score')->count();
 
         $this->newLine();
-        $this->info("🎯 Confidence Distribution:");
+        $this->info('🎯 Confidence Distribution:');
         $this->info("  High (≥0.8): {$highConfidence}");
         $this->info("  Medium (0.5-0.79): {$mediumConfidence}");
         $this->info("  Low (<0.5): {$lowConfidence}");
@@ -850,11 +855,11 @@ final class MatchBlueprintsCommand extends Command
                 $examples = array_slice($stats[$type], 0, 5);
                 foreach ($examples as $example) {
                     $score = $example['analysis']['analysis_score'];
-                    $this->line("  - {$example['name']} (score: " . number_format($score, 2) . ")");
+                    $this->line("  - {$example['name']} (score: ".number_format($score, 2).')');
                 }
 
                 if ($count > 5) {
-                    $this->line("  ... and " . ($count - 5) . " more");
+                    $this->line('  ... and '.($count - 5).' more');
                 }
                 $this->newLine();
             }
@@ -876,8 +881,8 @@ final class MatchBlueprintsCommand extends Command
         $unknownCount = count($stats['unknown']);
 
         $this->newLine();
-        $this->info("📊 Runtime Classification Summary:");
-        $this->info("  Total blueprints: " . count($results));
+        $this->info('📊 Runtime Classification Summary:');
+        $this->info('  Total blueprints: '.count($results));
         $this->info("  Single cards (will be matched): {$totalIncluded}");
         $this->info("  Products (excluded): {$totalExcluded}");
         $this->info("  Unknown/unclear: {$unknownCount}");
@@ -904,12 +909,13 @@ final class MatchBlueprintsCommand extends Command
 
         if ($blueprints->isEmpty()) {
             $this->warn("No blueprints found with collector number: {$serial}");
+
             return Command::SUCCESS;
         }
 
         $this->info("📋 Found {$blueprints->count()} blueprint(s):");
         foreach ($blueprints as $blueprint) {
-            $this->line("  - ID: {$blueprint->id}, Name: {$blueprint->name}, Rarity: {$blueprint->rarity}, Version: '{$blueprint->version}', Promo: " . ($blueprint->is_promo_card ? 'Yes' : 'No'));
+            $this->line("  - ID: {$blueprint->id}, Name: {$blueprint->name}, Rarity: {$blueprint->rarity}, Version: '{$blueprint->version}', Promo: ".($blueprint->is_promo_card ? 'Yes' : 'No'));
         }
 
         $this->newLine();
@@ -919,12 +925,13 @@ final class MatchBlueprintsCommand extends Command
 
         if ($oneLogCards->isEmpty()) {
             $this->warn("No OneLog cards found with serial: {$serial}");
+
             return Command::SUCCESS;
         }
 
         $this->info("🃏 Found {$oneLogCards->count()} OneLog card(s):");
         foreach ($oneLogCards as $card) {
-            $this->line("  - ID: {$card->id}, Name: {$card->name}, Rarity: {$card->rarity}, Variant: " . ($card->is_variant ? 'Yes' : 'No') . ", Promo: " . ($card->is_promo ? 'Yes' : 'No') . ", IMG_ID: {$card->img_id}");
+            $this->line("  - ID: {$card->id}, Name: {$card->name}, Rarity: {$card->rarity}, Variant: ".($card->is_variant ? 'Yes' : 'No').', Promo: '.($card->is_promo ? 'Yes' : 'No').", IMG_ID: {$card->img_id}");
         }
 
         $this->newLine();
@@ -936,9 +943,9 @@ final class MatchBlueprintsCommand extends Command
             $matches = $this->findExactMatches($blueprint);
 
             if (empty($matches)) {
-                $this->line("  ❌ No matches found");
+                $this->line('  ❌ No matches found');
             } else {
-                $this->line("  ✅ Found {" . count($matches) . "} match(es):");
+                $this->line('  ✅ Found {'.count($matches).'} match(es):');
 
                 foreach ($matches as $match) {
                     $card = $match['card'];
@@ -947,10 +954,10 @@ final class MatchBlueprintsCommand extends Command
 
                     $this->line("    - OneLog Card #{$card->id}: {$card->name} (confidence: {$confidence})");
                     $this->line("      Rarities: Blueprint='{$metadata['blueprint_rarity']}' vs Card='{$metadata['card_rarity']}'");
-                    $this->line("      Promo: Blueprint=" . ($metadata['blueprint_is_promo'] ? 'Yes' : 'No') . " vs Card=" . ($metadata['card_is_promo'] ? 'Yes' : 'No'));
-                    $this->line("      Variant: Card=" . ($metadata['card_is_variant'] ? 'Yes' : 'No'));
+                    $this->line('      Promo: Blueprint='.($metadata['blueprint_is_promo'] ? 'Yes' : 'No').' vs Card='.($metadata['card_is_promo'] ? 'Yes' : 'No'));
+                    $this->line('      Variant: Card='.($metadata['card_is_variant'] ? 'Yes' : 'No'));
                     $this->line("      Version: Blueprint='{$metadata['blueprint_version']}' vs CardSets='{$metadata['card_sets']}'");
-                    $this->line("      Score breakdown:");
+                    $this->line('      Score breakdown:');
                     foreach ($metadata['score_breakdown'] as $component => $score) {
                         $formattedScore = is_numeric($score) ? number_format($score, 3) : ($score ? 'Yes' : 'No');
                         $this->line("        {$component}: {$formattedScore}");

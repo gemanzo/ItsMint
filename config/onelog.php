@@ -39,5 +39,5 @@ return [
         '556801',
         // Parallel/Variant Series (example - discovered one)
         '556901', // ST01 parallel cards like your example
-    ]
+    ],
 ];

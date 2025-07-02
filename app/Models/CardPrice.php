@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use App\Models\Blueprint;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class CardPrice extends Model
 {

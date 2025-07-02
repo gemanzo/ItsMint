@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\Invitation;
+use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -42,7 +42,7 @@ final class RegisteredUserController extends Controller
         // Validate basic user data
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
+            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -81,13 +81,13 @@ final class RegisteredUserController extends Controller
     {
         $invitation = Invitation::byCode($code)->usable()->first();
 
-        if (!$invitation) {
+        if (! $invitation) {
             throw ValidationException::withMessages([
                 'invite_code' => 'Code not valid or expired.',
             ]);
         }
 
-        if (!$invitation->canBeUsedBy($email)) {
+        if (! $invitation->canBeUsedBy($email)) {
             throw ValidationException::withMessages([
                 'invite_code' => 'This invitation code cannot be used with this email.',
             ]);

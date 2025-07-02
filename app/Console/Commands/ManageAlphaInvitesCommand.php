@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Invitation;
 use App\Models\User;
+use Illuminate\Console\Command;
 
 final class ManageAlphaInvitesCommand extends Command
 {
@@ -67,6 +67,7 @@ final class ManageAlphaInvitesCommand extends Command
 
         if ($invites->isEmpty()) {
             $this->info('No invites found.');
+
             return 0;
         }
 
@@ -98,18 +99,20 @@ final class ManageAlphaInvitesCommand extends Command
     private function disableInvite(): int
     {
         $code = $this->option('code');
-        if (!$code) {
+        if (! $code) {
             $code = $this->ask('Enter the invite code to disable:');
         }
 
         $invite = Invitation::byCode($code)->first();
-        if (!$invite) {
+        if (! $invite) {
             $this->error("Invite code '{$code}' not found.");
+
             return 1;
         }
 
-        if (!$invite->is_active) {
+        if (! $invite->is_active) {
             $this->info("Invite '{$code}' is already disabled.");
+
             return 0;
         }
 
@@ -122,18 +125,20 @@ final class ManageAlphaInvitesCommand extends Command
     private function enableInvite(): int
     {
         $code = $this->option('code');
-        if (!$code) {
+        if (! $code) {
             $code = $this->ask('Enter the invite code to enable:');
         }
 
         $invite = Invitation::byCode($code)->first();
-        if (!$invite) {
+        if (! $invite) {
             $this->error("Invite code '{$code}' not found.");
+
             return 1;
         }
 
         if ($invite->is_active) {
             $this->info("Invite '{$code}' is already active.");
+
             return 0;
         }
 
@@ -216,6 +221,7 @@ final class ManageAlphaInvitesCommand extends Command
 
         if ($expired === 0 && $exhausted === 0) {
             $this->info('No cleanup needed. All invites are current.');
+
             return 0;
         }
 
@@ -231,7 +237,7 @@ final class ManageAlphaInvitesCommand extends Command
                 ->where('is_active', true)
                 ->update(['is_active' => false]);
 
-            $this->info("✅ Cleanup completed:");
+            $this->info('✅ Cleanup completed:');
             $this->line("• Disabled {$expired} expired invites");
             $this->line("• Disabled {$exhausted} exhausted invites");
         } else {
@@ -243,7 +249,7 @@ final class ManageAlphaInvitesCommand extends Command
 
     private function getInviteStatus(Invitation $invite): string
     {
-        if (!$invite->is_active) {
+        if (! $invite->is_active) {
             return '❌ Disabled';
         }
 

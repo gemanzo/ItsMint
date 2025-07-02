@@ -6,16 +6,19 @@ namespace App\Services;
 
 use App\Models\Blueprint;
 use App\Models\Expansion;
+use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Exception;
 
 final class OneLogScrapingService
 {
     private const BASE_URL = 'https://onelogtcg.com';
+
     private const API_ENDPOINT = 'https://onelogtcg.com/api/getCards';
+
     private const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
     private const REQUEST_DELAY = 1; // Seconds between requests to be respectful
 
     private array $colorMapping = [
@@ -52,7 +55,6 @@ final class OneLogScrapingService
         'Special' => 'Special',
         'Promo' => 'Promo',
     ];
-
 
     /**
      * Mapping from expansion codes to OneLog series IDs.
@@ -112,24 +114,24 @@ final class OneLogScrapingService
             Log::info("Starting OneLog API scraping for expansion: {$expansionCode}");
 
             $seriesId = $this->getSeriesIdForExpansion($expansionCode);
-            if (!$seriesId) {
+            if (! $seriesId) {
                 throw new Exception("No series ID mapping found for expansion: {$expansionCode}");
             }
 
             $cardData = $this->fetchCardDataFromOneLogApi($seriesId);
             $processedCards = $this->processCardData($cardData, $expansionCode);
 
-            Log::info("OneLog API scraping completed", [
+            Log::info('OneLog API scraping completed', [
                 'expansion' => $expansionCode,
                 'series_id' => $seriesId,
-                'cards_found' => count($processedCards)
+                'cards_found' => count($processedCards),
             ]);
 
             return $processedCards;
         } catch (Exception $e) {
             Log::error("OneLog API scraping failed for {$expansionCode}", [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             throw $e;
@@ -204,12 +206,12 @@ final class OneLogScrapingService
             $payload = [
                 'page' => $page,
                 'showAltArts' => true,
-                'card set' => [$seriesId]
+                'card set' => [$seriesId],
             ];
 
-            Log::info("OneLog API request", [
+            Log::info('OneLog API request', [
                 'url' => self::API_ENDPOINT,
-                'payload' => $payload
+                'payload' => $payload,
             ]);
 
             $response = Http::withHeaders([
@@ -222,36 +224,39 @@ final class OneLogScrapingService
                 ->timeout(30)
                 ->post(self::API_ENDPOINT, $payload);
 
-            if (!$response->successful()) {
-                Log::warning("OneLog API request failed", [
+            if (! $response->successful()) {
+                Log::warning('OneLog API request failed', [
                     'status' => $response->status(),
                     'body' => $response->body(),
-                    'payload' => $payload
+                    'payload' => $payload,
                 ]);
+
                 return [];
             }
 
             $data = $response->json();
 
-            if (!isset($data['data']) || !is_array($data['data'])) {
-                Log::warning("Unexpected OneLog API response format", [
-                    'response' => $data
+            if (! isset($data['data']) || ! is_array($data['data'])) {
+                Log::warning('Unexpected OneLog API response format', [
+                    'response' => $data,
                 ]);
+
                 return [];
             }
 
-            Log::info("OneLog API response received", [
+            Log::info('OneLog API response received', [
                 'cards_count' => count($data['data']),
-                'total_count' => $data['count'] ?? 'unknown'
+                'total_count' => $data['count'] ?? 'unknown',
             ]);
 
             return $data['data'];
         } catch (Exception $e) {
-            Log::error("Error calling OneLog API", [
+            Log::error('Error calling OneLog API', [
                 'error' => $e->getMessage(),
                 'series_id' => $seriesId,
-                'page' => $page
+                'page' => $page,
             ]);
+
             return [];
         }
     }
@@ -265,13 +270,13 @@ final class OneLogScrapingService
         try {
             $payload = [
                 'page' => $page,
-                'showAltArts' => true
+                'showAltArts' => true,
                 // NO 'card set' filter - fetch ALL cards
             ];
 
-            Log::info("OneLog API request (no filter)", [
+            Log::info('OneLog API request (no filter)', [
                 'url' => self::API_ENDPOINT,
-                'payload' => $payload
+                'payload' => $payload,
             ]);
 
             $response = Http::withHeaders([
@@ -284,35 +289,38 @@ final class OneLogScrapingService
                 ->timeout(30)
                 ->post(self::API_ENDPOINT, $payload);
 
-            if (!$response->successful()) {
-                Log::warning("OneLog API request failed (no filter)", [
+            if (! $response->successful()) {
+                Log::warning('OneLog API request failed (no filter)', [
                     'status' => $response->status(),
                     'body' => $response->body(),
-                    'payload' => $payload
+                    'payload' => $payload,
                 ]);
+
                 return [];
             }
 
             $data = $response->json();
 
-            if (!isset($data['data']) || !is_array($data['data'])) {
-                Log::warning("Unexpected OneLog API response format (no filter)", [
-                    'response' => $data
+            if (! isset($data['data']) || ! is_array($data['data'])) {
+                Log::warning('Unexpected OneLog API response format (no filter)', [
+                    'response' => $data,
                 ]);
+
                 return [];
             }
 
-            Log::info("OneLog API response received (no filter)", [
+            Log::info('OneLog API response received (no filter)', [
                 'cards_count' => count($data['data']),
-                'total_count' => $data['count'] ?? 'unknown'
+                'total_count' => $data['count'] ?? 'unknown',
             ]);
 
             return $data['data'];
         } catch (Exception $e) {
-            Log::error("Error calling OneLog API (no filter)", [
+            Log::error('Error calling OneLog API (no filter)', [
                 'error' => $e->getMessage(),
-                'page' => $page
+                'page' => $page,
             ]);
+
             return [];
         }
     }
@@ -331,9 +339,9 @@ final class OneLogScrapingService
                     $processedCards[] = $processedCard;
                 }
             } catch (Exception $e) {
-                Log::warning("Failed to process card from API", [
+                Log::warning('Failed to process card from API', [
                     'card' => $card,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
                 ]);
             }
         }
@@ -349,8 +357,9 @@ final class OneLogScrapingService
         try {
             // Extract card number from 'serial' field
             $cardNumber = $card['serial'] ?? null;
-            if (!$cardNumber) {
-                Log::warning("Card missing serial number", ['card' => $card]);
+            if (! $cardNumber) {
+                Log::warning('Card missing serial number', ['card' => $card]);
+
                 return null;
             }
 
@@ -379,10 +388,11 @@ final class OneLogScrapingService
                 'card_sets' => $card['card_sets'] ?? null, // Store for reference
             ];
         } catch (Exception $e) {
-            Log::warning("Error processing individual card from API", [
+            Log::warning('Error processing individual card from API', [
                 'error' => $e->getMessage(),
-                'card' => $card
+                'card' => $card,
             ]);
+
             return null;
         }
     }
@@ -459,13 +469,12 @@ final class OneLogScrapingService
         return (string) $counter;
     }
 
-
     /**
      * Map rarity to standardized format.
      */
     private function mapRarity(?string $rarity): ?string
     {
-        if (!$rarity) {
+        if (! $rarity) {
             return null;
         }
 
@@ -496,7 +505,7 @@ final class OneLogScrapingService
             'STORAGE BOX SET',
             'Mini-tin Pack Set',
             'OFFICIAL PLAYMAT LIMITED EDITION',
-            'Live Action Edition'
+            'Live Action Edition',
         ];
 
         foreach ($promoKeywords as $keyword) {
@@ -524,7 +533,7 @@ final class OneLogScrapingService
             $cardData['collector_number']
         );
 
-        if (!empty($cardData['rarity'])) {
+        if (! empty($cardData['rarity'])) {
             $query->whereJsonContains('properties->fixed_properties->onepiece_rarity', $cardData['rarity']);
         }
 
@@ -554,7 +563,7 @@ final class OneLogScrapingService
         // Try with common promo suffixes (p, pr, promo, etc.)
         $promoSuffixes = ['p', 'pr', 'promo', 'alt', 'parallel'];
         foreach ($promoSuffixes as $suffix) {
-            $modifiedNumber = $collectorNumber . $suffix;
+            $modifiedNumber = $collectorNumber.$suffix;
 
             $result = Blueprint::whereJsonContains(
                 'properties->fixed_properties->collector_number',
@@ -562,45 +571,47 @@ final class OneLogScrapingService
             )->first();
 
             if ($result) {
-                Log::info("Found promo card with suffix", [
+                Log::info('Found promo card with suffix', [
                     'original_number' => $collectorNumber,
                     'matched_number' => $modifiedNumber,
-                    'blueprint_id' => $result->id
+                    'blueprint_id' => $result->id,
                 ]);
+
                 return $result;
             }
         }
 
         // Try matching by name and partial collector number (for edge cases)
-        if (!empty($cardName)) {
+        if (! empty($cardName)) {
             $result = Blueprint::where('name', 'LIKE', "%{$cardName}%")
                 ->whereJsonContains('properties->fixed_properties->onepiece_rarity', 'PROMO')
                 ->whereRaw("properties->'fixed_properties'->>'collector_number' LIKE ?", ["%{$collectorNumber}%"])
                 ->first();
 
             if ($result) {
-                Log::info("Found promo card by name and partial collector number", [
+                Log::info('Found promo card by name and partial collector number', [
                     'api_name' => $cardName,
                     'api_collector_number' => $collectorNumber,
                     'matched_blueprint' => $result->name,
-                    'matched_collector_number' => $result->properties['fixed_properties']['collector_number'] ?? null
+                    'matched_collector_number' => $result->properties['fixed_properties']['collector_number'] ?? null,
                 ]);
+
                 return $result;
             }
         }
 
         // Try version matching with card_sets
-        if (!empty($cardSets)) {
+        if (! empty($cardSets)) {
             $result = $this->findBlueprintByVersionAndCardSets($collectorNumber, $cardSets, $cardName);
             if ($result) {
                 return $result;
             }
         }
 
-        Log::warning("Promo card not found with any matching strategy", [
+        Log::warning('Promo card not found with any matching strategy', [
             'collector_number' => $collectorNumber,
             'card_sets' => $cardSets,
-            'name' => $cardName
+            'name' => $cardName,
         ]);
 
         return null;
@@ -632,30 +643,32 @@ final class OneLogScrapingService
                     ->first();
 
                 if ($result) {
-                    Log::info("Found promo by version mapping", [
+                    Log::info('Found promo by version mapping', [
                         'card_sets' => $cardSets,
                         'mapped_version' => $versionValue,
-                        'collector_number' => $collectorNumber
+                        'collector_number' => $collectorNumber,
                     ]);
+
                     return $result;
                 }
 
                 // Try with promo suffixes
                 $promoSuffixes = ['p', 'pr', 'promo'];
                 foreach ($promoSuffixes as $suffix) {
-                    $modifiedNumber = $collectorNumber . $suffix;
+                    $modifiedNumber = $collectorNumber.$suffix;
 
                     $result = Blueprint::where('version', 'LIKE', "%{$versionValue}%")
                         ->whereJsonContains('properties->fixed_properties->collector_number', $modifiedNumber)
                         ->first();
 
                     if ($result) {
-                        Log::info("Found promo by version mapping with suffix", [
+                        Log::info('Found promo by version mapping with suffix', [
                             'card_sets' => $cardSets,
                             'mapped_version' => $versionValue,
                             'original_number' => $collectorNumber,
-                            'matched_number' => $modifiedNumber
+                            'matched_number' => $modifiedNumber,
                         ]);
+
                         return $result;
                     }
                 }
@@ -683,13 +696,13 @@ final class OneLogScrapingService
             return $value !== null && $value !== '';
         });
 
-        if (!empty($updateData)) {
+        if (! empty($updateData)) {
             $blueprint->update($updateData);
 
-            Log::info("Updated blueprint with scraped data", [
+            Log::info('Updated blueprint with scraped data', [
                 'blueprint_id' => $blueprint->id,
                 'card_number' => $cardData['collector_number'],
-                'updated_fields' => array_keys($updateData)
+                'updated_fields' => array_keys($updateData),
             ]);
         }
     }
@@ -705,7 +718,7 @@ final class OneLogScrapingService
             $expansions[] = [
                 'code' => $code,
                 'series_id' => $seriesId,
-                'name' => $this->getExpansionName($code)
+                'name' => $this->getExpansionName($code),
             ];
         }
 
@@ -768,19 +781,19 @@ final class OneLogScrapingService
     public function testApiConnection(): array
     {
         try {
-            Log::info("Testing OneLog API connection with EB02");
+            Log::info('Testing OneLog API connection with EB02');
 
             $cards = $this->fetchSinglePageFromApi('556202', 0);
 
             return [
-                'success' => !empty($cards),
+                'success' => ! empty($cards),
                 'cards_found' => count($cards),
-                'sample_card' => $cards[0] ?? null
+                'sample_card' => $cards[0] ?? null,
             ];
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ];
         }
     }

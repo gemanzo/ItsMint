@@ -5,12 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PortfolioResource;
 use App\Models\Portfolio;
-use App\Models\UserCard;
-use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Response; // Added for Response status codes
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Response; // Added for Response status codes
+use Illuminate\Support\Facades\Auth;
 
 class PortfolioController extends Controller
 {
@@ -22,7 +20,7 @@ class PortfolioController extends Controller
         $user = Auth::user();
         $portfolios = $user->portfolios()->with([
             'userCards.blueprint.latestPrice', // Ensure blueprint.latestPrice is loaded
-            'userCards.user' // Keep user relationship if needed, or remove if not directly used by client here
+            'userCards.user', // Keep user relationship if needed, or remove if not directly used by client here
         ])->withCount('userCards')->get();
 
         return PortfolioResource::collection($portfolios);
@@ -39,7 +37,7 @@ class PortfolioController extends Controller
 
         $portfolio->load([
             'userCards.blueprint.latestPrice', // Ensure blueprint.latestPrice is loaded
-            'userCards.user' // Keep user relationship if needed
+            'userCards.user', // Keep user relationship if needed
         ])->loadCount('userCards');
 
         return new PortfolioResource($portfolio);

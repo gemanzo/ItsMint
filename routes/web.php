@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BlueprintController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PortfolioController as WebPortfolioController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -51,4 +51,4 @@ Route::middleware('auth')->group(function () {
     Route::get('/portfolios/{portfolio}', [WebPortfolioController::class, 'show'])->name('portfolios.show');
 });
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

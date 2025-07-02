@@ -4,12 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Portfolio;
 use App\Models\UserCard;
-use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-use Inertia\Response as InertiaResponse;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class PortfolioController extends Controller
 {
@@ -31,7 +30,7 @@ class PortfolioController extends Controller
                 ->get();
 
             return response()->json([
-                'data' => $portfolios
+                'data' => $portfolios,
             ]);
         }
 
@@ -41,7 +40,7 @@ class PortfolioController extends Controller
         return Inertia::render('Portfolios/Index', [
             'portfolios' => $portfolios,
             // You might want to use an API resource here for consistency and to control data shape
-            // 'portfolios' => PortfolioResource::collection($portfolios), 
+            // 'portfolios' => PortfolioResource::collection($portfolios),
         ]);
     }
 
@@ -79,7 +78,7 @@ class PortfolioController extends Controller
         // Check if this is an API request (JSON expected)
         if ($request->expectsJson() || $request->is('api/*')) {
             return response()->json([
-                'data' => $portfolio
+                'data' => $portfolio,
             ]);
         }
 
@@ -142,13 +141,13 @@ class PortfolioController extends Controller
             ->where('user_id', $request->user()->id)
             ->first();
 
-        if (!$userCard) {
+        if (! $userCard) {
             return response()->json(['message' => 'UserCard not found or not owned by user.'], 404);
         }
 
         // Aggiungi o aggiorna la carta nel portafoglio
         $portfolio->userCards()->syncWithoutDetaching([
-            $validated['user_card_id'] => ['quantity' => $validated['quantity']]
+            $validated['user_card_id'] => ['quantity' => $validated['quantity']],
         ]);
 
         return response()->json($portfolio->load('userCards'));
@@ -166,8 +165,10 @@ class PortfolioController extends Controller
 
         if ($portfolio->userCards()->where('user_card_id', $userCard->id)->exists()) {
             $portfolio->userCards()->updateExistingPivot($userCard->id, ['quantity' => $validated['quantity']]);
+
             return response()->json($portfolio->load('userCards'));
         }
+
         return response()->json(['message' => 'Card not in portfolio'], 404);
     }
 
@@ -180,6 +181,7 @@ class PortfolioController extends Controller
         if ($portfolio->userCards()->detach($userCard->id)) {
             return response()->json(null, 204);
         }
+
         return response()->json(['message' => 'Card not found in portfolio'], 404);
     }
 }

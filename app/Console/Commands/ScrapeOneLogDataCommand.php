@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Services\OneLogScrapingService;
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
-use Exception;
 
 final class ScrapeOneLogDataCommand extends Command
 {
@@ -44,6 +44,7 @@ final class ScrapeOneLogDataCommand extends Command
             return $this->scrapeAllExpansions($scrapingService);
         } catch (Exception $e) {
             $this->error("❌ Scraping failed: {$e->getMessage()}");
+
             return Command::FAILURE;
         }
     }
@@ -57,6 +58,7 @@ final class ScrapeOneLogDataCommand extends Command
 
         if (empty($expansions)) {
             $this->warn('⚠️ No expansions found');
+
             return Command::SUCCESS;
         }
 
@@ -68,8 +70,9 @@ final class ScrapeOneLogDataCommand extends Command
         foreach ($expansions as $expansion) {
             $expansionCode = $expansion['code'] ?? $expansion['id'] ?? null;
 
-            if (!$expansionCode) {
+            if (! $expansionCode) {
                 $progressBar->advance();
+
                 continue;
             }
 
@@ -108,18 +111,18 @@ final class ScrapeOneLogDataCommand extends Command
 
         if (empty($scrapedCards)) {
             $this->warn("⚠️ No cards found for {$expansionCode}");
+
             return 0;
         }
 
         if ($this->option('dry-run')) {
             $this->previewScrapedData($scrapedCards, $expansionCode);
+
             return 0;
         }
 
         return $scrapingService->updateBlueprintsWithScrapedData($scrapedCards);
     }
-
-
 
     /**
      * Preview scraped data without updating database.

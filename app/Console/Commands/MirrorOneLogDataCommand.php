@@ -6,10 +6,10 @@ namespace App\Console\Commands;
 
 use App\Models\OneLogCard;
 use App\Services\OneLogScrapingService;
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Exception;
 
 final class MirrorOneLogDataCommand extends Command
 {
@@ -65,6 +65,7 @@ final class MirrorOneLogDataCommand extends Command
             return $this->showMenu($scrapingService);
         } catch (Exception $e) {
             $this->error("❌ Mirroring failed: {$e->getMessage()}");
+
             return Command::FAILURE;
         }
     }
@@ -81,7 +82,7 @@ final class MirrorOneLogDataCommand extends Command
                 'Mirror all known series',
                 'Mirror EVERYTHING (all 3374+ cards without filters)',
                 'Show current database stats',
-                'Test API connection'
+                'Test API connection',
             ],
             0
         );
@@ -112,11 +113,13 @@ final class MirrorOneLogDataCommand extends Command
 
             if (empty($cards)) {
                 $this->warn("No cards found for series {$seriesId}");
+
                 return Command::SUCCESS;
             }
 
             if ($this->option('dry-run')) {
                 $this->previewCards($cards, $seriesId);
+
                 return Command::SUCCESS;
             }
 
@@ -125,6 +128,7 @@ final class MirrorOneLogDataCommand extends Command
             return Command::SUCCESS;
         } catch (Exception $e) {
             $this->error("Failed to mirror series {$seriesId}: {$e->getMessage()}");
+
             return Command::FAILURE;
         }
     }
@@ -140,7 +144,7 @@ final class MirrorOneLogDataCommand extends Command
         foreach ($this->knownSeriesIds as $seriesId) {
             try {
                 $cards = $this->fetchCardsFromSeries($scrapingService, $seriesId);
-                if (!empty($cards)) {
+                if (! empty($cards)) {
                     $stored = $this->storeCards($cards);
                     $totalStored += $stored;
                 }
@@ -165,7 +169,7 @@ final class MirrorOneLogDataCommand extends Command
     {
         $this->warn('This will fetch ALL 3374+ cards from OneLog API');
 
-        if (!$this->option('force') && !$this->confirm('Are you sure you want to fetch ALL cards?', false)) {
+        if (! $this->option('force') && ! $this->confirm('Are you sure you want to fetch ALL cards?', false)) {
             return Command::SUCCESS;
         }
 
@@ -173,12 +177,14 @@ final class MirrorOneLogDataCommand extends Command
             $cards = $this->fetchAllCardsWithoutFilter($scrapingService);
 
             if (empty($cards)) {
-                $this->warn("No cards found");
+                $this->warn('No cards found');
+
                 return Command::SUCCESS;
             }
 
             if ($this->option('dry-run')) {
                 $this->previewCards($cards, 'ALL');
+
                 return Command::SUCCESS;
             }
 
@@ -187,6 +193,7 @@ final class MirrorOneLogDataCommand extends Command
             return Command::SUCCESS;
         } catch (Exception $e) {
             $this->error("Failed to mirror everything: {$e->getMessage()}");
+
             return Command::FAILURE;
         }
     }
@@ -200,7 +207,8 @@ final class MirrorOneLogDataCommand extends Command
         $cardData = $this->fetchCardDataFromOneLogApi($scrapingService, $seriesId);
 
         if (empty($cardData)) {
-            $this->warn("No raw card data fetched from API");
+            $this->warn('No raw card data fetched from API');
+
             return [];
         }
 
@@ -225,12 +233,12 @@ final class MirrorOneLogDataCommand extends Command
 
                 $this->error("❌ Failed to process card {$cardId} ({$cardName}): {$e->getMessage()}");
 
-                Log::warning("Failed to process card from API", [
+                Log::warning('Failed to process card from API', [
                     'card_index' => $index,
                     'card_id' => $cardId,
                     'card_name' => $cardName,
                     'error' => $e->getMessage(),
-                    'raw_card' => $rawCard
+                    'raw_card' => $rawCard,
                 ]);
             }
         }
@@ -260,7 +268,7 @@ final class MirrorOneLogDataCommand extends Command
                 $allCards = array_merge($allCards, $pageCards);
                 $page++;
 
-                if (!$this->option('dry-run')) {
+                if (! $this->option('dry-run')) {
                     sleep(1); // Be respectful with requests
                 }
             }
@@ -283,14 +291,16 @@ final class MirrorOneLogDataCommand extends Command
                 str_contains($e->getMessage(), 'PGRST103')
             ) {
                 $this->line("Reached end of available pages for series {$seriesId} at page {$page}");
+
                 return []; // Return empty to stop pagination
             }
 
-            Log::error("Error calling OneLog API via service", [
+            Log::error('Error calling OneLog API via service', [
                 'series_id' => $seriesId,
                 'page' => $page,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
+
             return [];
         }
     }
@@ -324,7 +334,7 @@ final class MirrorOneLogDataCommand extends Command
                 $allCards = array_merge($allCards, $processedCards);
                 $page++;
 
-                if (!$this->option('dry-run')) {
+                if (! $this->option('dry-run')) {
                     sleep(1); // Be respectful with requests
                 }
             }
@@ -347,13 +357,15 @@ final class MirrorOneLogDataCommand extends Command
                 str_contains($e->getMessage(), 'PGRST103')
             ) {
                 $this->line("Reached end of available pages at page {$page}");
+
                 return []; // Return empty to stop pagination
             }
 
-            Log::error("Error calling OneLog API without filter", [
+            Log::error('Error calling OneLog API without filter', [
                 'page' => $page,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
+
             return [];
         }
     }
@@ -372,9 +384,10 @@ final class MirrorOneLogDataCommand extends Command
         foreach ($cards as $cardData) {
             try {
                 if (empty($cardData['onelog_id'])) {
-                    $this->warn("⚠️ Skipping card with missing onelog_id");
-                    Log::channel('single')->error("Card with missing onelog_id", ['card_data' => $cardData]);
+                    $this->warn('⚠️ Skipping card with missing onelog_id');
+                    Log::channel('single')->error('Card with missing onelog_id', ['card_data' => $cardData]);
                     $errors++;
+
                     continue;
                 }
 
@@ -413,32 +426,32 @@ final class MirrorOneLogDataCommand extends Command
                 $this->error("❌ Failed to store card {$cardId} ({$cardName}): {$e->getMessage()}");
 
                 // Force log to single channel to ensure visibility
-                Log::channel('single')->error("FAILED TO STORE ONELOG CARD", [
+                Log::channel('single')->error('FAILED TO STORE ONELOG CARD', [
                     'card_id' => $cardId,
                     'card_name' => $cardName,
                     'error_message' => $e->getMessage(),
                     'error_file' => $e->getFile(),
                     'error_line' => $e->getLine(),
                     'card_data' => $cardData,
-                    'timestamp' => now()->toISOString()
+                    'timestamp' => now()->toISOString(),
                 ]);
 
                 // Also write directly to Laravel log
-                error_log("ONELOG CARD ERROR [{$cardId}]: " . $e->getMessage());
+                error_log("ONELOG CARD ERROR [{$cardId}]: ".$e->getMessage());
 
                 // Also log to console for immediate visibility
                 if ($this->getOutput()->isVerbose()) {
-                    $this->line("Full error details: " . $e->getTraceAsString());
+                    $this->line('Full error details: '.$e->getTraceAsString());
                 }
             }
         }
 
         if ($errors > 0) {
             $this->warn("⚠️ {$errors} cards had errors - check storage/logs/laravel.log for details");
-            Log::channel('single')->error("Storage completed with errors", [
+            Log::channel('single')->error('Storage completed with errors', [
                 'total_errors' => $errors,
                 'total_processed' => count($cards),
-                'success_rate' => round((($stored / count($cards)) * 100), 2) . '%'
+                'success_rate' => round((($stored / count($cards)) * 100), 2).'%',
             ]);
         }
 
@@ -451,32 +464,32 @@ final class MirrorOneLogDataCommand extends Command
     private function processCardData(array $rawCard): array
     {
         // Validate required fields
-        if (!isset($rawCard['id']) || empty($rawCard['id'])) {
+        if (! isset($rawCard['id']) || empty($rawCard['id'])) {
             throw new Exception("Missing required field 'id'");
         }
 
-        if (!isset($rawCard['name']) || empty($rawCard['name'])) {
-            Log::warning("Card missing name", ['card_id' => $rawCard['id']]);
+        if (! isset($rawCard['name']) || empty($rawCard['name'])) {
+            Log::warning('Card missing name', ['card_id' => $rawCard['id']]);
         }
 
-        if (!isset($rawCard['serial']) || empty($rawCard['serial'])) {
-            Log::warning("Card missing serial", [
+        if (! isset($rawCard['serial']) || empty($rawCard['serial'])) {
+            Log::warning('Card missing serial', [
                 'card_id' => $rawCard['id'],
-                'card_name' => $rawCard['name'] ?? 'unknown'
+                'card_name' => $rawCard['name'] ?? 'unknown',
             ]);
         }
 
         $processedCard = [
-            'onelog_id' => (string)$rawCard['id'],
+            'onelog_id' => (string) $rawCard['id'],
             'img_id' => $rawCard['img_id'] ?? null,
             'series_id' => $rawCard['series_id'] ?? null,
             'name' => $rawCard['name'] ?? null,
             'serial' => $rawCard['serial'] ?? null,
             'rarity' => $rawCard['rarity'] ?? null,
             'type' => $rawCard['type'] ?? null,
-            'cost' => is_numeric($rawCard['cost'] ?? null) ? (int)$rawCard['cost'] : null,
+            'cost' => is_numeric($rawCard['cost'] ?? null) ? (int) $rawCard['cost'] : null,
             'attribute' => $rawCard['attribute'] ?? null,
-            'power' => is_numeric($rawCard['power'] ?? null) ? (int)$rawCard['power'] : null,
+            'power' => is_numeric($rawCard['power'] ?? null) ? (int) $rawCard['power'] : null,
             'counter' => ($rawCard['counter'] ?? null) === '-' ? null : $rawCard['counter'],
             'colors' => $this->processColors($rawCard['color'] ?? ''),
             'feature' => $rawCard['feature'] ?? null,
@@ -494,15 +507,21 @@ final class MirrorOneLogDataCommand extends Command
         if ($this->getOutput()->isDebug()) {
             $issues = [];
 
-            if (empty($processedCard['name'])) $issues[] = 'missing_name';
-            if (empty($processedCard['serial'])) $issues[] = 'missing_serial';
-            if (empty($processedCard['series_id'])) $issues[] = 'missing_series_id';
+            if (empty($processedCard['name'])) {
+                $issues[] = 'missing_name';
+            }
+            if (empty($processedCard['serial'])) {
+                $issues[] = 'missing_serial';
+            }
+            if (empty($processedCard['series_id'])) {
+                $issues[] = 'missing_series_id';
+            }
 
-            if (!empty($issues)) {
-                Log::info("Card with potential issues", [
+            if (! empty($issues)) {
+                Log::info('Card with potential issues', [
                     'card_id' => $processedCard['onelog_id'],
                     'issues' => $issues,
-                    'raw_card' => $rawCard
+                    'raw_card' => $rawCard,
                 ]);
             }
         }
@@ -515,7 +534,9 @@ final class MirrorOneLogDataCommand extends Command
      */
     private function processColors(string $colorString): array
     {
-        if (empty($colorString)) return [];
+        if (empty($colorString)) {
+            return [];
+        }
 
         $colorMapping = [
             'Red' => 'Red',
@@ -581,6 +602,7 @@ final class MirrorOneLogDataCommand extends Command
     private function isPromo(array $card): bool
     {
         $cardSets = $card['card_sets'] ?? '';
+
         return Str::contains($cardSets, ['PREMIUM', 'prize', 'CHAMPIONSHIP', 'ANNIVERSARY']);
     }
 
@@ -604,7 +626,7 @@ final class MirrorOneLogDataCommand extends Command
         }
 
         // For other types, convert to string and wrap in array
-        return [(string)$remarks];
+        return [(string) $remarks];
     }
 
     /**
@@ -633,7 +655,7 @@ final class MirrorOneLogDataCommand extends Command
         $this->table($headers, $rows);
 
         if (count($cards) > 10) {
-            $this->info('... and ' . (count($cards) - 10) . ' more cards');
+            $this->info('... and '.(count($cards) - 10).' more cards');
         }
     }
 
@@ -646,7 +668,7 @@ final class MirrorOneLogDataCommand extends Command
         $variants = OneLogCard::where('is_variant', true)->count();
         $promos = OneLogCard::where('is_promo', true)->count();
 
-        $this->info("📊 OneLog Database Stats:");
+        $this->info('📊 OneLog Database Stats:');
         $this->info("  Total cards: {$total}");
         $this->info("  Variants: {$variants}");
         $this->info("  Promos: {$promos}");
@@ -672,18 +694,20 @@ final class MirrorOneLogDataCommand extends Command
             $result = $scrapingService->testApiConnection();
 
             if ($result['success']) {
-                $this->info("✅ API connection successful!");
-                $this->info("Cards found: " . $result['cards_found']);
+                $this->info('✅ API connection successful!');
+                $this->info('Cards found: '.$result['cards_found']);
 
-                if (!empty($result['sample_card'])) {
-                    $this->info("Sample card: " . ($result['sample_card']['name'] ?? 'N/A'));
+                if (! empty($result['sample_card'])) {
+                    $this->info('Sample card: '.($result['sample_card']['name'] ?? 'N/A'));
                 }
             } else {
-                $this->error("❌ API connection failed: " . ($result['error'] ?? 'Unknown error'));
+                $this->error('❌ API connection failed: '.($result['error'] ?? 'Unknown error'));
+
                 return Command::FAILURE;
             }
         } catch (Exception $e) {
             $this->error("❌ Connection test failed: {$e->getMessage()}");
+
             return Command::FAILURE;
         }
 

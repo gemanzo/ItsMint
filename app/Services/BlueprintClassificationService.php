@@ -191,7 +191,7 @@ final class BlueprintClassificationService
     {
         $collectorNumber = $blueprint->properties['fixed_properties']['collector_number'] ?? null;
 
-        if (!$collectorNumber) {
+        if (! $collectorNumber) {
             return false;
         }
 
@@ -320,7 +320,7 @@ final class BlueprintClassificationService
     /**
      * Bulk classify blueprints.
      */
-    public function bulkClassifyBlueprints(int $limit = null): array
+    public function bulkClassifyBlueprints(?int $limit = null): array
     {
         $query = Blueprint::query();
 

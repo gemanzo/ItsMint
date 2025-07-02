@@ -42,7 +42,7 @@ class BlueprintObserver
         } catch (\Exception $e) {
             Log::error('Failed to delete blueprint from Elasticsearch', [
                 'blueprint_id' => $blueprint->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -104,7 +104,7 @@ class BlueprintObserver
         } catch (\Exception $e) {
             Log::error('Failed to index blueprint in Elasticsearch', [
                 'blueprint_id' => $blueprint->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
         }
     }

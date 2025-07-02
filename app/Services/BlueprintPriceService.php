@@ -6,24 +6,23 @@ namespace App\Services;
 
 use App\Models\Blueprint;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 
 class BlueprintPriceService
 {
     private const CONDITION_HIERARCHY = [
-        "Near Mint",
-        "Slightly Played",
-        "Moderately Played",
-        "Played",
-        "Poor"
+        'Near Mint',
+        'Slightly Played',
+        'Moderately Played',
+        'Played',
+        'Poor',
     ];
 
     /**
      * Calculate and adjust blueprint prices based on CardTrader marketplace data.
      *
-     * @param Blueprint $blueprint
      * @return array<string, array<string, mixed>>|null
      */
     public function calculatePrices(Blueprint $blueprint): ?array
@@ -41,39 +40,43 @@ class BlueprintPriceService
 
         if (empty($token) || empty($baseApiUrl)) {
             Log::error('CardTrader API service not configured for BlueprintPriceService.', ['blueprint_id' => $blueprint->id]);
+
             return null;
         }
 
-        $marketplaceUrl = $baseApiUrl . '/marketplace/products';
+        $marketplaceUrl = $baseApiUrl.'/marketplace/products';
 
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $token,
+                'Authorization' => 'Bearer '.$token,
                 'Accept' => 'application/json',
             ])->retry(5, function ($attempt, \Illuminate\Http\Client\RequestException $exception) use ($blueprintCtId) {
                 // Retry only on 429 errors
                 if ($exception->response && $exception->response->status() === 429) {
                     // Exponential backoff increased: e.g., 2.25s, 6.75s, 20.25s, ...
                     $delay = pow(3, $attempt) * 750;
-                    Log::warning('CardTrader API rate limit hit. Retrying attempt #' . $attempt . ' after ' . ($delay / 1000) . 's.', [
+                    Log::warning('CardTrader API rate limit hit. Retrying attempt #'.$attempt.' after '.($delay / 1000).'s.', [
                         'blueprint_id' => $blueprintCtId,
                         'status' => $exception->response->status(),
                     ]);
+
                     return $delay;
                 }
+
                 // Do not retry for other errors
                 return 0;
             })->get($marketplaceUrl, [
-                'blueprint_id' => $blueprintCtId
+                'blueprint_id' => $blueprintCtId,
             ]);
 
-            if (!$response->successful()) {
+            if (! $response->successful()) {
                 Log::error('CardTrader API Error - Fetching Marketplace Products in Service', [
                     'blueprint_id' => $blueprint->id,
                     'ct_id' => $blueprintCtId,
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
+
                 return null; // Don't cache failures to allow for retries
             }
 
@@ -82,6 +85,7 @@ class BlueprintPriceService
             if (empty($apiProducts)) {
                 Log::info('No products found on marketplace for blueprint in Service.', ['blueprint_id' => $blueprint->id, 'ct_id' => $blueprintCtId]);
                 Cache::put($cacheKey, null, now()->addMinutes(60)); // Cache null result
+
                 return null;
             }
 
@@ -90,6 +94,7 @@ class BlueprintPriceService
             if (empty($lowestPricesByCondition)) {
                 Log::info('No valid products with recognized conditions found to process for blueprint in Service.', ['blueprint_id' => $blueprint->id, 'ct_id' => $blueprintCtId]);
                 Cache::put($cacheKey, null, now()->addMinutes(60)); // Cache null result
+
                 return null;
             }
 
@@ -103,8 +108,9 @@ class BlueprintPriceService
                 'blueprint_id' => $blueprint->id,
                 'ct_id' => $blueprintCtId,
                 'error' => $e->getMessage(),
-                'trace_small' => substr($e->getTraceAsString(), 0, 500)
+                'trace_small' => substr($e->getTraceAsString(), 0, 500),
             ]);
+
             return null;
         }
     }
@@ -112,7 +118,6 @@ class BlueprintPriceService
     /**
      * Extracts the lowest price for each recognized condition from the API products.
      *
-     * @param array $apiProducts
      * @return array<string, array<string, mixed>>
      */
     private function extractLowestPricesByCondition(array $apiProducts): array
@@ -129,7 +134,7 @@ class BlueprintPriceService
 
             $properties = $product['properties_hash'] ?? $product['properties'] ?? [];
             $condition = $properties['condition'] ?? null;
-            if (!$condition || !in_array($condition, self::CONDITION_HIERARCHY)) {
+            if (! $condition || ! in_array($condition, self::CONDITION_HIERARCHY)) {
                 continue;
             }
 
@@ -141,17 +146,18 @@ class BlueprintPriceService
 
             $priceCents = $product['price_cents'];
 
-            if (!isset($lowestPricesByCondition[$condition]) || $priceCents < $lowestPricesByCondition[$condition]['price_cents']) {
+            if (! isset($lowestPricesByCondition[$condition]) || $priceCents < $lowestPricesByCondition[$condition]['price_cents']) {
                 $lowestPricesByCondition[$condition] = [
                     'price_cents' => $priceCents,
                     'currency' => $currency,
                     'language' => $language,
                     'is_foil' => $is_foil,
                     'fetched_at' => Carbon::now(),
-                    'source' => 'cardtrader_service_by_condition' // Changed source
+                    'source' => 'cardtrader_service_by_condition', // Changed source
                 ];
             }
         }
+
         return $lowestPricesByCondition;
     }
 
@@ -159,7 +165,7 @@ class BlueprintPriceService
      * Applies hierarchical pricing logic to the lowest prices.
      * Ensures that a lower condition card is not more expensive than a higher condition one.
      *
-     * @param array<string, array<string, mixed>> $lowestPricesByCondition
+     * @param  array<string, array<string, mixed>>  $lowestPricesByCondition
      * @return array<string, array<string, mixed>>
      */
     private function applyHierarchyLogic(array $lowestPricesByCondition): array
@@ -186,6 +192,7 @@ class BlueprintPriceService
                 $lastValidPriceCents = $adjustedPriceCents;
             }
         }
+
         return $adjustedPrices;
     }
 }

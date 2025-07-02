@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Invitation;
-use Carbon\Carbon;
+use Illuminate\Console\Command;
 
 final class CreateAlphaInvitesCommand extends Command
 {
@@ -46,6 +45,7 @@ final class CreateAlphaInvitesCommand extends Command
 
         if ($count < 1 || $count > 100) {
             $this->error('Count must be between 1 and 100');
+
             return 1;
         }
 
@@ -91,7 +91,7 @@ final class CreateAlphaInvitesCommand extends Command
                 $invite->email ?? 'Any',
                 $invite->expires_at ? $invite->expires_at->format('Y-m-d H:i') : 'Never',
                 $invite->max_uses,
-                $invite->is_active ? '✅ Active' : '❌ Inactive'
+                $invite->is_active ? '✅ Active' : '❌ Inactive',
             ];
         }
 
@@ -101,14 +101,14 @@ final class CreateAlphaInvitesCommand extends Command
             $invite = $invites[0];
             $this->newLine();
             $this->info('🔗 Registration URL:');
-            $this->line(route('register') . '?invite=' . $invite->code);
+            $this->line(route('register').'?invite='.$invite->code);
         }
 
         // Summary
         $this->newLine();
         $this->info('📊 Summary:');
         $this->line("• Total invites created: {$count}");
-        $this->line("• Expires in: " . ($days > 0 ? "{$days} days" : 'Never'));
+        $this->line('• Expires in: '.($days > 0 ? "{$days} days" : 'Never'));
         $this->line("• Max uses per invite: {$uses}");
         if ($batchName) {
             $this->line("• Batch name: {$batchName}");

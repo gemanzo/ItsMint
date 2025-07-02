@@ -4,9 +4,9 @@ namespace App\Providers;
 
 use App\Models\Blueprint;
 use App\Observers\BlueprintObserver;
-use Illuminate\Support\Facades\Vite;
-use Illuminate\Support\Facades\URL;
 use App\Services\ElasticsearchService;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
