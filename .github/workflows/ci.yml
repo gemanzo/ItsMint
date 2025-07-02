@@ -1,0 +1,61 @@
+name: CI - Continuous Integration
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  build_and_lint:
+    name: Build & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 2. Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, intl, gd
+          coverage: none
+
+      - name: 3. Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 4. Cache Composer Dependencies
+        uses: actions/cache@v4
+        id: composer-cache
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
+      - name: 5. Install Composer Dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: 6. Cache Node.js Dependencies
+        uses: actions/cache@v4
+        id: npm-cache
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: 7. Install Node.js Dependencies
+        run: npm install
+
+      - name: 8. Run Laravel Pint for Linting
+        run: ./vendor/bin/pint --test
+
+      - name: 9. Build Frontend Assets
+        run: npm run build 
