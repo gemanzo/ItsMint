@@ -50,6 +50,24 @@ class UserCard extends Model
         'DMG' => 0.25, // -75%
     ];
 
+    /**
+     * Get condition-based price adjustments array
+     */
+    public static function getConditionPriceAdjustments(): array
+    {
+        return self::$conditionPriceAdjustments;
+    }
+
+    /**
+     * Calculate estimated price in cents for a given condition and base price
+     */
+    public static function calculateEstimatedPriceCents(int $basePriceCents, string $condition): int
+    {
+        $adjustmentFactor = self::$conditionPriceAdjustments[$condition] ?? 1.00;
+
+        return (int) round($basePriceCents * $adjustmentFactor);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -105,9 +123,7 @@ class UserCard extends Model
             return null;
         }
 
-        $adjustmentFactor = self::$conditionPriceAdjustments[$this->condition] ?? 1.00; // Default to 1.00 if condition not in map
-
-        return (int) round($basePriceCents * $adjustmentFactor);
+        return self::calculateEstimatedPriceCents($basePriceCents, $this->condition);
     }
 
     /**

@@ -45,12 +45,11 @@
     },
     "lint-staged": {
         "*.php": [
-            "./vendor/bin/pint"
+            "./scripts/lint-php.sh"
         ],
         "*.{js,ts,vue}": [
-            "./node_modules/.bin/eslint --fix",
-            "./node_modules/.bin/prettier --write",
-            "sh -c './node_modules/.bin/vue-tsc --noEmit -p tsconfig.json'"
+            "./scripts/lint-js.sh",
+            "./scripts/format-js.sh"
         ]
     }
 }
