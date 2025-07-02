@@ -774,7 +774,7 @@ watch(
                       >
                         <p>
                           {{ blueprint.latest_price.condition }} •
-                          {{ blueprint.latest_price.language.toUpperCase() }}
+                          {{ blueprint.latest_price.language?.toUpperCase() }}
                         </p>
                         <p
                           v-if="blueprint.latest_price.is_foil"
