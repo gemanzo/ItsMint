@@ -50,7 +50,7 @@
         "*.{js,ts,vue}": [
             "./node_modules/.bin/eslint --fix",
             "./node_modules/.bin/prettier --write",
-            "./node_modules/.bin/vue-tsc --noEmit -p tsconfig.json"
+            "sh -c './node_modules/.bin/vue-tsc --noEmit -p tsconfig.json'"
         ]
     }
 }
