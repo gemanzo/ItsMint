@@ -14,12 +14,12 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USERNAME }}
+          username: ${{ secrets.PROD_USERNAME }}ß
           port: ${{ secrets.PROD_PORT }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
             set -e
-            cd /var/www/html/itsmint
+            cd /var/www/html/ItsMintß
             git pull origin master
             chmod +x scripts/deploy.sh
             bash scripts/deploy.sh 
