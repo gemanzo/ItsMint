@@ -24,6 +24,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'profile_photo_path',
     ];
 
     /**
@@ -34,6 +35,16 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+    ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<string>
+     */
+    protected $appends = [
+        'profile_photo_url',
+        'initials',
     ];
 
     /**
@@ -67,5 +78,30 @@ class User extends Authenticatable
     public function invitation(): HasOne
     {
         return $this->hasOne(Invitation::class, 'used_by_user_id');
+    }
+
+    /**
+     * Get the URL to the user's profile photo.
+     */
+    public function getProfilePhotoUrlAttribute(): ?string
+    {
+        return $this->profile_photo_path
+            ? asset('storage/'.$this->profile_photo_path)
+            : null;
+    }
+
+    /**
+     * Get the initials of the user's name for avatar fallback.
+     */
+    public function getInitialsAttribute(): string
+    {
+        $name = trim($this->name);
+        $words = explode(' ', $name);
+
+        if (count($words) >= 2) {
+            return strtoupper(substr($words[0], 0, 1).substr($words[1], 0, 1));
+        }
+
+        return strtoupper(substr($name, 0, 2));
     }
 }
