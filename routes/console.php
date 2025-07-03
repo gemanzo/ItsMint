@@ -15,14 +15,20 @@ Schedule::command('itsmint:mirror-onelog --all --force')
     ->withoutOverlapping()
     ->runInBackground();
 
-// 3. Match blueprints with OneLog data
-Schedule::command('itsmint:match-blueprints-onelog')
+Schedule::command('itsmint:classify-blueprints --save')
     ->dailyAt('03:00')
     ->withoutOverlapping()
     ->runInBackground();
 
-Schedule::command('itsmint:classify-blueprints --save')
+// 3. Match blueprints with OneLog data
+Schedule::command('itsmint:match-blueprints-onelog')
     ->dailyAt('04:00')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+// 4. Index blueprints into Elasticsearch
+Schedule::command('elasticsearch:index-blueprints --fresh')
+    ->dailyAt('05:00')
     ->withoutOverlapping()
     ->runInBackground();
 

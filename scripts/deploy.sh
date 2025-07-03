@@ -20,8 +20,11 @@ docker-compose -f compose.yml exec -T node npm run build
 echo ">>> Running database migrations..."
 docker-compose -f compose.yml exec -T php php artisan migrate --force
 
-# 5. Optimize the application (caches routes and config)
-echo ">>> Optimizing application..."
+# 5. Clear and optimize caches
+echo ">>> Clearing and optimizing caches..."
+docker-compose -f compose.yml exec -T php php artisan cache:clear
+docker-compose -f compose.yml exec -T php php artisan config:clear
+docker-compose -f compose.yml exec -T php php artisan optimize:clear
 docker-compose -f compose.yml exec -T php php artisan optimize
 
 # 6. Restart Horizon workers

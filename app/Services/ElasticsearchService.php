@@ -272,42 +272,32 @@ class ElasticsearchService
         ?int $expansionId = null,
         ?int $categoryId = null
     ): array {
-        $searchQuery = trim($query);
-        $expansionCode = null;
-
-        // Extract expansion code from the query string
-        if (preg_match('/\\b([A-Z]{2,3}-?[0-9]{1,2})\\b$/i', $searchQuery, $matches)) {
-            $expansionCode = strtoupper(str_replace(['-', '.'], '', $matches[1]));
-            $searchQuery = trim(preg_replace('/\\b'.preg_quote($matches[0], '/').'\\b$/i', '', $searchQuery));
-        }
-
-        // Build the main query part
         $mustClauses = [];
-        if (! empty($searchQuery)) {
+        $filterClauses = [];
+
+        // Main search query using multi_match for flexibility
+        if (! empty($query)) {
             $mustClauses[] = [
                 'multi_match' => [
-                    'query' => $searchQuery,
-                    'fields' => ['name^3', 'expansion.name'],
+                    'query' => $query,
+                    'fields' => [
+                        'name^3', // Boost name field
+                        'expansion.name',
+                    ],
                     'type' => 'best_fields',
                     'fuzziness' => 'AUTO',
+                    'prefix_length' => 2,
                 ],
             ];
         }
 
-        // Build the filter part
-        $filterClauses = [];
+        // Filters for exact matches
         if ($language) {
             $filterClauses[] = ['term' => ['latest_price.language' => $language]];
         }
-
         if ($expansionId) {
             $filterClauses[] = ['term' => ['expansion.id' => $expansionId]];
-        } elseif ($expansionCode) {
-            // This part is tricky because the field is analyzed.
-            // Using a match query on the normalized field.
-            $filterClauses[] = ['match' => ['expansion.code.normalized' => $expansionCode]];
         }
-
         if ($categoryId) {
             $filterClauses[] = ['term' => ['category.id' => $categoryId]];
         }
@@ -319,19 +309,16 @@ class ElasticsearchService
                 'size' => $size,
                 'query' => [
                     'bool' => [
-                        'must' => ! empty($mustClauses) ? $mustClauses : [['match_all' => new \stdClass]],
+                        'must' => $mustClauses,
                         'filter' => $filterClauses,
                     ],
                 ],
+                'sort' => [
+                    '_score' => ['order' => 'desc'], // Sort by relevance first
+                    'name.keyword' => ['order' => 'asc'], // Then alphabetically
+                ],
             ],
         ];
-
-        // If there's no text query, sort by name. Otherwise, rely on relevance score.
-        if (empty($searchQuery)) {
-            $params['body']['sort'] = [
-                ['name.keyword' => 'asc'],
-            ];
-        }
 
         try {
             $response = $this->client->search($params)->asArray();
@@ -339,16 +326,19 @@ class ElasticsearchService
             return $this->formatSearchResponse($response);
         } catch (\Exception $e) {
             \Log::error('Elasticsearch search failed', [
+                'query' => $query,
                 'error' => $e->getMessage(),
-                'query' => $params,
             ]);
-            throw $e; // Re-throw to be handled by the controller
+
+            // Return empty result set on failure
+            return [
+                'total' => 0,
+                'max_score' => 0,
+                'hits' => [],
+            ];
         }
     }
 
-    /**
-     * Format search response for API consumption
-     */
     private function formatSearchResponse(array $response): array
     {
         $hits = [];

@@ -97,6 +97,7 @@ class BlueprintController extends Controller
 
         return Inertia::render('Dashboard/Blueprints/Show', [
             'blueprint' => $blueprint,
+            'userIsAdmin' => auth()->user()?->hasRole('admin') ?? false,
         ]);
     }
 

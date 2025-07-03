@@ -17,13 +17,9 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Card Scanner route
@@ -42,9 +38,6 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-    // Potremmo avere una route dedicata per la vista "Portfolio" se diversa dalla dashboard
-    // Route::get('/portfolios', [PortfolioController::class, 'view'])->name('portfolios.view');
 
     // Portfolio Web Routes
     Route::get('/portfolios', [WebPortfolioController::class, 'index'])->name('portfolios.index');

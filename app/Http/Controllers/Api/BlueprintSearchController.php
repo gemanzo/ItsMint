@@ -32,7 +32,7 @@ final class BlueprintSearchController extends Controller
 
         $query = $validated['q'];
         $from = $validated['from'] ?? 0;
-        $size = $validated['size'] ?? 30;
+        $size = $validated['size'] ?? 50;
         $language = $validated['language'] ?? null;
         $expansionId = $validated['expansion_id'] ?? null;
         $categoryId = $validated['category_id'] ?? null;
@@ -82,16 +82,14 @@ final class BlueprintSearchController extends Controller
     {
         $request->validate([
             'q' => 'required|string|min:1|max:100',
-            'limit' => 'integer|min:1|max:10',
+            'limit' => 'sometimes|integer|min:1|max:20',
         ]);
 
         $query = $request->input('q');
-        $limit = $request->input('limit', 5);
+        $limit = $request->input('limit', 10);
 
         try {
-            // For now, use regular search with smaller size
-            // TODO: Implement proper completion suggester in Elasticsearch
-            $results = $this->elasticsearch->searchBlueprints($query, $limit);
+            $results = $this->elasticsearch->searchBlueprints($query, 0, $limit);
 
             $suggestions = collect($results['hits'])->map(function ($hit) {
                 return [
