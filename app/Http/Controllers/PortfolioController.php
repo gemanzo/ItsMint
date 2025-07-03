@@ -34,8 +34,23 @@ class PortfolioController extends Controller
             ]);
         }
 
-        // For web requests (portfolios index page), just load counts for performance
-        $portfolios = $user->portfolios()->withCount('userCards')->latest()->get();
+        // For web requests (portfolios index page), calculate value efficiently
+        $portfolios = $user->portfolios()
+            ->with('userCards.blueprint.latestPrice') // Eager load for calculation
+            ->withCount('userCards')
+            ->latest()
+            ->get();
+
+        $portfolios->each(function ($portfolio) {
+            $totalValueCents = $portfolio->userCards->reduce(function ($carry, $userCard) {
+                // Use the estimated_value_cents from the UserCard model's accessor
+                $cardValue = $userCard->estimated_value_cents ?? 0;
+                $quantity = $userCard->pivot->quantity ?? 1; // Pivot data is available here
+
+                return $carry + ($cardValue * $quantity);
+            }, 0);
+            $portfolio->total_value_cents = $totalValueCents;
+        });
 
         return Inertia::render('Portfolios/Index', [
             'portfolios' => $portfolios,
@@ -120,6 +135,54 @@ class PortfolioController extends Controller
         $portfolio->delete();
 
         return response()->json(null, 204);
+    }
+
+    /**
+     * Finds or creates a UserCard and attaches it to a portfolio.
+     */
+    public function addBlueprint(Request $request, Portfolio $portfolio): JsonResponse
+    {
+        $this->authorize('update', $portfolio);
+
+        $validated = $request->validate([
+            'blueprint_id' => 'required|exists:blueprints,id',
+            'condition' => 'required|string|max:50',
+            'language' => 'required|string|max:10',
+            'quantity' => 'required|integer|min:1',
+            'purchase_price_cents' => 'nullable|integer|min:0',
+            'is_foil' => 'required|boolean',
+        ]);
+
+        $user = $request->user();
+
+        // Find an existing UserCard or create a new one
+        $userCard = $user->userCards()->firstOrCreate(
+            [
+                'blueprint_id' => $validated['blueprint_id'],
+                'condition' => $validated['condition'],
+                'language' => $validated['language'],
+                'is_foil' => $validated['is_foil'],
+            ],
+            [
+                'purchase_price_cents' => $validated['purchase_price_cents'],
+                'purchase_currency' => 'EUR',
+                'acquired_at' => now(),
+            ]
+        );
+
+        // Check if the card is already in the portfolio
+        $pivot = $portfolio->userCards()->where('user_card_id', $userCard->id)->first();
+
+        if ($pivot) {
+            // If it exists, update the quantity
+            $newQuantity = $pivot->pivot->quantity + $validated['quantity'];
+            $portfolio->userCards()->updateExistingPivot($userCard->id, ['quantity' => $newQuantity]);
+        } else {
+            // If not, attach it with the new quantity
+            $portfolio->userCards()->attach($userCard->id, ['quantity' => $validated['quantity']]);
+        }
+
+        return response()->json($userCard->load('blueprint'), 201);
     }
 
     /**

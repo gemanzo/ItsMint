@@ -32,6 +32,7 @@ Route::apiResource('portfolios', PortfolioController::class)->middleware('auth:s
     'update' => 'api.portfolios.update',
     'destroy' => 'api.portfolios.destroy',
 ]);
+Route::post('portfolios/{portfolio}/blueprints', [PortfolioController::class, 'addBlueprint'])->middleware('auth:sanctum')->name('api.portfolios.addBlueprint');
 Route::post('portfolios/{portfolio}/user-cards', [PortfolioController::class, 'addUserCard'])->middleware('auth:sanctum')->name('api.portfolios.addUserCard');
 Route::delete('portfolios/{portfolio}/user-cards/{userCard}', [PortfolioController::class, 'removeUserCard'])->middleware('auth:sanctum')->name('api.portfolios.removeUserCard');
 Route::put('portfolios/{portfolio}/user-cards/{userCard}', [PortfolioController::class, 'updateUserCardQuantity'])->middleware('auth:sanctum')->name('api.portfolios.updateUserCardQuantity');
