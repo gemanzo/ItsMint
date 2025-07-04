@@ -70,8 +70,7 @@ class UpdateBlueprintPriceJob implements ShouldQueue
                 'ct_id' => $blueprintCtId,
                 'service_response_is_null' => is_null($adjustedPrices),
                 'service_response_count' => is_array($adjustedPrices) ? count($adjustedPrices) : 'N/A (not an array)',
-                // Consider logging $adjustedPrices directly if the data volume is manageable
-                // 'service_response_data' => $adjustedPrices
+                'response_keys' => is_array($adjustedPrices) ? array_keys($adjustedPrices) : null,
             ]);
             // --- END ADDED LOGGING ---
 
@@ -87,25 +86,62 @@ class UpdateBlueprintPriceJob implements ShouldQueue
                 return;
             }
 
-            foreach ($adjustedPrices as $condition => $priceData) {
+            $pricesProcessed = 0;
+            $pricesSkipped = 0;
+
+            foreach ($adjustedPrices as $priceKey => $priceData) {
+                // Skip metadata entry
+                if ($priceKey === '_metadata') {
+                    continue;
+                }
+
+                // Validate that priceData has required fields for the new structure
+                if (! isset($priceData['condition']) || ! isset($priceData['language'])) {
+                    Log::warning('UpdateBlueprintPriceJob: Price data missing required fields', [
+                        'blueprint_id' => $blueprint->id,
+                        'price_key' => $priceKey,
+                        'missing_fields' => [
+                            'condition' => ! isset($priceData['condition']),
+                            'language' => ! isset($priceData['language']),
+                        ],
+                    ]);
+                    $pricesSkipped++;
+
+                    continue;
+                }
+
                 CardPrice::updateOrCreate([
                     'blueprint_id' => $blueprint->id,
-                    'condition' => $condition,
+                    'condition' => $priceData['condition'],
+                    'language' => $priceData['language'], // Now includes language in search criteria
                 ], [
                     'price_cents' => $priceData['price_cents'],
                     'currency' => $priceData['currency'] ?? 'EUR',
-                    'language' => $priceData['language'] ?? 'en',
                     'is_foil' => $priceData['is_foil'] ?? false,
                     'source' => $priceData['source'] ?? 'Default Source',
                     'fetched_at' => $priceData['fetched_at'],
                 ]);
-                Log::info('Saved/Updated price for blueprint by condition (from service).', [
+
+                Log::info('Saved/Updated price for blueprint by condition and language (from service).', [
                     'blueprint_id' => $blueprint->id,
-                    'condition' => $condition,
-                    'price' => $priceData['price_cents'],
+                    'condition' => $priceData['condition'],
+                    'language' => $priceData['language'],
+                    'price_cents' => $priceData['price_cents'],
                     'source' => $priceData['source'],
+                    'was_adjusted' => isset($priceData['original_price_cents']),
+                    'original_price_cents' => $priceData['original_price_cents'] ?? null,
                 ]);
+
+                $pricesProcessed++;
             }
+
+            Log::info('UpdateBlueprintPriceJob completed successfully', [
+                'blueprint_id' => $blueprint->id,
+                'ct_id' => $blueprintCtId,
+                'prices_processed' => $pricesProcessed,
+                'prices_skipped' => $pricesSkipped,
+                'total_entries_in_response' => count($adjustedPrices),
+            ]);
         } catch (\Exception $e) {
             Log::error('Exception in UpdateBlueprintPriceJob (after service call)', [
                 'blueprint_id' => $blueprint->id ?? 'N/A',

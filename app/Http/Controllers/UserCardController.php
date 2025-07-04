@@ -44,15 +44,45 @@ class UserCardController extends Controller
 
         $quantity = $validated['quantity'];
 
-        // Auto-populate purchase_price if not provided, using estimated value with condition adjustments
+        // Auto-populate purchase_price if not provided, using language and condition-specific pricing
         if (! isset($validated['purchase_price']) || is_null($validated['purchase_price'])) {
-            $blueprint = Blueprint::with('latestPrice')->find($validated['blueprint_id']);
-            if ($blueprint && $blueprint->latestPrice && ! is_null($blueprint->latestPrice->price_cents)) {
-                $adjustedPriceCents = UserCard::calculateEstimatedPriceCents(
-                    $blueprint->latestPrice->price_cents,
-                    $validated['condition']
-                );
-                $validated['purchase_price'] = $adjustedPriceCents / 100; // Convert to euros
+            $userLanguage = strtolower($validated['language']);
+            $userCondition = $validated['condition'];
+
+            // Try to get exact match for language and condition first
+            $specificPrice = $blueprint->cardPrices()
+                ->where('language', $userLanguage)
+                ->where('condition', $userCondition)
+                ->orderBy('fetched_at', 'desc')
+                ->first();
+
+            if ($specificPrice && ! is_null($specificPrice->price_cents)) {
+                $validated['purchase_price'] = $specificPrice->price_cents / 100; // Convert to euros
+            } else {
+                // Fallback to latest price for the language (any condition)
+                $languagePrice = $blueprint->cardPrices()
+                    ->where('language', $userLanguage)
+                    ->orderBy('fetched_at', 'desc')
+                    ->first();
+
+                if ($languagePrice && ! is_null($languagePrice->price_cents)) {
+                    // Apply condition adjustment to the language-specific price
+                    $adjustedPriceCents = UserCard::calculateEstimatedPriceCents(
+                        $languagePrice->price_cents,
+                        $userCondition
+                    );
+                    $validated['purchase_price'] = $adjustedPriceCents / 100; // Convert to euros
+                } else {
+                    // Final fallback to latest price (any language/condition) with condition adjustment
+                    $blueprint = Blueprint::with('latestPrice')->find($validated['blueprint_id']);
+                    if ($blueprint && $blueprint->latestPrice && ! is_null($blueprint->latestPrice->price_cents)) {
+                        $adjustedPriceCents = UserCard::calculateEstimatedPriceCents(
+                            $blueprint->latestPrice->price_cents,
+                            $userCondition
+                        );
+                        $validated['purchase_price'] = $adjustedPriceCents / 100; // Convert to euros
+                    }
+                }
             }
         }
 

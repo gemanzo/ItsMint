@@ -20,7 +20,7 @@ class BlueprintController extends Controller
         $request->validate([
             'category_id' => 'nullable|integer|exists:blueprints,ct_category_id',
             'expansion_id' => 'nullable|integer|exists:expansions,id', // Validate expansion_id
-            'language' => 'nullable|string|in:en,jp,zh-cn,fr',
+            'language' => 'nullable|string|in:en,jp,zh-cn,zh-tw,fr,ko',
         ]);
 
         $selectedCategoryId = $request->input('category_id');
@@ -38,13 +38,25 @@ class BlueprintController extends Controller
                 return $query->where('expansion_id', $expansionId);
             })
             ->when($selectedLanguage, function ($query, $language) {
-                return $query->whereHas('latestPrice', function ($q) use ($language) {
-                    $q->where('language', $language);
+                // Use the new relation to filter by language with any available prices
+                return $query->whereHas('cardPrices', function ($q) use ($language) {
+                    $q->where('language', strtolower($language));
                 });
             })
             ->orderBy('name')
             ->paginate(30)
             ->withQueryString();
+
+        // Load additional price data for each blueprint if language is selected
+        if ($selectedLanguage) {
+            $blueprints->getCollection()->transform(function ($blueprint) use ($selectedLanguage) {
+                $blueprint->load(['latestPriceForLanguage' => function ($query) use ($selectedLanguage) {
+                    $query->where('language', strtolower($selectedLanguage));
+                }]);
+
+                return $blueprint;
+            });
+        }
 
         // Get CardTrader category configurations
         $cardtraderCategoriesConfig = config('services.cardtrader');
@@ -76,6 +88,18 @@ class BlueprintController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        // Get available languages with their display names
+        $availableLanguages = collect([
+            'jp' => 'Japanese',
+            'en' => 'English',
+            'fr' => 'French',
+            'zh-cn' => 'Chinese (Simplified)',
+            'zh-tw' => 'Chinese (Traditional)',
+            'ko' => 'Korean',
+        ])->map(function ($name, $code) {
+            return ['code' => $code, 'name' => $name];
+        })->values();
+
         return Inertia::render('Dashboard/Blueprints/Index', [
             'blueprints' => $blueprints,
             'filters' => [
@@ -85,6 +109,7 @@ class BlueprintController extends Controller
             ],
             'availableCategories' => $availableCategories,
             'availableExpansions' => $availableExpansions, // Pass available expansions
+            'availableLanguages' => $availableLanguages, // Pass available languages
         ]);
     }
 
@@ -93,10 +118,26 @@ class BlueprintController extends Controller
      */
     public function show(Blueprint $blueprint): Response
     {
-        $blueprint->load(['expansion', 'latestPrice']);
+        $blueprint->load([
+            'expansion',
+            'latestPrice',
+            'cardPrices' => function ($query) {
+                $query->orderBy('language')->orderBy('condition')->orderBy('fetched_at', 'desc');
+            },
+        ]);
+
+        // Group prices by language for easier frontend consumption
+        $pricesByLanguage = $blueprint->cardPrices
+            ->groupBy('language')
+            ->map(function ($prices) {
+                return $prices->groupBy('condition')->map(function ($conditionPrices) {
+                    return $conditionPrices->first(); // Get latest for each condition
+                });
+            });
 
         return Inertia::render('Dashboard/Blueprints/Show', [
             'blueprint' => $blueprint,
+            'pricesByLanguage' => $pricesByLanguage,
             'userIsAdmin' => auth()->user()?->hasRole('admin') ?? false,
         ]);
     }

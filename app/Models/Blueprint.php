@@ -66,10 +66,66 @@ class Blueprint extends Model
 
     /**
      * Get the latest price for the Blueprint.
+     * Note: With language-based pricing, this returns the most recent price regardless of language/condition.
+     * Consider using latestPriceForLanguage() for more specific needs.
      */
     public function latestPrice()
     {
         return $this->hasOne(CardPrice::class)->latestOfMany('fetched_at');
+    }
+
+    /**
+     * Get prices grouped by language.
+     */
+    public function pricesByLanguage()
+    {
+        return $this->cardPrices()
+            ->orderBy('language')
+            ->orderBy('condition')
+            ->orderBy('fetched_at', 'desc');
+    }
+
+    /**
+     * Get the latest price for a specific language.
+     */
+    public function latestPriceForLanguage(string $language)
+    {
+        return $this->hasOne(CardPrice::class)
+            ->where('language', strtolower($language))
+            ->latestOfMany('fetched_at');
+    }
+
+    /**
+     * Get the latest price for a specific language and condition.
+     */
+    public function latestPriceForLanguageAndCondition(string $language, string $condition)
+    {
+        return $this->hasOne(CardPrice::class)
+            ->where('language', strtolower($language))
+            ->where('condition', $condition)
+            ->latestOfMany('fetched_at');
+    }
+
+    /**
+     * Get all latest prices by language (one per language).
+     */
+    public function latestPricesByLanguage()
+    {
+        return $this->cardPrices()
+            ->selectRaw('*, ROW_NUMBER() OVER (PARTITION BY language ORDER BY fetched_at DESC) as rn')
+            ->havingRaw('rn = 1')
+            ->orderBy('language');
+    }
+
+    /**
+     * Get cheapest price across all languages for a given condition.
+     */
+    public function cheapestPriceForCondition(string $condition)
+    {
+        return $this->hasOne(CardPrice::class)
+            ->where('condition', $condition)
+            ->orderBy('price_cents', 'asc')
+            ->orderBy('fetched_at', 'desc');
     }
 
     /**

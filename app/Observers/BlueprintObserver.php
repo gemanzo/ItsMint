@@ -69,8 +69,45 @@ class BlueprintObserver
     private function indexBlueprint(Blueprint $blueprint): void
     {
         try {
-            // Load relationships
-            $blueprint->load(['expansion', 'latestPrice']);
+            // Load relationships including all card prices for language analysis
+            $blueprint->load(['expansion', 'latestPrice', 'cardPrices']);
+
+            // Calculate price statistics by language
+            $pricesByLanguage = [];
+            $overallPriceStats = [
+                'min_price_cents' => null,
+                'max_price_cents' => null,
+                'avg_price_cents' => null,
+                'languages_available' => [],
+            ];
+
+            if ($blueprint->cardPrices->isNotEmpty()) {
+                $groupedPrices = $blueprint->cardPrices->groupBy('language');
+
+                foreach ($groupedPrices as $language => $prices) {
+                    $languagePrices = $prices->pluck('price_cents')->filter();
+                    if ($languagePrices->isNotEmpty()) {
+                        $pricesByLanguage[$language] = [
+                            'min_price_cents' => $languagePrices->min(),
+                            'max_price_cents' => $languagePrices->max(),
+                            'avg_price_cents' => round($languagePrices->avg()),
+                            'record_count' => $languagePrices->count(),
+                            'latest_update' => $this->formatDateForElasticsearch(
+                                $prices->max('fetched_at')
+                            ),
+                        ];
+                        $overallPriceStats['languages_available'][] = $language;
+                    }
+                }
+
+                // Overall statistics across all languages
+                $allPrices = $blueprint->cardPrices->pluck('price_cents')->filter();
+                if ($allPrices->isNotEmpty()) {
+                    $overallPriceStats['min_price_cents'] = $allPrices->min();
+                    $overallPriceStats['max_price_cents'] = $allPrices->max();
+                    $overallPriceStats['avg_price_cents'] = round($allPrices->avg());
+                }
+            }
 
             // Transform to Elasticsearch format
             $data = [
@@ -94,13 +131,19 @@ class BlueprintObserver
                     'is_foil' => $blueprint->latestPrice->is_foil ?? false,
                     'fetched_at' => $this->formatDateForElasticsearch($blueprint->latestPrice->fetched_at),
                 ] : null,
+                'price_statistics' => $overallPriceStats,
+                'prices_by_language' => $pricesByLanguage,
                 'properties' => $blueprint->properties,
                 'created_at' => $this->formatDateForElasticsearch($blueprint->created_at),
                 'updated_at' => $this->formatDateForElasticsearch($blueprint->updated_at),
             ];
 
             $this->elasticsearch->indexBlueprint($data);
-            Log::info('Blueprint indexed in Elasticsearch', ['blueprint_id' => $blueprint->id]);
+            Log::info('Blueprint indexed in Elasticsearch', [
+                'blueprint_id' => $blueprint->id,
+                'languages_indexed' => count($pricesByLanguage),
+                'total_price_records' => $blueprint->cardPrices->count(),
+            ]);
         } catch (\Exception $e) {
             Log::error('Failed to index blueprint in Elasticsearch', [
                 'blueprint_id' => $blueprint->id,
