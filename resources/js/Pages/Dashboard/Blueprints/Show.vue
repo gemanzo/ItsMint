@@ -19,6 +19,10 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  pricesByLanguage: {
+    type: Object,
+    default: () => ({}),
+  },
   userIsAdmin: Boolean,
 });
 
@@ -30,6 +34,7 @@ const priceHistory = ref(null);
 const isLoadingChart = ref(true);
 const portfolios = ref([]);
 const isLoadingPortfolios = ref(false);
+const selectedLanguage = ref('en'); // Default to English
 
 const form = reactive({
   portfolio_id: null,
@@ -51,6 +56,75 @@ const purchasePriceEuros = computed({
       form.purchase_price_cents = Math.round(numValue * 100);
     }
   },
+});
+
+// Language mapping for display names
+const languageNames = {
+  en: 'English',
+  jp: 'Japanese',
+  fr: 'French',
+  'zh-cn': 'Chinese (Simplified)',
+  'zh-tw': 'Chinese (Traditional)',
+  ko: 'Korean',
+};
+
+// Condition hierarchy for proper ordering
+const conditionOrder = [
+  'Near Mint',
+  'Slightly Played', 
+  'Lightly Played',
+  'Moderately Played',
+  'Played',
+  'Heavily Played',
+  'Poor',
+  'Damaged'
+];
+
+// Computed properties for price data
+const availableLanguages = computed(() => {
+  return Object.keys(props.pricesByLanguage).map(lang => ({
+    code: lang,
+    name: languageNames[lang] || lang.toUpperCase(),
+    hasData: Object.keys(props.pricesByLanguage[lang] || {}).length > 0
+  })).sort((a, b) => a.name.localeCompare(b.name));
+});
+
+const selectedLanguagePrices = computed(() => {
+  const langPrices = props.pricesByLanguage[selectedLanguage.value] || {};
+  
+  // Sort conditions by the defined order
+  const sortedConditions = Object.keys(langPrices).sort((a, b) => {
+    const indexA = conditionOrder.indexOf(a);
+    const indexB = conditionOrder.indexOf(b);
+    
+    // If condition not found in order, put it at the end
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    
+    return indexA - indexB;
+  });
+
+  return sortedConditions.map(condition => ({
+    condition,
+    ...langPrices[condition]
+  }));
+});
+
+const hasAnyPriceData = computed(() => {
+  return Object.keys(props.pricesByLanguage).length > 0;
+});
+
+const selectedLanguageData = computed(() => {
+  return availableLanguages.value.find(lang => lang.code === selectedLanguage.value);
+});
+
+// Set default language to the first available one
+onMounted(() => {
+  if (availableLanguages.value.length > 0) {
+    // Try to find English first, otherwise use the first available
+    const englishLang = availableLanguages.value.find(lang => lang.code === 'en');
+    selectedLanguage.value = englishLang ? englishLang.code : availableLanguages.value[0].code;
+  }
 });
 
 // Placeholder image as data URL SVG
@@ -77,16 +151,7 @@ const formatPrice = (cents, currency = 'EUR') => {
   });
 };
 
-const formatDate = (dateString) => {
-  if (!dateString) return 'N/A';
-  return new Date(dateString).toLocaleString('it-IT', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
+
 
 const formatDateShort = (dateString) => {
   if (!dateString) return 'N/A';
@@ -98,34 +163,22 @@ const formatDateShort = (dateString) => {
 };
 
 // Computed properties
-const conditionColor = computed(() => {
-  if (!props.blueprint.latest_price) return 'gray';
-  const condition = props.blueprint.latest_price.condition.toLowerCase();
 
-  if (condition.includes('mint') || condition.includes('near mint'))
+const getConditionColor = (condition) => {
+  const conditionLower = condition.toLowerCase();
+  
+  if (conditionLower.includes('mint') || conditionLower.includes('near mint'))
     return 'green';
-  if (condition.includes('excellent') || condition.includes('lightly played'))
+  if (conditionLower.includes('excellent') || conditionLower.includes('lightly') || conditionLower.includes('slightly'))
     return 'blue';
-  if (condition.includes('good') || condition.includes('moderately played'))
+  if (conditionLower.includes('moderate') || conditionLower.includes('good'))
     return 'yellow';
-  if (condition.includes('played') || condition.includes('damaged'))
+  if (conditionLower.includes('played') || conditionLower.includes('poor') || conditionLower.includes('damaged') || conditionLower.includes('heavily'))
     return 'red';
   return 'gray';
-});
+};
 
-const priceStatus = computed(() => {
-  if (!props.blueprint.latest_price) return null;
-  const fetched = new Date(props.blueprint.latest_price.fetched_at);
-  const now = new Date();
-  const hoursDiff = (now - fetched) / (1000 * 60 * 60);
 
-  if (hoursDiff < 1) return { text: 'Just updated', color: 'green' };
-  if (hoursDiff < 24)
-    return { text: `${Math.floor(hoursDiff)}h ago`, color: 'blue' };
-  if (hoursDiff < 168)
-    return { text: `${Math.floor(hoursDiff / 24)}d ago`, color: 'yellow' };
-  return { text: 'Outdated', color: 'red' };
-});
 
 const fetchPortfolios = async () => {
   if (portfolios.value.length > 0) return; // Don't refetch
@@ -146,9 +199,26 @@ const fetchPortfolios = async () => {
 
 // Methods
 const addToPortfolio = () => {
+  // Set default values based on selected language and available prices
+  if (selectedLanguagePrices.value.length > 0) {
+    const bestConditionPrice = selectedLanguagePrices.value[0]; // First in the sorted array
+    form.language = selectedLanguage.value;
+    form.condition = bestConditionPrice.condition;
+    form.purchase_price_cents = bestConditionPrice.price_cents;
+    form.is_foil = bestConditionPrice.is_foil || false;
+  } else if (props.blueprint.latest_price) {
+    // Fallback to latest price if no data for selected language
+    form.language = props.blueprint.latest_price.language;
+    form.condition = props.blueprint.latest_price.condition;
+    form.purchase_price_cents = props.blueprint.latest_price.price_cents;
+    form.is_foil = props.blueprint.latest_price.is_foil || false;
+  }
+  
   showAddToPortfolioModal.value = true;
   fetchPortfolios();
 };
+
+
 
 const submitAddToPortfolio = () => {
   form.errors = {};
@@ -176,11 +246,7 @@ const submitAddToPortfolio = () => {
     });
 };
 
-const copyToClipboard = (text) => {
-  navigator.clipboard.writeText(text);
-  // TODO: Show toast notification
-  console.log('Copied to clipboard:', text);
-};
+
 
 const fetchPriceHistory = async () => {
   try {
@@ -325,7 +391,7 @@ onMounted(() => {
                   {{ blueprint.name }}
                 </h1>
                 <div class="flex flex-wrap items-center gap-3">
-                  <div
+                  <!-- <div
                     v-if="blueprint.latest_price"
                     class="bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1 shadow-lg"
                   >
@@ -338,7 +404,7 @@ onMounted(() => {
                       }}
                     </p>
                     <p class="text-xs text-red-600">Market Price</p>
-                  </div>
+                  </div> -->
                   <div class="flex flex-wrap gap-1">
                     <span
                       v-if="blueprint.expansion"
@@ -346,12 +412,7 @@ onMounted(() => {
                     >
                       {{ blueprint.expansion.name }}
                     </span>
-                    <span
-                      v-if="blueprint.category"
-                      class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/90 text-orange-800 shadow-sm"
-                    >
-                      {{ blueprint.category.name }}
-                    </span>
+
                     <span
                       v-if="
                         blueprint.latest_price && blueprint.latest_price.is_foil
@@ -366,7 +427,7 @@ onMounted(() => {
 
               <!-- Quick Actions -->
               <div class="flex flex-wrap gap-2">
-                <button
+                <!-- <button
                   class="inline-flex items-center px-3 py-1.5 bg-white/95 backdrop-blur-sm text-red-600 font-semibold rounded-md shadow-lg hover:bg-white transition-colors duration-200 text-xs"
                   @click="addToPortfolio"
                 >
@@ -384,8 +445,8 @@ onMounted(() => {
                     />
                   </svg>
                   Add to Portfolio
-                </button>
-                <button
+                </button> -->
+                <!-- <button
                   class="inline-flex items-center px-3 py-1.5 bg-white/20 backdrop-blur-sm text-white font-medium rounded-md hover:bg-white/30 transition-colors duration-200 text-xs border border-white/30"
                   @click="copyToClipboard(blueprint.ct_id)"
                 >
@@ -403,7 +464,7 @@ onMounted(() => {
                     />
                   </svg>
                   Copy ID
-                </button>
+                </button> -->
                 <Link
                   :href="route('dashboard.blueprints.index')"
                   class="inline-flex items-center px-3 py-1.5 bg-white/20 backdrop-blur-sm text-white font-medium rounded-md hover:bg-white/30 transition-colors duration-200 text-xs border border-white/30"
@@ -501,47 +562,6 @@ onMounted(() => {
                     {{ blueprint.category?.name || 'N/A' }}
                   </p>
                 </div>
-                <div>
-                  <p
-                    class="text-sm font-medium text-gray-500 dark:text-gray-400"
-                  >
-                    CardTrader ID
-                  </p>
-                  <div class="flex items-center mt-1">
-                    <p class="text-lg font-mono text-gray-900 dark:text-white">
-                      {{ blueprint.ct_id }}
-                    </p>
-                    <button
-                      class="ml-2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                      title="Copy to clipboard"
-                      @click="copyToClipboard(blueprint.ct_id)"
-                    >
-                      <svg
-                        class="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <p
-                    class="text-sm font-medium text-gray-500 dark:text-gray-400"
-                  >
-                    Added to Database
-                  </p>
-                  <p class="text-lg text-gray-900 dark:text-white mt-1">
-                    {{ formatDateShort(blueprint.created_at) }}
-                  </p>
-                </div>
               </div>
             </div>
 
@@ -594,91 +614,127 @@ onMounted(() => {
 
           <!-- Right Column - Price & Market Info -->
           <div class="space-y-6">
-            <!-- Current Price Card -->
+            <!-- Multi-Language Price Display -->
             <div
-              v-if="blueprint.latest_price"
+              v-if="hasAnyPriceData"
               class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
             >
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                  Current Price
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                  <svg class="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                  </svg>
+                  Prices by Language
                 </h3>
-                <span
-                  v-if="priceStatus"
-                  :class="`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-${priceStatus.color}-100 text-${priceStatus.color}-800 dark:bg-${priceStatus.color}-900 dark:text-${priceStatus.color}-200`"
-                >
-                  {{ priceStatus.text }}
-                </span>
               </div>
 
-              <div class="space-y-4">
-                <div
-                  class="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800"
+              <!-- Language Selector -->
+              <div class="mb-6">
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="language in availableLanguages"
+                    :key="language.code"
+                    :class="[
+                      'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                      selectedLanguage === language.code
+                        ? 'bg-indigo-600 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    ]"
+                    @click="selectedLanguage = language.code"
+                  >
+                    <span class="flex items-center">
+                      {{ language.name }}
+                      <span v-if="!language.hasData" class="ml-1 text-xs opacity-50">(No data)</span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Price Data for Selected Language -->
+              <div v-if="selectedLanguagePrices.length > 0" class="space-y-4">
+                <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Showing prices for <strong>{{ selectedLanguageData?.name }}</strong>
+                </div>
+
+                                 <!-- Price Cards Grid -->
+                 <div class="grid gap-3">
+                   <div
+                     v-for="price in selectedLanguagePrices"
+                     :key="`${price.condition}-${price.language}`"
+                     class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200"
+                   >
+                     <div class="flex items-center justify-between">
+                       <div class="flex-1">
+                         <div class="flex items-center space-x-2 mb-2">
+                           <span
+                             :class="`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-${getConditionColor(price.condition)}-100 text-${getConditionColor(price.condition)}-800 dark:bg-${getConditionColor(price.condition)}-900 dark:text-${getConditionColor(price.condition)}-200`"
+                           >
+                             {{ price.condition }}
+                           </span>
+                           <span
+                             v-if="price.is_foil"
+                             class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
+                           >
+                             ✨ Foil
+                           </span>
+                         </div>
+                         <div class="text-xs text-gray-500 dark:text-gray-400">
+                           Updated {{ formatDateShort(price.fetched_at) }}
+                         </div>
+                       </div>
+                       <div class="text-right">
+                         <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+                           {{ formatPrice(price.price_cents, price.currency) }}
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+
+                                 <!-- Add to Portfolio button with selected language context -->
+                 <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                   <div class="flex items-center justify-between">
+                     <p class="text-xs text-gray-500 dark:text-gray-400">
+                       💡 Prices automatically sync from CardTrader marketplace
+                     </p>
+                     <button
+                       class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors duration-200 flex items-center"
+                       @click="addToPortfolio"
+                     >
+                       <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                       </svg>
+                       Add to Portfolio
+                     </button>
+                   </div>
+                 </div>
+              </div>
+
+              <!-- No data for selected language -->
+              <div v-else class="text-center py-8">
+                <svg
+                  class="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <p
-                    class="text-3xl font-bold text-green-600 dark:text-green-400"
-                  >
-                    {{
-                      formatPrice(
-                        blueprint.latest_price.price_cents,
-                        blueprint.latest_price.currency
-                      )
-                    }}
-                  </p>
-                  <p class="text-sm text-green-600 dark:text-green-400 mt-1">
-                    Market Price
-                  </p>
-                </div>
-
-                <div class="space-y-3">
-                  <div class="flex items-center justify-between">
-                    <span
-                      class="text-sm font-medium text-gray-500 dark:text-gray-400"
-                      >Condition</span
-                    >
-                    <span
-                      :class="`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-${conditionColor}-100 text-${conditionColor}-800 dark:bg-${conditionColor}-900 dark:text-${conditionColor}-200`"
-                    >
-                      {{ blueprint.latest_price.condition }}
-                    </span>
-                  </div>
-                  <div class="flex items-center justify-between">
-                    <span
-                      class="text-sm font-medium text-gray-500 dark:text-gray-400"
-                      >Language</span
-                    >
-                    <span
-                      class="text-sm font-semibold text-gray-900 dark:text-white"
-                      >{{ blueprint.latest_price.language.toUpperCase() }}</span
-                    >
-                  </div>
-                  <div class="flex items-center justify-between">
-                    <span
-                      class="text-sm font-medium text-gray-500 dark:text-gray-400"
-                      >Foil</span
-                    >
-                    <span
-                      class="text-sm font-semibold text-gray-900 dark:text-white"
-                    >
-                      {{ blueprint.latest_price.is_foil ? '✨ Yes' : 'No' }}
-                    </span>
-                  </div>
-                </div>
-
-                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <div
-                    class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400"
-                  >
-                    <span>Source: {{ blueprint.latest_price.source }}</span>
-                    <span>{{
-                      formatDate(blueprint.latest_price.fetched_at)
-                    }}</span>
-                  </div>
-                </div>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  No Prices for {{ selectedLanguageData?.name }}
+                </h4>
+                <p class="text-gray-600 dark:text-gray-400 text-sm">
+                  Price data is not available for this language yet.
+                </p>
               </div>
             </div>
 
-            <!-- No Price Data -->
+            <!-- No Price Data At All -->
             <div
               v-else
               class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
@@ -806,6 +862,11 @@ onMounted(() => {
         <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
           Add "{{ blueprint.name }}" to Portfolio
         </h2>
+        <p v-if="form.language" class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          Language: <strong>{{ languageNames[form.language] || form.language.toUpperCase() }}</strong>
+          <span v-if="form.condition">• {{ form.condition }}</span>
+          <span v-if="form.is_foil" class="text-yellow-600 dark:text-yellow-400">• ✨ Foil</span>
+        </p>
 
         <form class="mt-6 space-y-4" @submit.prevent="submitAddToPortfolio">
           <div>

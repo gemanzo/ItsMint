@@ -20,22 +20,22 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
                 <!-- Enhanced Metrics Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                     <!-- Total Estimated Value -->
-                    <div class="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-6 border border-green-200 dark:border-green-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <div class="bg-white dark:bg-gray-800 rounded-card p-6 border border-gray-200 dark:border-gray-700 shadow-card hover:shadow-card-hover transition-shadow duration-200">
                         <div class="flex items-center justify-between">
                             <div class="flex-1">
-                                <p class="text-green-600 dark:text-green-400 text-sm font-medium uppercase tracking-wide">Total Estimated Value</p>
-                                <p class="text-3xl font-bold text-green-900 dark:text-green-100 mt-2">{{ formatCurrency(totalEstimatedPortfolioValue) }}</p>
-                                <div class="flex items-center mt-3">
-                                    <svg class="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <p class="text-gray-600 dark:text-gray-400 text-sm font-medium uppercase tracking-wide">Total Estimated Value</p>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white mt-2">{{ formatCurrency(totalEstimatedPortfolioValue) }}</p>
+                                <div class="flex items-center mt-2">
+                                    <svg class="h-3 w-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                                     </svg>
-                                    <span class="text-green-600 dark:text-green-400 text-sm ml-1 font-medium">Portfolio Value</span>
+                                    <span class="text-gray-600 dark:text-gray-400 text-xs ml-1">Portfolio Value</span>
                                 </div>
                             </div>
-                            <div class="h-14 w-14 bg-green-500 rounded-xl flex items-center justify-center shadow-lg">
-                                <svg class="h-7 w-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="h-10 w-10 bg-gray-600 rounded-card flex items-center justify-center">
+                                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                                 </svg>
                             </div>
@@ -43,20 +43,20 @@
                             </div>
 
                             <!-- Total Purchase Cost -->
-                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <div class="bg-white dark:bg-gray-800 rounded-card p-6 border border-gray-200 dark:border-gray-700 shadow-card hover:shadow-card-hover transition-shadow duration-200">
                         <div class="flex items-center justify-between">
                             <div class="flex-1">
-                                <p class="text-blue-600 dark:text-blue-400 text-sm font-medium uppercase tracking-wide">Total Purchase Cost</p>
-                                <p class="text-3xl font-bold text-blue-900 dark:text-blue-100 mt-2">{{ formatCurrency(totalPurchasePortfolioCost) }}</p>
-                                <div class="flex items-center mt-3">
-                                    <svg class="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <p class="text-gray-600 dark:text-gray-400 text-sm font-medium uppercase tracking-wide">Total Purchase Cost</p>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white mt-2">{{ formatCurrency(totalPurchasePortfolioCost) }}</p>
+                                <div class="flex items-center mt-2">
+                                    <svg class="h-3 w-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                     </svg>
-                                    <span class="text-blue-600 dark:text-blue-400 text-sm ml-1 font-medium">Initial Investment</span>
+                                    <span class="text-gray-600 dark:text-gray-400 text-xs ml-1">Initial Investment</span>
                                 </div>
                             </div>
-                            <div class="h-14 w-14 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg">
-                                <svg class="h-7 w-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="h-10 w-10 bg-gray-600 rounded-card flex items-center justify-center">
+                                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                                 </svg>
                             </div>
@@ -64,28 +64,28 @@
                             </div>
 
                             <!-- Total Profit/Loss -->
-                    <div class="rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1" :class="profitLossCardClasses">
+                    <div class="bg-white dark:bg-gray-800 rounded-card p-6 border border-gray-200 dark:border-gray-700 shadow-card hover:shadow-card-hover transition-shadow duration-200">
                         <div class="flex items-center justify-between">
                             <div class="flex-1">
-                                <p class="text-sm font-medium uppercase tracking-wide" :class="profitLossTextClasses">Total Profit / Loss</p>
-                                <p class="text-3xl font-bold mt-2" :class="profitLossValueClasses">{{ formatCurrency(totalProfitLoss) }}</p>
-                                <div class="flex items-center mt-3">
-                                    <svg v-if="totalProfitLoss >= 0" class="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <p class="text-gray-600 dark:text-gray-400 text-sm font-medium uppercase tracking-wide">Total Profit / Loss</p>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white mt-2">{{ formatCurrency(totalProfitLoss) }}</p>
+                                <div class="flex items-center mt-2">
+                                    <svg v-if="totalProfitLoss >= 0" class="h-3 w-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                                     </svg>
-                                    <svg v-else class="h-4 w-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg v-else class="h-3 w-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
                                     </svg>
-                                    <span class="text-sm ml-1 font-medium" :class="profitLossTextClasses">
+                                    <span class="text-xs ml-1" :class="totalProfitLoss >= 0 ? 'text-green-600' : 'text-red-600'">
                                         {{ totalProfitLoss >= 0 ? 'Profit' : 'Loss' }}
                                     </span>
                                 </div>
                             </div>
-                            <div class="h-14 w-14 rounded-xl flex items-center justify-center shadow-lg" :class="profitLossIconBgClasses">
-                                <svg v-if="totalProfitLoss >= 0" class="h-7 w-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="h-10 w-10 rounded-card flex items-center justify-center" :class="totalProfitLoss >= 0 ? 'bg-green-600' : 'bg-red-600'">
+                                <svg v-if="totalProfitLoss >= 0" class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
                                 </svg>
-                                <svg v-else class="h-7 w-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg v-else class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"></path>
                                 </svg>
                             </div>
@@ -94,57 +94,57 @@
                 </div>
 
                 <!-- Quick Actions Hub -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm mb-8 border border-gray-200 dark:border-gray-700">
-                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">⚡ Quick Actions</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white dark:bg-gray-800 rounded-card p-6 shadow-card mb-8 border border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <button 
                             @click="showCreatePortfolioModal = true"
-                            class="group flex flex-col items-center p-6 rounded-xl bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 border border-purple-200 dark:border-purple-800 transition-all duration-300 hover:scale-105 hover:shadow-md"
+                            class="group flex flex-col items-center p-4 rounded-card bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-colors duration-200"
                         >
-                            <div class="h-12 w-12 bg-purple-500 rounded-lg flex items-center justify-center mb-3 group-hover:bg-purple-600 transition-colors">
-                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="h-8 w-8 bg-gray-600 rounded-button flex items-center justify-center mb-2 group-hover:bg-gray-700 transition-colors">
+                                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                 </svg>
                             </div>
-                            <span class="text-sm font-semibold text-purple-700 dark:text-purple-300 group-hover:text-purple-800 dark:group-hover:text-purple-200">New Portfolio</span>
-                            <span class="text-xs text-purple-500 dark:text-purple-400 mt-1">Create collection</span>
+                            <span class="text-xs font-medium text-gray-700 dark:text-gray-300">New Portfolio</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">Create collection</span>
                         </button>
                         
                         <Link :href="route('portfolios.index')" 
-                            class="group flex flex-col items-center p-6 rounded-xl bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border border-blue-200 dark:border-blue-800 transition-all duration-300 hover:scale-105 hover:shadow-md"
+                            class="group flex flex-col items-center p-4 rounded-card bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-colors duration-200"
                         >
-                            <div class="h-12 w-12 bg-blue-500 rounded-lg flex items-center justify-center mb-3 group-hover:bg-blue-600 transition-colors">
-                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="h-8 w-8 bg-gray-600 rounded-button flex items-center justify-center mb-2 group-hover:bg-gray-700 transition-colors">
+                                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                                 </svg>
                             </div>
-                            <span class="text-sm font-semibold text-blue-700 dark:text-blue-300 group-hover:text-blue-800 dark:group-hover:text-blue-200">View Portfolios</span>
-                            <span class="text-xs text-blue-500 dark:text-blue-400 mt-1">Manage collections</span>
+                            <span class="text-xs font-medium text-gray-700 dark:text-gray-300">View Portfolios</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">Manage collections</span>
                         </Link>
                         
                         <Link :href="route('dashboard.blueprints.index')" 
-                            class="group flex flex-col items-center p-6 rounded-xl bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 border border-orange-200 dark:border-orange-800 transition-all duration-300 hover:scale-105 hover:shadow-md"
+                            class="group flex flex-col items-center p-4 rounded-card bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-colors duration-200"
                         >
-                            <div class="h-12 w-12 bg-orange-500 rounded-lg flex items-center justify-center mb-3 group-hover:bg-orange-600 transition-colors">
-                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="h-8 w-8 bg-gray-600 rounded-button flex items-center justify-center mb-2 group-hover:bg-gray-700 transition-colors">
+                                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                 </svg>
                             </div>
-                            <span class="text-sm font-semibold text-orange-700 dark:text-orange-300 group-hover:text-orange-800 dark:group-hover:text-orange-200">Search Cards</span>
-                            <span class="text-xs text-orange-500 dark:text-orange-400 mt-1">Browse catalog</span>
+                            <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Search Cards</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">Browse catalog</span>
                         </Link>
                         
                         <button 
                             @click="showPriceAlertsModal = true"
-                            class="group flex flex-col items-center p-6 rounded-xl bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 border border-green-200 dark:border-green-800 transition-all duration-300 hover:scale-105 hover:shadow-md"
+                            class="group flex flex-col items-center p-4 rounded-card bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-colors duration-200"
                         >
-                            <div class="h-12 w-12 bg-green-500 rounded-lg flex items-center justify-center mb-3 group-hover:bg-green-600 transition-colors">
-                                <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="h-8 w-8 bg-gray-600 rounded-button flex items-center justify-center mb-2 group-hover:bg-gray-700 transition-colors">
+                                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5-5-5h5zm-5-5l5-5 5 5h-5v-5z"></path>
                                 </svg>
                             </div>
-                            <span class="text-sm font-semibold text-green-700 dark:text-green-300 group-hover:text-green-800 dark:group-hover:text-green-200">Price Alerts</span>
-                            <span class="text-xs text-green-500 dark:text-green-400 mt-1">Track changes</span>
+                            <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Price Alerts</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">Track changes</span>
                         </button>
                     </div>
                 </div>
@@ -153,10 +153,10 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <!-- Left Column - Recent Activity -->
                     <div class="lg:col-span-2">
-                        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                            <div class="flex items-center justify-between mb-6">
-                                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">📈 Recent Activity</h3>
-                                <Link :href="route('portfolios.index')" class="text-blue-600 dark:text-blue-400 text-sm hover:text-blue-700 dark:hover:text-blue-300 font-medium">
+                        <div class="bg-white dark:bg-gray-800 rounded-card p-6 shadow-card border border-gray-200 dark:border-gray-700">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Activity</h3>
+                                <Link :href="route('portfolios.index')" class="text-gray-600 dark:text-gray-400 text-sm hover:text-gray-800 dark:hover:text-gray-300 font-medium">
                                     View All →
                                 </Link>
                             </div>
@@ -186,7 +186,7 @@
                                 <p class="text-gray-500 dark:text-gray-400 mb-4">Start by creating a portfolio or adding cards to see activity here.</p>
                              <button 
                                 @click="showCreatePortfolioModal = true"
-                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                    class="px-4 py-2 bg-gray-600 text-white rounded-button hover:bg-gray-700 transition-colors"
                                 >
                                     Create Portfolio
                             </button>
@@ -195,12 +195,12 @@
                         </div>
 
                     <!-- Right Column - Portfolio Summary -->
-                    <div class="space-y-6">
+                    <div class="space-y-4">
                         <!-- Portfolio Count -->
-                        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                        <div class="bg-white dark:bg-gray-800 rounded-card p-6 shadow-card border border-gray-200 dark:border-gray-700">
                             <div class="flex items-center justify-between mb-4">
-                                <h4 class="text-lg font-semibold text-gray-900 dark:text-white">📂 Portfolios</h4>
-                                <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ portfolioStore.portfolios.length }}</span>
+                                <h4 class="text-lg font-semibold text-gray-900 dark:text-white">Portfolios</h4>
+                                <span class="text-xl font-bold text-gray-900 dark:text-white">{{ portfolioStore.portfolios.length }}</span>
                             </div>
                             <div class="space-y-2">
                                 <div class="flex justify-between text-sm">
@@ -215,14 +215,14 @@
                         </div>
 
                         <!-- Chart Placeholder -->
-                        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                            <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">📊 Performance</h4>
-                            <div class="h-40 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                        <div class="bg-white dark:bg-gray-800 rounded-card p-6 shadow-card border border-gray-200 dark:border-gray-700">
+                            <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Performance</h4>
+                            <div class="h-32 bg-gray-100 dark:bg-gray-700 rounded-card flex items-center justify-center">
                                 <div class="text-center">
-                                    <svg class="h-8 w-8 text-gray-400 dark:text-gray-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="h-6 w-6 text-gray-400 dark:text-gray-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                                     </svg>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">Chart Coming Soon</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Chart Coming Soon</p>
                                 </div>
                             </div>
                         </div>
@@ -230,27 +230,27 @@
                         </div>
 
                 <!-- Getting Started Guide (if no portfolios) -->
-                <div v-if="portfolioStore.portfolios.length === 0 && !portfolioStore.isLoading" class="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-700 mt-8">
+                <div v-if="portfolioStore.portfolios.length === 0 && !portfolioStore.isLoading" class="bg-white dark:bg-gray-800 rounded-card p-8 shadow-card border border-gray-200 dark:border-gray-700 mt-8">
                     <div class="text-center">
-                        <svg class="h-16 w-16 text-blue-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="h-12 w-12 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                         </svg>
-                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Welcome to ItsMint! 🎉</h3>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Welcome to ItsMint!</h3>
                         <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
                             Start building your One Piece TCG collection by creating your first portfolio. 
                             Track card values, monitor performance, and organize your collection like a pro.
                         </p>
-                        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <div class="flex flex-col sm:flex-row gap-3 justify-center">
                             <button 
                                 @click="showCreatePortfolioModal = true"
-                                class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                                class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-button transition-colors"
                             >
-                                🎯 Create Your First Portfolio
+                                Create Your First Portfolio
                             </button>
                             <Link :href="route('dashboard.blueprints.index')" 
-                                class="px-6 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-lg transition-colors"
+                                class="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium rounded-button transition-colors"
                             >
-                                🔍 Browse Card Catalog
+                                Browse Card Catalog
                             </Link>
                         </div>
                     </div>
@@ -265,12 +265,12 @@
         <div v-if="showPriceAlertsModal" class="fixed inset-0 z-50 overflow-y-auto">
             <div class="flex min-h-screen items-center justify-center p-4">
                 <div class="fixed inset-0 bg-black bg-opacity-25" @click="showPriceAlertsModal = false"></div>
-                <div class="relative bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">🔔 Price Alerts</h3>
+                <div class="relative bg-white dark:bg-gray-800 rounded-card p-6 max-w-md w-full border border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Price Alerts</h3>
                     <p class="text-gray-600 dark:text-gray-400 mb-4">Price alert functionality coming soon! We'll notify you when your cards' values change significantly.</p>
                     <button 
                         @click="showPriceAlertsModal = false"
-                        class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        class="w-full px-4 py-2 bg-gray-600 text-white rounded-button hover:bg-gray-700 transition-colors"
                     >
                         Got it!
                     </button>
@@ -358,30 +358,7 @@ const totalProfitLoss = computed(() => {
     return totalEstimatedPortfolioValue.value - totalPurchasePortfolioCost.value;
 });
 
-// Computed properties for styling profit/loss cards
-const profitLossCardClasses = computed(() => {
-    return totalProfitLoss.value >= 0 
-        ? 'bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border border-green-200 dark:border-green-800'
-        : 'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border border-red-200 dark:border-red-800';
-});
 
-const profitLossTextClasses = computed(() => {
-    return totalProfitLoss.value >= 0 
-        ? 'text-green-600 dark:text-green-400'
-        : 'text-red-600 dark:text-red-400';
-});
-
-const profitLossValueClasses = computed(() => {
-    return totalProfitLoss.value >= 0 
-        ? 'text-green-900 dark:text-green-100'
-        : 'text-red-900 dark:text-red-100';
-});
-
-const profitLossIconBgClasses = computed(() => {
-    return totalProfitLoss.value >= 0 
-        ? 'bg-green-500'
-        : 'bg-red-500';
-});
 
 // Computed properties for portfolio statistics
 const totalCards = computed(() => {
