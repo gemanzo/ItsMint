@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Convert absolute paths to relative paths for the container
 RELATIVE_FILES=""

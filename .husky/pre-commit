@@ -1,6 +1,24 @@
 #!/bin/sh
 #
-# Execute lint-staged from host to use docker exec commands
+# Execute lint-staged using Docker containers
 # This requires both 'node_itsmint' and 'php_itsmint' containers to be running.
 #
-npx lint-staged
+
+# Check if containers are running
+NODE_CONTAINER="node_itsmint"
+PHP_CONTAINER="php_itsmint"
+
+if ! docker ps --format "table {{.Names}}" | grep -q "^${NODE_CONTAINER}$"; then
+    echo "Error: Container ${NODE_CONTAINER} is not running."
+    echo "Please start your Docker containers with: docker-compose up -d"
+    exit 1
+fi
+
+if ! docker ps --format "table {{.Names}}" | grep -q "^${PHP_CONTAINER}$"; then
+    echo "Error: Container ${PHP_CONTAINER} is not running."
+    echo "Please start your Docker containers with: docker-compose up -d"
+    exit 1
+fi
+
+# Execute lint-staged from the node container
+docker exec ${NODE_CONTAINER} npx lint-staged 
