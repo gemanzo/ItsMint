@@ -222,6 +222,7 @@ final class BlueprintController extends Controller
             if ($prices->isNotEmpty()) {
                 $byCondition = $prices->groupBy('condition')->map(function ($conditionPrices) {
                     $latest = $conditionPrices->sortByDesc('fetched_at')->first();
+
                     return [
                         'price_cents' => $latest->price_cents,
                         'currency' => $latest->currency,

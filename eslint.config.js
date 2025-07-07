@@ -13,6 +13,7 @@ export default tseslint.config(
       'storage',
       'dist',
       '*.js',
+      'resources/js/ziggy.js',
     ],
   },
   js.configs.recommended,

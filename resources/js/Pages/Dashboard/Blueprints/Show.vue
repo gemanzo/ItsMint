@@ -71,42 +71,44 @@ const languageNames = {
 // Condition hierarchy for proper ordering
 const conditionOrder = [
   'Near Mint',
-  'Slightly Played', 
+  'Slightly Played',
   'Lightly Played',
   'Moderately Played',
   'Played',
   'Heavily Played',
   'Poor',
-  'Damaged'
+  'Damaged',
 ];
 
 // Computed properties for price data
 const availableLanguages = computed(() => {
-  return Object.keys(props.pricesByLanguage).map(lang => ({
-    code: lang,
-    name: languageNames[lang] || lang.toUpperCase(),
-    hasData: Object.keys(props.pricesByLanguage[lang] || {}).length > 0
-  })).sort((a, b) => a.name.localeCompare(b.name));
+  return Object.keys(props.pricesByLanguage)
+    .map((lang) => ({
+      code: lang,
+      name: languageNames[lang] || lang.toUpperCase(),
+      hasData: Object.keys(props.pricesByLanguage[lang] || {}).length > 0,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 });
 
 const selectedLanguagePrices = computed(() => {
   const langPrices = props.pricesByLanguage[selectedLanguage.value] || {};
-  
+
   // Sort conditions by the defined order
   const sortedConditions = Object.keys(langPrices).sort((a, b) => {
     const indexA = conditionOrder.indexOf(a);
     const indexB = conditionOrder.indexOf(b);
-    
+
     // If condition not found in order, put it at the end
     if (indexA === -1) return 1;
     if (indexB === -1) return -1;
-    
+
     return indexA - indexB;
   });
 
-  return sortedConditions.map(condition => ({
+  return sortedConditions.map((condition) => ({
     condition,
-    ...langPrices[condition]
+    ...langPrices[condition],
   }));
 });
 
@@ -115,15 +117,21 @@ const hasAnyPriceData = computed(() => {
 });
 
 const selectedLanguageData = computed(() => {
-  return availableLanguages.value.find(lang => lang.code === selectedLanguage.value);
+  return availableLanguages.value.find(
+    (lang) => lang.code === selectedLanguage.value
+  );
 });
 
 // Set default language to the first available one
 onMounted(() => {
   if (availableLanguages.value.length > 0) {
     // Try to find English first, otherwise use the first available
-    const englishLang = availableLanguages.value.find(lang => lang.code === 'en');
-    selectedLanguage.value = englishLang ? englishLang.code : availableLanguages.value[0].code;
+    const englishLang = availableLanguages.value.find(
+      (lang) => lang.code === 'en'
+    );
+    selectedLanguage.value = englishLang
+      ? englishLang.code
+      : availableLanguages.value[0].code;
   }
 });
 
@@ -151,8 +159,6 @@ const formatPrice = (cents, currency = 'EUR') => {
   });
 };
 
-
-
 const formatDateShort = (dateString) => {
   if (!dateString) return 'N/A';
   return new Date(dateString).toLocaleDateString('it-IT', {
@@ -166,19 +172,26 @@ const formatDateShort = (dateString) => {
 
 const getConditionColor = (condition) => {
   const conditionLower = condition.toLowerCase();
-  
+
   if (conditionLower.includes('mint') || conditionLower.includes('near mint'))
     return 'green';
-  if (conditionLower.includes('excellent') || conditionLower.includes('lightly') || conditionLower.includes('slightly'))
+  if (
+    conditionLower.includes('excellent') ||
+    conditionLower.includes('lightly') ||
+    conditionLower.includes('slightly')
+  )
     return 'blue';
   if (conditionLower.includes('moderate') || conditionLower.includes('good'))
     return 'yellow';
-  if (conditionLower.includes('played') || conditionLower.includes('poor') || conditionLower.includes('damaged') || conditionLower.includes('heavily'))
+  if (
+    conditionLower.includes('played') ||
+    conditionLower.includes('poor') ||
+    conditionLower.includes('damaged') ||
+    conditionLower.includes('heavily')
+  )
     return 'red';
   return 'gray';
 };
-
-
 
 const fetchPortfolios = async () => {
   if (portfolios.value.length > 0) return; // Don't refetch
@@ -213,12 +226,10 @@ const addToPortfolio = () => {
     form.purchase_price_cents = props.blueprint.latest_price.price_cents;
     form.is_foil = props.blueprint.latest_price.is_foil || false;
   }
-  
+
   showAddToPortfolioModal.value = true;
   fetchPortfolios();
 };
-
-
 
 const submitAddToPortfolio = () => {
   form.errors = {};
@@ -245,8 +256,6 @@ const submitAddToPortfolio = () => {
       }
     });
 };
-
-
 
 const fetchPriceHistory = async () => {
   try {
@@ -620,9 +629,21 @@ onMounted(() => {
               class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
             >
               <div class="flex items-center justify-between mb-6">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                  <svg class="h-5 w-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                <h3
+                  class="text-lg font-semibold text-gray-900 dark:text-white flex items-center"
+                >
+                  <svg
+                    class="h-5 w-5 mr-2 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                    />
                   </svg>
                   Prices by Language
                 </h3>
@@ -638,13 +659,17 @@ onMounted(() => {
                       'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
                       selectedLanguage === language.code
                         ? 'bg-indigo-600 text-white shadow-md'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600',
                     ]"
                     @click="selectedLanguage = language.code"
                   >
                     <span class="flex items-center">
                       {{ language.name }}
-                      <span v-if="!language.hasData" class="ml-1 text-xs opacity-50">(No data)</span>
+                      <span
+                        v-if="!language.hasData"
+                        class="ml-1 text-xs opacity-50"
+                        >(No data)</span
+                      >
                     </span>
                   </button>
                 </div>
@@ -653,61 +678,74 @@ onMounted(() => {
               <!-- Price Data for Selected Language -->
               <div v-if="selectedLanguagePrices.length > 0" class="space-y-4">
                 <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Showing prices for <strong>{{ selectedLanguageData?.name }}</strong>
+                  Showing prices for
+                  <strong>{{ selectedLanguageData?.name }}</strong>
                 </div>
 
-                                 <!-- Price Cards Grid -->
-                 <div class="grid gap-3">
-                   <div
-                     v-for="price in selectedLanguagePrices"
-                     :key="`${price.condition}-${price.language}`"
-                     class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200"
-                   >
-                     <div class="flex items-center justify-between">
-                       <div class="flex-1">
-                         <div class="flex items-center space-x-2 mb-2">
-                           <span
-                             :class="`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-${getConditionColor(price.condition)}-100 text-${getConditionColor(price.condition)}-800 dark:bg-${getConditionColor(price.condition)}-900 dark:text-${getConditionColor(price.condition)}-200`"
-                           >
-                             {{ price.condition }}
-                           </span>
-                           <span
-                             v-if="price.is_foil"
-                             class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
-                           >
-                             ✨ Foil
-                           </span>
-                         </div>
-                         <div class="text-xs text-gray-500 dark:text-gray-400">
-                           Updated {{ formatDateShort(price.fetched_at) }}
-                         </div>
-                       </div>
-                       <div class="text-right">
-                         <div class="text-2xl font-bold text-green-600 dark:text-green-400">
-                           {{ formatPrice(price.price_cents, price.currency) }}
-                         </div>
-                       </div>
-                     </div>
-                   </div>
-                 </div>
+                <!-- Price Cards Grid -->
+                <div class="grid gap-3">
+                  <div
+                    v-for="price in selectedLanguagePrices"
+                    :key="`${price.condition}-${price.language}`"
+                    class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200"
+                  >
+                    <div class="flex items-center justify-between">
+                      <div class="flex-1">
+                        <div class="flex items-center space-x-2 mb-2">
+                          <span
+                            :class="`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-${getConditionColor(price.condition)}-100 text-${getConditionColor(price.condition)}-800 dark:bg-${getConditionColor(price.condition)}-900 dark:text-${getConditionColor(price.condition)}-200`"
+                          >
+                            {{ price.condition }}
+                          </span>
+                          <span
+                            v-if="price.is_foil"
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
+                          >
+                            ✨ Foil
+                          </span>
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                          Updated {{ formatDateShort(price.fetched_at) }}
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <div
+                          class="text-2xl font-bold text-green-600 dark:text-green-400"
+                        >
+                          {{ formatPrice(price.price_cents, price.currency) }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                                 <!-- Add to Portfolio button with selected language context -->
-                 <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-                   <div class="flex items-center justify-between">
-                     <p class="text-xs text-gray-500 dark:text-gray-400">
-                       💡 Prices automatically sync from CardTrader marketplace
-                     </p>
-                     <button
-                       class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors duration-200 flex items-center"
-                       @click="addToPortfolio"
-                     >
-                       <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                       </svg>
-                       Add to Portfolio
-                     </button>
-                   </div>
-                 </div>
+                <!-- Add to Portfolio button with selected language context -->
+                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <div class="flex items-center justify-between">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      💡 Prices automatically sync from CardTrader marketplace
+                    </p>
+                    <button
+                      class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors duration-200 flex items-center"
+                      @click="addToPortfolio"
+                    >
+                      <svg
+                        class="h-4 w-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                        />
+                      </svg>
+                      Add to Portfolio
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <!-- No data for selected language -->
@@ -725,7 +763,9 @@ onMounted(() => {
                     d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                <h4
+                  class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+                >
                   No Prices for {{ selectedLanguageData?.name }}
                 </h4>
                 <p class="text-gray-600 dark:text-gray-400 text-sm">
@@ -862,10 +902,18 @@ onMounted(() => {
         <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
           Add "{{ blueprint.name }}" to Portfolio
         </h2>
-        <p v-if="form.language" class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-          Language: <strong>{{ languageNames[form.language] || form.language.toUpperCase() }}</strong>
+        <p
+          v-if="form.language"
+          class="text-sm text-gray-600 dark:text-gray-400 mt-1"
+        >
+          Language:
+          <strong>{{
+            languageNames[form.language] || form.language.toUpperCase()
+          }}</strong>
           <span v-if="form.condition">• {{ form.condition }}</span>
-          <span v-if="form.is_foil" class="text-yellow-600 dark:text-yellow-400">• ✨ Foil</span>
+          <span v-if="form.is_foil" class="text-yellow-600 dark:text-yellow-400"
+            >• ✨ Foil</span
+          >
         </p>
 
         <form class="mt-6 space-y-4" @submit.prevent="submitAddToPortfolio">

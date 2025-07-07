@@ -145,7 +145,7 @@ class Blueprint extends Model
     {
         $collectorNumber = $this->collector_number;
 
-        if (!$collectorNumber) {
+        if (! $collectorNumber) {
             return static::where('id', '!=', $this->id)
                 ->where('name', $this->name)
                 ->where('ct_category_id', $this->ct_category_id)
@@ -169,7 +169,7 @@ class Blueprint extends Model
     {
         $collectorNumber = $this->collector_number;
 
-        if (!$collectorNumber) {
+        if (! $collectorNumber) {
             return static::where('name', $this->name)
                 ->where('ct_category_id', $this->ct_category_id)
                 ->where('expansion_id', $this->expansion_id);
@@ -214,12 +214,12 @@ class Blueprint extends Model
         foreach ($allVersions as $blueprint) {
             $language = $blueprint->primary_language ?? 'unknown';
 
-            if (!isset($pricesByLanguage[$language])) {
+            if (! isset($pricesByLanguage[$language])) {
                 $pricesByLanguage[$language] = [
                     'blueprint_id' => $blueprint->id,
                     'ct_id' => $blueprint->ct_id,
                     'language' => $language,
-                    'prices' => []
+                    'prices' => [],
                 ];
             }
 

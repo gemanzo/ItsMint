@@ -203,7 +203,11 @@ const closeAddToPortfolioModal = () => {
   selectedBlueprint.value = null;
 };
 
-const handleCardAdded = (event: { portfolioId: number; cards: unknown[]; totalQuantity: number }) => {
+const handleCardAdded = (event: {
+  portfolioId: number;
+  cards: unknown[];
+  totalQuantity: number;
+}) => {
   // Gestisci l'evento di aggiunta carta se necessario
   console.log('Card added:', event);
   closeAddToPortfolioModal();
@@ -580,7 +584,7 @@ watch(
                   "
                 />
               </div>
-              
+
               <!-- Card Content -->
               <div class="p-2.5">
                 <!-- Card Name -->
@@ -590,15 +594,17 @@ watch(
                 >
                   {{ blueprint.name }}
                 </h3>
-                
+
                 <!-- Expansion & Collector Number -->
-                <div
-                  v-if="blueprint.expansion"
-                  class="mb-1.5 space-y-1"
-                >
-                  <div class="text-xs text-gray-500 dark:text-gray-400 font-normal">
+                <div v-if="blueprint.expansion" class="mb-1.5 space-y-1">
+                  <div
+                    class="text-xs text-gray-500 dark:text-gray-400 font-normal"
+                  >
                     {{ blueprint.expansion.code }}
-                    <span v-if="blueprint.expansion.name" class="text-gray-400 dark:text-gray-500">
+                    <span
+                      v-if="blueprint.expansion.name"
+                      class="text-gray-400 dark:text-gray-500"
+                    >
                       • {{ blueprint.expansion.name }}
                     </span>
                   </div>
@@ -609,12 +615,21 @@ watch(
                     #{{ blueprint.collector_number }}
                   </div>
                 </div>
-                
-                                <!-- Price Section -->
-                <div class="mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-700">
-                  <div v-if="blueprint.latest_price" class="flex items-center justify-between">
-                    <span class="text-sm font-semibold text-gray-900 dark:text-white">
-                      €{{ (blueprint.latest_price.price_cents / 100).toFixed(2) }}
+
+                <!-- Price Section -->
+                <div
+                  class="mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-700"
+                >
+                  <div
+                    v-if="blueprint.latest_price"
+                    class="flex items-center justify-between"
+                  >
+                    <span
+                      class="text-sm font-semibold text-gray-900 dark:text-white"
+                    >
+                      €{{
+                        (blueprint.latest_price.price_cents / 100).toFixed(2)
+                      }}
                     </span>
                     <button
                       class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-600 hover:bg-gray-700 transition-colors duration-150"
@@ -702,10 +717,18 @@ watch(
                         {{ blueprint.name }}
                       </h3>
                       <div class="mt-1 space-y-1">
-                        <div v-if="blueprint.expansion" class="flex items-center space-x-2">
-                          <span class="text-xs text-gray-500 dark:text-gray-400">
+                        <div
+                          v-if="blueprint.expansion"
+                          class="flex items-center space-x-2"
+                        >
+                          <span
+                            class="text-xs text-gray-500 dark:text-gray-400"
+                          >
                             {{ blueprint.expansion.code }}
-                            <span v-if="blueprint.expansion.name" class="text-gray-400 dark:text-gray-500">
+                            <span
+                              v-if="blueprint.expansion.name"
+                              class="text-gray-400 dark:text-gray-500"
+                            >
                               • {{ blueprint.expansion.name }}
                             </span>
                           </span>
@@ -713,7 +736,11 @@ watch(
                             v-if="blueprint.latest_price"
                             class="text-sm font-semibold text-gray-900 dark:text-white"
                           >
-                            €{{ (blueprint.latest_price.price_cents / 100).toFixed(2) }}
+                            €{{
+                              (
+                                blueprint.latest_price.price_cents / 100
+                              ).toFixed(2)
+                            }}
                           </span>
                         </div>
                         <div
@@ -793,9 +820,7 @@ watch(
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
-            <h3
-              class="text-lg font-medium text-gray-900 dark:text-white mb-2"
-            >
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
               {{ isSearchMode ? 'No cards found' : 'No cards available' }}
             </h3>
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
