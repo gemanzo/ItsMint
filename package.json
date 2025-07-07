@@ -4,7 +4,10 @@
     "scripts": {
         "build": "vue-tsc && vite build && vite build --ssr",
         "dev": "vite",
-        "prepare": "husky"
+        "prepare": "husky",
+        "lint:php": "/var/www/html/itsmint/scripts/lint-php.sh",
+        "lint:js": "/var/www/html/itsmint/scripts/lint-js.sh",
+        "format:js": "/var/www/html/itsmint/scripts/format-js.sh"
     },
     "devDependencies": {
         "@inertiajs/vue3": "^2.0.0",
@@ -45,11 +48,11 @@
     },
     "lint-staged": {
         "*.php": [
-            "./scripts/lint-php.sh"
+            "npm run lint:php"
         ],
         "*.{js,ts,vue}": [
-            "./scripts/lint-js.sh",
-            "./scripts/format-js.sh"
+            "npm run lint:js",
+            "npm run format:js"
         ]
     }
 }
