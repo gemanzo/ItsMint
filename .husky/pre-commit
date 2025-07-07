@@ -4,21 +4,37 @@
 # This requires both 'node_itsmint' and 'php_itsmint' containers to be running.
 #
 
-# Check if containers are running
-NODE_CONTAINER="node_itsmint"
-PHP_CONTAINER="php_itsmint"
+# Find docker executable
+DOCKER_CMD=""
+for path in /usr/local/bin/docker /opt/homebrew/bin/docker /usr/bin/docker; do
+    if [ -x "$path" ]; then
+        DOCKER_CMD="$path"
+        break
+    fi
+done
 
-if ! docker ps --format "table {{.Names}}" | grep -q "^${NODE_CONTAINER}$"; then
+if [ -z "$DOCKER_CMD" ]; then
+    echo "Error: Docker not found. Please ensure Docker is installed and running."
+    exit 1
+fi
+
+# Get container names from .env file
+APP_NAME=$(grep '^APP_NAME=' .env 2>/dev/null | cut -d'=' -f2 || echo 'itsmint')
+NODE_CONTAINER="node_${APP_NAME}"
+PHP_CONTAINER="php_${APP_NAME}"
+
+# Check if containers are running
+if ! $DOCKER_CMD ps --format "table {{.Names}}" | grep -q "^${NODE_CONTAINER}$"; then
     echo "Error: Container ${NODE_CONTAINER} is not running."
     echo "Please start your Docker containers with: docker-compose up -d"
     exit 1
 fi
 
-if ! docker ps --format "table {{.Names}}" | grep -q "^${PHP_CONTAINER}$"; then
+if ! $DOCKER_CMD ps --format "table {{.Names}}" | grep -q "^${PHP_CONTAINER}$"; then
     echo "Error: Container ${PHP_CONTAINER} is not running."
     echo "Please start your Docker containers with: docker-compose up -d"
     exit 1
 fi
 
 # Execute lint-staged from the node container
-docker exec ${NODE_CONTAINER} npx lint-staged 
+$DOCKER_CMD exec ${NODE_CONTAINER} npx lint-staged 
