@@ -85,6 +85,10 @@ class ElasticsearchService
                                 ],
                             ],
                         ],
+                        'collector_number' => [
+                            'type' => 'keyword',
+                            'index' => true,
+                        ],
                         'expansion' => [
                             'properties' => [
                                 'id' => ['type' => 'integer'],
@@ -291,10 +295,7 @@ class ElasticsearchService
             ];
         }
 
-        // Filters for exact matches
-        if ($language) {
-            $filterClauses[] = ['term' => ['latest_price.language' => $language]];
-        }
+        // Filters for exact matches (language filter removed)
         if ($expansionId) {
             $filterClauses[] = ['term' => ['expansion.id' => $expansionId]];
         }

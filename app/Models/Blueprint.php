@@ -139,6 +139,107 @@ class Blueprint extends Model
     }
 
     /**
+     * Get language variants of this blueprint (same card, different languages).
+     */
+    public function languageVariants()
+    {
+        $collectorNumber = $this->collector_number;
+
+        if (!$collectorNumber) {
+            return static::where('id', '!=', $this->id)
+                ->where('name', $this->name)
+                ->where('ct_category_id', $this->ct_category_id)
+                ->where('expansion_id', $this->expansion_id);
+        }
+
+        return static::where('id', '!=', $this->id)
+            ->where(function ($query) use ($collectorNumber) {
+                $query->whereRaw("properties->'fixed_properties'->>'collector_number' = ?", [$collectorNumber])
+                    ->orWhere(function ($subQuery) {
+                        $subQuery->where('name', $this->name)
+                            ->where('ct_category_id', $this->ct_category_id);
+                    });
+            });
+    }
+
+    /**
+     * Get all blueprints (including this one) for the same card in different languages.
+     */
+    public function allLanguageVersions()
+    {
+        $collectorNumber = $this->collector_number;
+
+        if (!$collectorNumber) {
+            return static::where('name', $this->name)
+                ->where('ct_category_id', $this->ct_category_id)
+                ->where('expansion_id', $this->expansion_id);
+        }
+
+        return static::where(function ($query) use ($collectorNumber) {
+            $query->whereRaw("properties->'fixed_properties'->>'collector_number' = ?", [$collectorNumber])
+                ->orWhere(function ($subQuery) {
+                    $subQuery->where('name', $this->name)
+                        ->where('ct_category_id', $this->ct_category_id);
+                });
+        });
+    }
+
+    /**
+     * Get the primary language for this blueprint from properties.
+     */
+    public function getPrimaryLanguageAttribute(): ?string
+    {
+        $editableProps = $this->properties['editable_properties'] ?? [];
+
+        foreach ($editableProps as $prop) {
+            if (isset($prop['name']) && str_contains($prop['name'], 'onepiece_language')) {
+                return $prop['default_value'] ?? null;
+            }
+            if (isset($prop['name']) && str_contains($prop['name'], 'language')) {
+                return $prop['default_value'] ?? null;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get aggregated prices from all language variants.
+     */
+    public function getAllLanguagesPrices(): array
+    {
+        $allVersions = $this->allLanguageVersions()->with('cardPrices')->get();
+        $pricesByLanguage = [];
+
+        foreach ($allVersions as $blueprint) {
+            $language = $blueprint->primary_language ?? 'unknown';
+
+            if (!isset($pricesByLanguage[$language])) {
+                $pricesByLanguage[$language] = [
+                    'blueprint_id' => $blueprint->id,
+                    'ct_id' => $blueprint->ct_id,
+                    'language' => $language,
+                    'prices' => []
+                ];
+            }
+
+            foreach ($blueprint->cardPrices as $price) {
+                $pricesByLanguage[$language]['prices'][] = $price;
+            }
+        }
+
+        return $pricesByLanguage;
+    }
+
+    /**
+     * Check if this blueprint has language variants.
+     */
+    public function hasLanguageVariants(): bool
+    {
+        return $this->languageVariants()->exists();
+    }
+
+    /**
      * Get the category for the Blueprint.
      */
     public function getCategoryAttribute(): ?object

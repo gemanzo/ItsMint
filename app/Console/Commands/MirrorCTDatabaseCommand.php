@@ -36,12 +36,12 @@ class MirrorCTDatabaseCommand extends Command
         $baseApiUrl = config('services.cardtrader.api_base_url');
         $opGameID = config('services.cardtrader.one_piece_game_id');
 
-        $gamesUrl = $baseApiUrl.'/games';
-        $expansionsUrl = $baseApiUrl.'/expansions';
-        $blueprintsUrl = $baseApiUrl.'/blueprints/export';
+        $gamesUrl = $baseApiUrl . '/games';
+        $expansionsUrl = $baseApiUrl . '/expansions';
+        $blueprintsUrl = $baseApiUrl . '/blueprints/export';
 
         $httpClient = Http::withHeaders([
-            'Authorization' => 'Bearer '.$token,
+            'Authorization' => 'Bearer ' . $token,
             'Accept' => 'application/json',
         ]);
 
@@ -96,7 +96,7 @@ class MirrorCTDatabaseCommand extends Command
 
         // Process Blueprints for One Piece (or all expansions if $opGameID is not set)
         $expansionsToProcess = $opGameID ?
-            Expansion::whereHas('game', fn ($query) => $query->where('ct_id', $opGameID))->get() :
+            Expansion::whereHas('game', fn($query) => $query->where('ct_id', $opGameID))->get() :
             Expansion::all();
 
         if ($expansionsToProcess->isEmpty()) {
@@ -106,7 +106,7 @@ class MirrorCTDatabaseCommand extends Command
         }
 
         foreach ($expansionsToProcess as $expansion) {
-            $response = $httpClient->get($blueprintsUrl.'?expansion_id='.$expansion->ct_id);
+            $response = $httpClient->get($blueprintsUrl . '?expansion_id=' . $expansion->ct_id);
 
             if (! $response->successful()) {
                 $this->error("Failed to fetch blueprints for expansion {$expansion->name}. Status: {$response->status()}");
@@ -115,7 +115,7 @@ class MirrorCTDatabaseCommand extends Command
                 continue; // Skip to next expansion
             }
 
-            $blueprintsApiData = $response->json();
+            $blueprintsApiData = collect($response->json())->filter(fn($bp) => $bp['category_id'] == config('services.cardtrader.one_piece_single_card_category_id'));
             if (empty($blueprintsApiData)) {
                 continue;
             }

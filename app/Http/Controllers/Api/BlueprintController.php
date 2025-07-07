@@ -162,4 +162,128 @@ final class BlueprintController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Get all language variants for a blueprint.
+     */
+    public function languageVariants(Blueprint $blueprint): JsonResponse
+    {
+        $variants = $blueprint->allLanguageVersions()
+            ->with(['cardPrices' => function ($query) {
+                $query->orderBy('fetched_at', 'desc')
+                    ->orderBy('condition');
+            }])
+            ->get();
+
+        $variantData = [];
+        $supportedLanguages = BlueprintPriceService::getSupportedLanguages();
+
+        foreach ($variants as $variant) {
+            $language = $variant->primary_language ?? 'unknown';
+
+            $variantData[] = [
+                'id' => $variant->id,
+                'ct_id' => $variant->ct_id,
+                'name' => $variant->name,
+                'language' => $language,
+                'language_name' => $supportedLanguages[$language] ?? ucfirst($language),
+                'image_url' => $variant->image_url,
+                'collector_number' => $variant->collector_number,
+                'expansion_id' => $variant->expansion_id,
+                'price_summary' => $this->getPriceSummaryForBlueprint($variant),
+                'has_prices' => $variant->cardPrices->isNotEmpty(),
+                'last_price_update' => $variant->cardPrices->max('fetched_at'),
+            ];
+        }
+
+        return response()->json([
+            'data' => $variantData,
+            'meta' => [
+                'base_blueprint_id' => $blueprint->id,
+                'base_blueprint_name' => $blueprint->name,
+                'total_variants' => count($variantData),
+                'languages_available' => collect($variantData)->pluck('language')->unique()->count(),
+            ],
+        ]);
+    }
+
+    /**
+     * Get aggregated prices from all language variants.
+     */
+    public function aggregatedLanguagePrices(Blueprint $blueprint): JsonResponse
+    {
+        $allLanguagesPrices = $blueprint->getAllLanguagesPrices();
+        $aggregatedData = [];
+        $supportedLanguages = BlueprintPriceService::getSupportedLanguages();
+
+        foreach ($allLanguagesPrices as $language => $data) {
+            $prices = collect($data['prices']);
+
+            if ($prices->isNotEmpty()) {
+                $byCondition = $prices->groupBy('condition')->map(function ($conditionPrices) {
+                    $latest = $conditionPrices->sortByDesc('fetched_at')->first();
+                    return [
+                        'price_cents' => $latest->price_cents,
+                        'currency' => $latest->currency,
+                        'fetched_at' => $latest->fetched_at,
+                        'source' => $latest->source,
+                    ];
+                });
+
+                $aggregatedData[$language] = [
+                    'blueprint_id' => $data['blueprint_id'],
+                    'ct_id' => $data['ct_id'],
+                    'language' => $language,
+                    'language_name' => $supportedLanguages[$language] ?? ucfirst($language),
+                    'prices_by_condition' => $byCondition,
+                    'cheapest_price' => $prices->min('price_cents'),
+                    'most_expensive_price' => $prices->max('price_cents'),
+                    'last_updated' => $prices->max('fetched_at'),
+                    'total_price_records' => $prices->count(),
+                ];
+            }
+        }
+
+        return response()->json([
+            'data' => $aggregatedData,
+            'meta' => [
+                'base_blueprint_id' => $blueprint->id,
+                'base_blueprint_name' => $blueprint->name,
+                'languages_with_prices' => count($aggregatedData),
+                'total_variants' => $blueprint->allLanguageVersions()->count(),
+            ],
+        ]);
+    }
+
+    /**
+     * Get price summary for a single blueprint.
+     */
+    private function getPriceSummaryForBlueprint(Blueprint $blueprint): array
+    {
+        if ($blueprint->cardPrices->isEmpty()) {
+            return [];
+        }
+
+        $latest = $blueprint->cardPrices->sortByDesc('fetched_at')->first();
+        $cheapest = $blueprint->cardPrices->sortBy('price_cents')->first();
+
+        return [
+            'latest_price' => [
+                'price_cents' => $latest->price_cents,
+                'currency' => $latest->currency,
+                'condition' => $latest->condition,
+                'fetched_at' => $latest->fetched_at,
+            ],
+            'cheapest_price' => [
+                'price_cents' => $cheapest->price_cents,
+                'currency' => $cheapest->currency,
+                'condition' => $cheapest->condition,
+                'fetched_at' => $cheapest->fetched_at,
+            ],
+            'price_range' => [
+                'min_cents' => $blueprint->cardPrices->min('price_cents'),
+                'max_cents' => $blueprint->cardPrices->max('price_cents'),
+            ],
+        ];
+    }
 }

@@ -64,7 +64,7 @@ class UpdateBlueprintPriceJob implements ShouldQueue
         try {
             $adjustedPrices = $this->blueprintPriceService->calculatePrices($blueprint);
 
-            // --- BEGIN ADDED LOGGING ---
+
             Log::debug('UpdateBlueprintPriceJob: Data received from BlueprintPriceService', [
                 'blueprint_id' => $blueprint->id,
                 'ct_id' => $blueprintCtId,
@@ -72,7 +72,7 @@ class UpdateBlueprintPriceJob implements ShouldQueue
                 'service_response_count' => is_array($adjustedPrices) ? count($adjustedPrices) : 'N/A (not an array)',
                 'response_keys' => is_array($adjustedPrices) ? array_keys($adjustedPrices) : null,
             ]);
-            // --- END ADDED LOGGING ---
+
 
             if (is_null($adjustedPrices)) {
                 Log::info('BlueprintPriceService returned null, skipping price updates for blueprint.', ['blueprint_id' => $blueprint->id, 'ct_id' => $blueprintCtId]);

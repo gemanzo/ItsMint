@@ -91,7 +91,7 @@ class ElasticsearchIndexBlueprints extends Command
                         $indexedCount += count($batchData);
                     } else {
                         $errorCount += count($batchData);
-                        $this->error("\n❌ Failed to index batch of ".count($batchData).' blueprints');
+                        $this->error("\n❌ Failed to index batch of " . count($batchData) . ' blueprints');
                     }
                 }
             });
@@ -106,7 +106,7 @@ class ElasticsearchIndexBlueprints extends Command
                 ['Total Blueprints', $totalBlueprints],
                 ['Successfully Indexed', $indexedCount],
                 ['Errors', $errorCount],
-                ['Success Rate', $totalBlueprints > 0 ? round(($indexedCount / $totalBlueprints) * 100, 2).'%' : '0%'],
+                ['Success Rate', $totalBlueprints > 0 ? round(($indexedCount / $totalBlueprints) * 100, 2) . '%' : '0%'],
             ]
         );
 
@@ -165,6 +165,7 @@ class ElasticsearchIndexBlueprints extends Command
             'id' => $blueprint->id,
             'name' => $blueprint->name,
             'image_url' => $blueprint->image_url,
+            'collector_number' => $blueprint->collector_number,
             'expansion' => $blueprint->expansion ? [
                 'id' => $blueprint->expansion->id,
                 'name' => $blueprint->expansion->name,

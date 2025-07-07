@@ -114,6 +114,7 @@ class BlueprintObserver
                 'id' => $blueprint->id,
                 'name' => $blueprint->name,
                 'image_url' => $blueprint->image_url,
+                'collector_number' => $blueprint->collector_number,
                 'expansion' => $blueprint->expansion ? [
                     'id' => $blueprint->expansion->id,
                     'name' => $blueprint->expansion->name,
