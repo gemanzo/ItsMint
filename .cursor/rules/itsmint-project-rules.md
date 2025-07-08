@@ -1,6 +1,6 @@
 ---
 description: Regole specifiche per il progetto ItsMint - Trading Card Game Collection & Price Tracker
-globs: 
+globs:
 alwaysApply: true
 ---
 
@@ -11,6 +11,7 @@ Sei un esperto AI coding assistant specializzato nel progetto **ItsMint**, una w
 ## 🏗️ Architettura del Progetto
 
 ### Stack Tecnologico
+
 - **Backend**: Laravel 12.0+ con PHP 8.2+
 - **Frontend**: Vue.js 3.4+ con Inertia.js 2.0+ e TypeScript
 - **Database**: PostgreSQL con Redis per caching
@@ -24,6 +25,7 @@ Sei un esperto AI coding assistant specializzato nel progetto **ItsMint**, una w
 - **Containerization**: Docker con compose.yml
 
 ### Entità Principali
+
 - **Blueprint**: Carta del gioco (modello principale)
 - **UserCard**: Carta posseduta dall'utente con prezzo acquisto/stimato
 - **Portfolio**: Collezione di carte dell'utente
@@ -34,6 +36,7 @@ Sei un esperto AI coding assistant specializzato nel progetto **ItsMint**, una w
 ## 📁 Struttura File Specifica
 
 ### Laravel Backend
+
 ```
 app/
 ├── Models/              # Eloquent models con relazioni
@@ -47,6 +50,7 @@ app/
 ```
 
 ### Vue.js Frontend
+
 ```
 resources/js/
 ├── Components/          # Componenti riutilizzabili (Modal, Forms, etc.)
@@ -62,6 +66,7 @@ resources/js/
 ## 🎯 Regole di Sviluppo Specifiche
 
 ### PHP/Laravel
+
 - **Strict Types**: Sempre `declare(strict_types=1)` in ogni file PHP
 - **Final Classes**: Controller e Service devono essere `final`
 - **Type Hints**: Sempre explicit return types e parameter types
@@ -71,6 +76,7 @@ resources/js/
 - **Observer Pattern**: Usa BlueprintObserver per sync automatico con Elasticsearch
 
 ### TypeScript/Vue.js
+
 - **Strict Mode**: TypeScript strict enabled
 - **Composition API**: Sempre prefer Composition API over Options API
 - **Pinia**: State management centralizzato per portfolio e user data
@@ -79,6 +85,7 @@ resources/js/
 - **Inertia**: Sempre usare Inertia.js per navigazione, no Vue Router
 
 ### Elasticsearch
+
 - **Service Class**: Tutta la logica ES in `ElasticsearchService`
 - **Auto-sync**: BlueprintObserver mantiene index aggiornato
 - **Fuzzy Search**: Implementare toleranza typo per nomi carte
@@ -88,6 +95,7 @@ resources/js/
 ## 🔧 Convenzioni di Coding
 
 ### 🐳 Docker-First Development
+
 **ItsMint è un'applicazione Docker-native**. Tutti i comandi devono essere eseguiti nei container:
 
 ```bash
@@ -98,21 +106,23 @@ composer install
 
 # ✅ SEMPRE eseguire nei container Docker
 docker exec -it php_itsmint php artisan migrate
-docker exec -it node_itsmint npm run dev  
+docker exec -it node_itsmint npm run dev
 docker exec -it php_itsmint composer install
 ```
 
 **Container Names**:
-- `php_itsmint` - Backend Laravel 
+
+- `php_itsmint` - Backend Laravel
 - `node_itsmint` - Frontend Vue.js
 - `postgres_itsmint` - Database PostgreSQL
 - `redis_itsmint` - Cache Redis
 - `elasticsearch_itsmint` - Search Engine
 
 ### Database & Models
+
 ```php
 // Sempre relazioni tipizzate
-public function userCards(): HasMany 
+public function userCards(): HasMany
 {
     return $this->hasMany(UserCard::class);
 }
@@ -126,6 +136,7 @@ protected $casts = [
 ```
 
 ### API Endpoints
+
 ```php
 // Pattern REST standard
 GET    /api/blueprints           # Index con search/filter
@@ -139,41 +150,44 @@ GET    /api/blueprints/search?q=luffy&size=10
 ```
 
 ### Vue Components
+
 ```vue
 <script setup lang="ts">
 // Import types
-import type { Blueprint, Portfolio } from '@/types'
-import { ref, computed } from 'vue'
-import { usePortfolioStore } from '@/stores/portfolioStore'
+import type { Blueprint, Portfolio } from '@/types';
+import { ref, computed } from 'vue';
+import { usePortfolioStore } from '@/stores/portfolioStore';
 
 // Props tipizzati
 interface Props {
-  blueprint: Blueprint
-  portfolio?: Portfolio
+  blueprint: Blueprint;
+  portfolio?: Portfolio;
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 </script>
 ```
 
 ### State Management
+
 ```typescript
 // Pinia store structure
 export const usePortfolioStore = defineStore('portfolio', () => {
-  const portfolios = ref<Portfolio[]>([])
-  const currentPortfolio = ref<Portfolio | null>(null)
-  
+  const portfolios = ref<Portfolio[]>([]);
+  const currentPortfolio = ref<Portfolio | null>(null);
+
   const addCard = async (blueprintId: number, data: AddCardData) => {
     // API call + state update
-  }
-  
-  return { portfolios, currentPortfolio, addCard }
-})
+  };
+
+  return { portfolios, currentPortfolio, addCard };
+});
 ```
 
 ## 🚀 Performance & Best Practices
 
 ### Laravel Performance
+
 - **Eager Loading**: Sempre `with()` per evitare N+1 queries
 - **API Resources**: Usare API Resources per response standardizzate
 - **Queue Workers**: Laravel Horizon per job monitoring
@@ -181,6 +195,7 @@ export const usePortfolioStore = defineStore('portfolio', () => {
 - **Database Indexes**: Su colonne search frequent (name, expansion_code)
 
 ### Vue.js Performance
+
 - **Lazy Loading**: Route components con dynamic imports
 - **Computed Properties**: Per derived state invece di watchers
 - **Key Props**: Sempre `:key` su v-for lists
@@ -188,6 +203,7 @@ export const usePortfolioStore = defineStore('portfolio', () => {
 - **Image Optimization**: Lazy loading per card images
 
 ### Elasticsearch Performance
+
 - **Batch Size**: 100-500 documenti per batch import
 - **Index Mapping**: Custom analyzers per expansion codes
 - **Query Optimization**: Bool queries con should/must
@@ -196,6 +212,7 @@ export const usePortfolioStore = defineStore('portfolio', () => {
 ## 🔒 Security & Validation
 
 ### API Security
+
 ```php
 // Form Requests sempre per validation
 class StoreUserCardRequest extends FormRequest
@@ -212,35 +229,38 @@ class StoreUserCardRequest extends FormRequest
 ```
 
 ### Frontend Validation
+
 ```vue
 <!-- Validation real-time con composables -->
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3'
+import { useForm } from '@inertiajs/vue3';
 
 const form = useForm({
   blueprint_id: null,
   purchase_price_cents: null,
-  condition: 'near_mint'
-})
+  condition: 'near_mint',
+});
 </script>
 ```
 
 ## 🧪 Testing Guidelines
 
 ### Laravel Testing
+
 ```php
 // Feature tests per API endpoints
 test('can search blueprints via elasticsearch', function () {
     Blueprint::factory()->create(['name' => 'Monkey.D.Luffy']);
-    
+
     $response = $this->getJson('/api/blueprints/search?q=luffy');
-    
+
     $response->assertOk()
         ->assertJsonStructure(['data' => [['id', 'name']]]);
 });
 ```
 
 ### Vue Testing
+
 - **Component Tests**: Per logica complessa nei components
 - **Store Tests**: Per azioni Pinia store
 - **E2E Tests**: Per user flows critici (add card, create portfolio)
@@ -248,6 +268,7 @@ test('can search blueprints via elasticsearch', function () {
 ## 🐛 Error Handling
 
 ### Laravel Exceptions
+
 ```php
 // Custom exceptions per business logic
 class CardTraderApiException extends Exception
@@ -260,22 +281,25 @@ class CardTraderApiException extends Exception
 ```
 
 ### Frontend Error Handling
+
 ```typescript
 // Centralized error handling in stores
 const handleApiError = (error: any) => {
   if (error.response?.status === 429) {
     // Rate limit
-    toast.error('Too many requests, try again later')
+    toast.error('Too many requests, try again later');
   } else {
-    toast.error('Something went wrong')
+    toast.error('Something went wrong');
   }
-}
+};
 ```
 
 ## 📦 Deployment & Environment
 
 ### Docker Architecture
+
 L'applicazione **ItsMint gira completamente in Docker** con container separati:
+
 - **Container PHP**: `php_itsmint` - Laravel backend
 - **Container Node**: `node_itsmint` - Vue.js frontend e build tools
 - **Container Database**: PostgreSQL
@@ -283,6 +307,7 @@ L'applicazione **ItsMint gira completamente in Docker** con container separati:
 - **Container Search**: Elasticsearch
 
 ### Docker Command Execution
+
 **IMPORTANTE**: Tutti i comandi devono essere eseguiti nei rispettivi container Docker:
 
 ```bash
@@ -304,6 +329,7 @@ docker exec -it node_itsmint sh     # Shell Node container
 ```
 
 ### Docker Development Workflow
+
 ```bash
 # Avvio ambiente completo
 docker compose up -d
@@ -323,6 +349,7 @@ docker compose down
 ```
 
 ### Environment Variables
+
 ```env
 # CardTrader API
 CARDTRADER_API_TOKEN=your_token
@@ -343,6 +370,7 @@ CARD_SCANNER_MOCK_OCR=false
 ```
 
 ### Docker Containers Reference
+
 **⚠️ IMPORTANTE**: ItsMint usa Docker - eseguire sempre i comandi nei container appropriati:
 
 ```bash
@@ -351,7 +379,7 @@ docker exec -it php_itsmint php artisan migrate
 docker exec -it php_itsmint php artisan make:model CardScan
 docker exec -it php_itsmint composer require package/name
 
-# Node.js/Frontend commands  
+# Node.js/Frontend commands
 docker exec -it node_itsmint npm install @heroicons/vue
 docker exec -it node_itsmint npm run build
 docker exec -it node_itsmint npm run dev
@@ -364,6 +392,7 @@ docker exec -it php_itsmint php artisan db:seed
 ## 🎨 UI/UX Guidelines
 
 ### TailwindCSS Patterns
+
 ```vue
 <!-- Card component pattern -->
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow">
@@ -375,6 +404,7 @@ docker exec -it php_itsmint php artisan db:seed
 ```
 
 ### Component Patterns
+
 - **Modal Pattern**: Usa `<Modal>` component con `v-model:show`
 - **Form Pattern**: Inertia forms con real-time validation
 - **Loading States**: Skeleton loaders per better UX
@@ -383,12 +413,13 @@ docker exec -it php_itsmint php artisan db:seed
 ## 🔄 API Integration
 
 ### CardTrader API
+
 ```php
 // Job pattern per API calls
 class UpdateBlueprintPricesJob implements ShouldQueue
 {
     use Queueable;
-    
+
     public function handle(BlueprintPriceService $service): void
     {
         $service->updatePricesFromCardTrader($this->blueprintId);
@@ -397,8 +428,9 @@ class UpdateBlueprintPricesJob implements ShouldQueue
 ```
 
 ### Rate Limiting
+
 - **API Calls**: Throttle con Redis
 - **Batch Processing**: 100 requests/minute max
 - **Exponential Backoff**: Per retry logic
 
-Queste regole sono specificamente calibrate per il progetto ItsMint e aiuteranno l'AI a generare codice coerente con l'architettura esistente e le best practices del dominio TCG. 
+Queste regole sono specificamente calibrate per il progetto ItsMint e aiuteranno l'AI a generare codice coerente con l'architettura esistente e le best practices del dominio TCG.

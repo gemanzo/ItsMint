@@ -4,32 +4,32 @@ ItsMint is a web application designed for enthusiasts and collectors of Trading 
 
 ## Key Features
 
--   **Blueprint Management**: View and manage a comprehensive database of TCG cards (Blueprints).
--   **Price Tracking**: Automatically fetches and updates card prices from the CardTrader marketplace for different conditions (e.g., Near Mint, Played) and versions (e.g., foil).
--   **OCR Card Recognition**: Advanced image recognition system for trading cards with:
-    -   Multi-method Tesseract OCR processing (PSM 3, 7, 11)
-    -   Intelligent text analysis and expansion code detection
-    -   Automatic card matching with confidence scoring
-    -   Image proxy system for seamless card preview
--   **Expansion Filtering**: Browse cards by their specific expansion sets.
--   **Category Filtering**: Filter cards by categories, such as "Single Cards," to easily find specific types of items.
--   **Dynamic Dashboard**: An intuitive dashboard (built with Inertia.js and Vue.js) allows users to:
-    -   View a paginated list of Blueprints.
-    -   See the latest price for each Blueprint.
-    -   Filter Blueprints by category (defaulting to "Single Cards") and expansion.
-    -   View detailed information for each Blueprint.
-    -   Scan and identify cards using camera or uploaded images.
--   **Background Job Processing**: Uses Laravel's queue system to efficiently update card prices in the background without impacting user experience.
--   **API Integration**: Connects with the CardTrader API to ensure up-to-date pricing and card information.
--   **Batch Operations**: Efficiently queues and processes price updates for a large number of cards in manageable batches.
+- **Blueprint Management**: View and manage a comprehensive database of TCG cards (Blueprints).
+- **Price Tracking**: Automatically fetches and updates card prices from the CardTrader marketplace for different conditions (e.g., Near Mint, Played) and versions (e.g., foil).
+- **OCR Card Recognition**: Advanced image recognition system for trading cards with:
+  - Multi-method Tesseract OCR processing (PSM 3, 7, 11)
+  - Intelligent text analysis and expansion code detection
+  - Automatic card matching with confidence scoring
+  - Image proxy system for seamless card preview
+- **Expansion Filtering**: Browse cards by their specific expansion sets.
+- **Category Filtering**: Filter cards by categories, such as "Single Cards," to easily find specific types of items.
+- **Dynamic Dashboard**: An intuitive dashboard (built with Inertia.js and Vue.js) allows users to:
+  - View a paginated list of Blueprints.
+  - See the latest price for each Blueprint.
+  - Filter Blueprints by category (defaulting to "Single Cards") and expansion.
+  - View detailed information for each Blueprint.
+  - Scan and identify cards using camera or uploaded images.
+- **Background Job Processing**: Uses Laravel's queue system to efficiently update card prices in the background without impacting user experience.
+- **API Integration**: Connects with the CardTrader API to ensure up-to-date pricing and card information.
+- **Batch Operations**: Efficiently queues and processes price updates for a large number of cards in manageable batches.
 
 ## Technology Stack
 
--   **Backend**: Laravel (PHP)
--   **Frontend**: Vue.js with Inertia.js
--   **Database**: PostgreSQL
--   **Styling**: Tailwind CSS
--   **API Integration**: CardTrader API
+- **Backend**: Laravel (PHP)
+- **Frontend**: Vue.js with Inertia.js
+- **Database**: PostgreSQL
+- **Styling**: Tailwind CSS
+- **API Integration**: CardTrader API
 
 ## Getting Started
 
@@ -37,12 +37,12 @@ ItsMint is a web application designed for enthusiasts and collectors of Trading 
 
 ### Prerequisites
 
--   PHP 8.3+
--   Composer
--   Node.js & npm
--   PostgreSQL server
--   Tesseract OCR with language packs (eng, jpn, ita)
--   A CardTrader API Token (configure in `.env`)
+- PHP 8.3+
+- Composer
+- Node.js & npm
+- PostgreSQL server
+- Tesseract OCR with language packs (eng, jpn, ita)
+- A CardTrader API Token (configure in `.env`)
 
 ### Installation & Setup
 
@@ -61,14 +61,14 @@ ItsMint is a web application designed for enthusiasts and collectors of Trading 
     npm run dev # or build for production
     ```
 4.  **Environment Configuration:**
-    -   Copy `.env.example` to `.env`: `cp .env.example .env`
-    -   Generate an application key: `php artisan key:generate`
-    -   Configure your database credentials in `.env`.
-    -   Add your CardTrader API Token to `.env`:
-        ```
-        CARDTRADER_API_TOKEN=your_api_token_here
-        CARDTRADER_API_BASE_URL=https://api.cardtrader.com/api/v2 # or the correct base URL
-        ```
+    - Copy `.env.example` to `.env`: `cp .env.example .env`
+    - Generate an application key: `php artisan key:generate`
+    - Configure your database credentials in `.env`.
+    - Add your CardTrader API Token to `.env`:
+      ```
+      CARDTRADER_API_TOKEN=your_api_token_here
+      CARDTRADER_API_BASE_URL=https://api.cardtrader.com/api/v2 # or the correct base URL
+      ```
 5.  **Run database migrations:**
     ```bash
     php artisan migrate
@@ -85,14 +85,14 @@ ItsMint is a web application designed for enthusiasts and collectors of Trading 
 
 ## Key Commands
 
--   `php artisan itsmint:queue-price-updates`: Queues jobs to update prices for all blueprints.
-    -   `--blueprint_ct_id={id}`: Queue update for a specific blueprint.
-    -   `--batch_size={size}`: Number of jobs per batch (default 100).
--   `php artisan queue:work --queue=price-updates`: Process the price update jobs (ensure your queue worker is running).
+- `php artisan itsmint:queue-price-updates`: Queues jobs to update prices for all blueprints.
+  - `--blueprint_ct_id={id}`: Queue update for a specific blueprint.
+  - `--batch_size={size}`: Number of jobs per batch (default 100).
+- `php artisan queue:work --queue=price-updates`: Process the price update jobs (ensure your queue worker is running).
 
 ## Documentation
 
--   **[OCR System Documentation](docs/OCR_SYSTEM.md)**: Comprehensive technical documentation for the card recognition system, including architecture, configuration, troubleshooting, and performance optimization.
+- **[OCR System Documentation](docs/OCR_SYSTEM.md)**: Comprehensive technical documentation for the card recognition system, including architecture, configuration, troubleshooting, and performance optimization.
 
 ## Docker Environment
 
@@ -102,7 +102,7 @@ This project includes a Docker setup for a consistent development environment.
 
 Refer to `docker/README.MD` for instructions on initializing and managing the Docker environment. Key scripts include:
 
--   `init-docker.sh`: Sets up and starts the Docker containers.
+- `init-docker.sh`: Sets up and starts the Docker containers.
 
 ---
 

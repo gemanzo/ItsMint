@@ -170,7 +170,9 @@
                                   Best Match
                                 </span>
                                 <span
-                                  v-if="selectedCard === (card.blueprint_id || 0)"
+                                  v-if="
+                                    selectedCard === (card.blueprint_id || 0)
+                                  "
                                   class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200"
                                 >
                                   ✓ Selected
@@ -194,7 +196,9 @@
                             <div class="ml-3 text-right flex-shrink-0">
                               <span
                                 class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                                :class="getConfidenceClass(card.confidence || 0)"
+                                :class="
+                                  getConfidenceClass(card.confidence || 0)
+                                "
                               >
                                 {{ Math.round(card.confidence || 0) }}%
                               </span>

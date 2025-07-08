@@ -15,15 +15,17 @@
 The project has successfully **replaced the entire database-based search system** with a high-performance **Elasticsearch implementation**.
 
 #### Performance Improvements
-| Metric | Before (Database) | After (Elasticsearch) | Improvement |
-|--------|-------------------|----------------------|-------------|
-| **Search Speed** | 200-500ms | 5-20ms | **25x faster** |
-| **Intelligence** | Exact match only | Smart scoring + fuzzy | **Intelligent** |
-| **Expansion Codes** | Regex hack | Native normalization | **Robust** |
-| **Typo Tolerance** | None | Automatic | **User-friendly** |
-| **Scalability** | Degrades with size | Linear scaling | **Future-proof** |
+
+| Metric              | Before (Database)  | After (Elasticsearch) | Improvement       |
+| ------------------- | ------------------ | --------------------- | ----------------- |
+| **Search Speed**    | 200-500ms          | 5-20ms                | **25x faster**    |
+| **Intelligence**    | Exact match only   | Smart scoring + fuzzy | **Intelligent**   |
+| **Expansion Codes** | Regex hack         | Native normalization  | **Robust**        |
+| **Typo Tolerance**  | None               | Automatic             | **User-friendly** |
+| **Scalability**     | Degrades with size | Linear scaling        | **Future-proof**  |
 
 #### Smart Features Implemented
+
 - ✅ **Expansion Code Intelligence**: `op-01` = `op01` = `OP-01` = `OP01`
 - ✅ **Fuzzy Matching**: `"sangi"` finds "Sanji" cards
 - ✅ **Case Insensitive**: Works with any capitalization
@@ -37,6 +39,7 @@ The project has successfully **replaced the entire database-based search system*
 ## 🏗️ Technology Stack
 
 ### Backend
+
 - **Framework**: Laravel 11.x
 - **Database**: PostgreSQL
 - **Search Engine**: Elasticsearch 8.17
@@ -44,7 +47,8 @@ The project has successfully **replaced the entire database-based search system*
 - **Queue System**: Laravel Horizon + Redis
 - **API Data**: CardTrader API integration
 
-### Frontend  
+### Frontend
+
 - **Framework**: Vue.js 3 + Composition API
 - **Router**: Inertia.js (SPA-like experience)
 - **UI Components**: Headless UI + Tailwind CSS
@@ -52,6 +56,7 @@ The project has successfully **replaced the entire database-based search system*
 - **Build Tool**: Vite
 
 ### Infrastructure
+
 - **Containerization**: Docker + Docker Compose
 - **Web Server**: Nginx
 - **PHP**: PHP-FPM 8.3+
@@ -62,6 +67,7 @@ The project has successfully **replaced the entire database-based search system*
 ## 🗃️ Database Architecture
 
 ### Core Models
+
 - **Blueprint**: Card definitions (4,286 indexed)
 - **Expansion**: TCG sets/expansions
 - **UserCard**: User-owned cards with conditions/pricing
@@ -69,6 +75,7 @@ The project has successfully **replaced the entire database-based search system*
 - **CardPrice**: Historical and current pricing data
 
 ### Key Relationships
+
 ```
 User → Portfolio → UserCard → Blueprint → Expansion
                   ↓
@@ -85,7 +92,7 @@ User → Portfolio → UserCard → Blueprint → Expansion
 Frontend (Vue.js)
      ↓
 API Controller (/api/blueprints/search)
-     ↓  
+     ↓
 ElasticsearchService (Smart Queries)
      ↓
 Elasticsearch Index (4,286 documents)
@@ -94,6 +101,7 @@ Real-time Results (5-20ms response)
 ```
 
 #### Advanced Features
+
 - **Custom Analyzers**: Expansion code normalization
 - **Multi-Query Search**: 8 different query types with weighted scoring
 - **Auto-Sync**: Blueprint Observer maintains real-time index
@@ -105,6 +113,7 @@ Real-time Results (5-20ms response)
 ## 🎮 User Features
 
 ### Portfolio Management
+
 - ✅ **Multiple Portfolios**: Organize cards by themes/sets
 - ✅ **Smart Card Grouping**: Visual grouping by blueprint+condition+language+price
 - ✅ **Quantity Management**: Multiple cards create separate records
@@ -112,6 +121,7 @@ Real-time Results (5-20ms response)
 - ✅ **Purchase History**: Track acquisition dates and prices
 
 ### Card Search & Discovery
+
 - ✅ **Lightning Fast Search**: Sub-20ms Elasticsearch responses
 - ✅ **Smart Expansion Matching**: `op01` finds `op-01` cards
 - ✅ **Typo Tolerance**: `"sangi"` finds "Sanji"
@@ -119,8 +129,9 @@ Real-time Results (5-20ms response)
 - ✅ **Visual Results**: Card images and expansion info
 
 ### Modern UI/UX
+
 - ✅ **Dark/Light Mode**: Automatic theme switching
-- ✅ **Responsive Design**: Works on mobile, tablet, desktop  
+- ✅ **Responsive Design**: Works on mobile, tablet, desktop
 - ✅ **Real-Time Updates**: No page refreshes needed
 - ✅ **Loading States**: Smooth user experience
 - ✅ **Error Handling**: Graceful error messages
@@ -130,12 +141,14 @@ Real-time Results (5-20ms response)
 ## 📊 Data Integration
 
 ### CardTrader API Sync
+
 - **Automated Jobs**: Background sync of blueprints and pricing
 - **Rate Limiting**: Intelligent throttling with exponential backoff
 - **Data Transformation**: CT format → Laravel models → ES index
 - **Error Recovery**: Retry logic and error logging
 
 ### Pricing System
+
 - **Latest Prices**: Real-time market values
 - **Purchase Tracking**: User-defined acquisition costs
 - **Estimated Values**: Auto-populated from market data
@@ -146,6 +159,7 @@ Real-time Results (5-20ms response)
 ## 🔄 Development Workflow
 
 ### Environment Setup
+
 ```bash
 # 1. Clone and setup
 git clone <repo>
@@ -169,12 +183,13 @@ docker compose exec nodejs npm run dev
 ```
 
 ### Database Management
+
 ```bash
 # Migrations
 php artisan migrate
 php artisan migrate:rollback
 
-# Seeders  
+# Seeders
 php artisan db:seed
 
 # Fresh install
@@ -182,6 +197,7 @@ php artisan migrate:fresh --seed
 ```
 
 ### Elasticsearch Management
+
 ```bash
 # Full re-index
 php artisan elasticsearch:index-blueprints --fresh
@@ -198,6 +214,7 @@ curl localhost:9200/_cluster/health
 ## 🚦 Testing & Quality
 
 ### Search System Testing
+
 - ✅ **Unit Tests**: ElasticsearchService methods
 - ✅ **Integration Tests**: Full API endpoint testing
 - ✅ **Performance Tests**: Sub-20ms response verification
@@ -205,6 +222,7 @@ curl localhost:9200/_cluster/health
 - ✅ **Real Data Tests**: 4,286 blueprint dataset
 
 ### Code Quality
+
 - **PSR-12 Standards**: Laravel coding standards
 - **Type Declarations**: Strict typing throughout
 - **Error Handling**: Comprehensive exception management
@@ -216,6 +234,7 @@ curl localhost:9200/_cluster/health
 ## 📈 Performance Metrics
 
 ### Current Stats (Jan 2025)
+
 - **Total Blueprints**: 4,286 (fully indexed)
 - **Search Response Time**: 5-20ms average
 - **Index Size**: ~15MB
@@ -223,18 +242,20 @@ curl localhost:9200/_cluster/health
 - **Throughput**: 1000+ searches/second capability
 
 ### Search Intelligence Results
-| Query | Results | Response Time | Intelligence |
-|-------|---------|---------------|--------------|
-| `"luffy"` | 97 cards | ~8ms | Name matching |
-| `"op-01"` | 2,762 cards | ~12ms | Exact expansion |
-| `"op01"` | 165 cards | ~15ms | Normalized matching |
-| `"sangi"` | 97 cards | ~18ms | Fuzzy correction |
+
+| Query     | Results     | Response Time | Intelligence        |
+| --------- | ----------- | ------------- | ------------------- |
+| `"luffy"` | 97 cards    | ~8ms          | Name matching       |
+| `"op-01"` | 2,762 cards | ~12ms         | Exact expansion     |
+| `"op01"`  | 165 cards   | ~15ms         | Normalized matching |
+| `"sangi"` | 97 cards    | ~18ms         | Fuzzy correction    |
 
 ---
 
 ## 🎯 Future Roadmap
 
 ### Immediate Opportunities
+
 - ✅ **Advanced Filtering**: Price ranges, conditions, rarities
 - ✅ **Aggregations**: Statistics by expansion, condition, etc.
 - ✅ **Analytics**: User search behavior tracking
@@ -242,6 +263,7 @@ curl localhost:9200/_cluster/health
 - ✅ **Real-Time Notifications**: Price alerts and portfolio updates
 
 ### Scalability Ready
+
 - **Elasticsearch Cluster**: Multi-node setup for high availability
 - **Caching Layer**: Redis for frequently accessed data
 - **CDN Integration**: Image and asset delivery
@@ -253,12 +275,14 @@ curl localhost:9200/_cluster/health
 ## 📚 Documentation
 
 ### Complete Guides Available
+
 - 📖 **[Elasticsearch Implementation](docs/ELASTICSEARCH.md)** - Complete technical documentation
 - 🚀 **[Quick Reference Guide](docs/ELASTICSEARCH_QUICK_GUIDE.md)** - Essential commands and troubleshooting
 - 🏗️ **[Architecture Overview](docs/ARCHITECTURE.md)** - System design and component relationships
 - 🔧 **[Development Setup](docs/DEVELOPMENT.md)** - Local environment configuration
 
 ### Key Resources
+
 - **API Documentation**: Postman collection available
 - **Database Schema**: ER diagrams and relationship docs
 - **Search Examples**: Real query examples and results
@@ -269,6 +293,7 @@ curl localhost:9200/_cluster/health
 ## 🏆 Project Status
 
 ### ✅ Completed Features
+
 - **Full-Stack Application**: Laravel + Vue.js + Inertia.js
 - **Elasticsearch Search**: Complete database replacement
 - **Portfolio Management**: Multi-portfolio support with smart grouping
@@ -279,7 +304,9 @@ curl localhost:9200/_cluster/health
 - **Fallback System**: Database backup for high availability
 
 ### 🚀 Production Ready
+
 The application is **fully production-ready** with:
+
 - **High Performance**: Sub-20ms search responses
 - **Scalable Architecture**: Handles 4,000+ blueprints effortlessly
 - **Robust Error Handling**: Graceful degradation and recovery
@@ -288,5 +315,5 @@ The application is **fully production-ready** with:
 
 ---
 
-*Last Updated: January 2025*  
-*Status: ✅ Production Ready with Advanced Search Implementation* 
+_Last Updated: January 2025_  
+_Status: ✅ Production Ready with Advanced Search Implementation_

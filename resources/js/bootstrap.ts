@@ -10,11 +10,11 @@ window.axios.defaults.withCredentials = true; // <-- IMPORTANTE!
 
 // Function to ensure CSRF token is available
 const ensureCSRFToken = async () => {
-    try {
-        await csrfAxios.get('/sanctum/csrf-cookie');
-    } catch (error) {
-        console.warn('Failed to get CSRF token:', error);
-    }
+  try {
+    await csrfAxios.get('/sanctum/csrf-cookie');
+  } catch (error) {
+    console.warn('Failed to get CSRF token:', error);
+  }
 };
 
 // Initialize CSRF token
@@ -24,15 +24,15 @@ window.axios.defaults.baseURL = '/api'; // Se hai una base URL per le API
 
 // Add response interceptor to handle auth failures
 window.axios.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-        if (error.response?.status === 401 || error.response?.status === 419) {
-            // Try to refresh CSRF token and retry
-            await ensureCSRFToken();
-            // Optionally retry the original request
-        }
-        return Promise.reject(error);
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401 || error.response?.status === 419) {
+      // Try to refresh CSRF token and retry
+      await ensureCSRFToken();
+      // Optionally retry the original request
     }
+    return Promise.reject(error);
+  }
 );
 
 /**
