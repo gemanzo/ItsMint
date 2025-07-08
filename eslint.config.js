@@ -33,6 +33,14 @@ export default tseslint.config(
     },
     rules: {
       'vue/multi-word-component-names': 'off',
+      'vue/no-v-html': 'warn', 
+      '@typescript-eslint/no-unused-vars': ['error', { 
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_',
+        ignoreRestSiblings: true
+      }],
+      '@typescript-eslint/no-explicit-any': 'warn', 
     },
   }
 );

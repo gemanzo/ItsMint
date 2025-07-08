@@ -33,8 +33,20 @@ jobs:
 
       - name: Fix JavaScript/TypeScript/Vue code style
         run: |
-          npx eslint . --ext .js,.ts,.vue --fix || true
-          npx prettier --write "**/*.{js,ts,vue,json,css,scss,md}" || true
+          # ESLint con auto-fix (continua anche con warnings)
+          npx eslint . --ext .js,.ts,.vue --fix --max-warnings 10 || echo "ESLint completed with warnings"
+          
+          # Prettier formatting
+          npx prettier --write "**/*.{js,ts,vue,json,css,scss,md}"
+          
+          # Check finale per errori gravi (escludo warnings)
+          npx eslint . --ext .js,.ts,.vue --quiet || echo "Found some linting issues but continuing..."
+
+      - name: Show remaining linting issues
+        run: |
+          echo "=== Remaining linting issues (for manual review) ==="
+          npx eslint . --ext .js,.ts,.vue --format=compact || true
+        continue-on-error: true
 
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v4
