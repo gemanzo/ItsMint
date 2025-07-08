@@ -40,6 +40,7 @@ docker-compose -f develop-compose.yml exec php php artisan itsmint:create-invite
 ```
 
 ### Opzioni disponibili
+
 - `--count=N` - Numero di inviti da creare (default: 1, max: 100)
 - `--email=EMAIL` - Lega l'invito a una email specifica
 - `--days=N` - Giorni di validità (default: 30, 0 = mai scade)
@@ -51,6 +52,7 @@ docker-compose -f develop-compose.yml exec php php artisan itsmint:create-invite
 ## Gestione Inviti
 
 ### Visualizzare tutti gli inviti
+
 ```bash
 # Lista completa
 docker-compose -f develop-compose.yml exec php php artisan itsmint:manage-invites list
@@ -66,6 +68,7 @@ docker-compose -f develop-compose.yml exec php php artisan itsmint:manage-invite
 ```
 
 ### Disabilitare/Riabilitare inviti
+
 ```bash
 # Disabilitare un invito specifico
 docker-compose -f develop-compose.yml exec php php artisan itsmint:manage-invites disable --code=ABC12345
@@ -75,11 +78,13 @@ docker-compose -f develop-compose.yml exec php php artisan itsmint:manage-invite
 ```
 
 ### Statistiche complete
+
 ```bash
 docker-compose -f develop-compose.yml exec php php artisan itsmint:manage-invites stats
 ```
 
 ### Pulizia automatica
+
 ```bash
 # Disabilita inviti scaduti e esauriti
 docker-compose -f develop-compose.yml exec php php artisan itsmint:manage-invites cleanup
@@ -107,6 +112,7 @@ Codice invito: ABC12345
 ## Monitoraggio
 
 ### Stati degli inviti:
+
 - 🟢 **Available** - Pronto all'uso
 - 🔄 **Partial** - Parzialmente usato (inviti multi-uso)
 - ✅ **Used** - Completamente utilizzato
@@ -114,6 +120,7 @@ Codice invito: ABC12345
 - ❌ **Disabled** - Disabilitato manualmente
 
 ### Controlli automatici:
+
 - Verifica scadenza
 - Limite utilizzi
 - Email vincolate (se specificate)
@@ -122,6 +129,7 @@ Codice invito: ABC12345
 ## Esempi Pratici
 
 ### Invitare 5 amici per test di 1 settimana
+
 ```bash
 docker-compose -f develop-compose.yml exec php php artisan itsmint:create-invites \
   --count=5 \
@@ -131,6 +139,7 @@ docker-compose -f develop-compose.yml exec php php artisan itsmint:create-invite
 ```
 
 ### Invito famiglia con usi multipli
+
 ```bash
 docker-compose -f develop-compose.yml exec php php artisan itsmint:create-invites \
   --uses=10 \
@@ -140,6 +149,7 @@ docker-compose -f develop-compose.yml exec php php artisan itsmint:create-invite
 ```
 
 ### Invito specifico per beta tester esperto
+
 ```bash
 docker-compose -f develop-compose.yml exec php php artisan itsmint:create-invites \
   --email="betatester@email.com" \
@@ -159,6 +169,7 @@ docker-compose -f develop-compose.yml exec php php artisan itsmint:create-invite
 ## Disattivare il Sistema Alpha
 
 Per passare alla registrazione libera:
+
 1. Modifica `.env`: `ALPHA_MODE=false`
 2. Riavvia l'applicazione
 3. La registrazione diventerà accessibile a tutti
@@ -166,9 +177,10 @@ Per passare alla registrazione libera:
 ## Backup dei Dati
 
 Gli inviti sono salvati nella tabella `invitations` del database. Include:
+
 - Codici e metadati
 - Storico utilizzi
 - Informazioni sui creatori
 - Date di scadenza
 
-Assicurati di includere questa tabella nei backup del database. 
+Assicurati di includere questa tabella nei backup del database.

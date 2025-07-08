@@ -1,11 +1,13 @@
 # Card Scanner Implementation
 
 ## Overview
+
 Sistema completo di riconoscimento automatico di carte tramite OCR (Optical Character Recognition) implementato in Laravel + Vue.js. La funzionalità supporta sia l'utilizzo della camera che l'upload di immagini per il riconoscimento automatico delle carte.
 
 ## Features Implementate
 
 ### Backend (Laravel)
+
 - **Modello CardScan**: Gestione completa delle scansioni con stati, metadata e relazioni
 - **Servizio CardOcrService**: Processamento OCR con Tesseract e preprocessing immagini
 - **Controller API**: Endpoint RESTful per upload, gestione e storico scansioni
@@ -13,6 +15,7 @@ Sistema completo di riconoscimento automatico di carte tramite OCR (Optical Char
 - **Gestione File**: Storage sicuro delle immagini scansite con hash e metadata
 
 ### Frontend (Vue.js)
+
 - **CardScanModal**: Componente modale per cattura foto e upload immagini
 - **ScanResultsModal**: Visualizzazione risultati OCR con confidence scores
 - **Integrazione Camera**: Accesso camera device con supporto mobile (camera posteriore)
@@ -22,6 +25,7 @@ Sistema completo di riconoscimento automatico di carte tramite OCR (Optical Char
 ## Architettura
 
 ### Database Schema
+
 ```sql
 CREATE TABLE card_scans (
     id BIGINT PRIMARY KEY,
@@ -47,7 +51,9 @@ CREATE TABLE card_scans (
 ### API Endpoints
 
 #### POST /api/card-scans/upload
+
 Carica e processa un'immagine per il riconoscimento OCR
+
 ```bash
 curl -X POST /api/card-scans/upload \
   -H "Authorization: Bearer {token}" \
@@ -56,28 +62,36 @@ curl -X POST /api/card-scans/upload \
 ```
 
 #### GET /api/card-scans
+
 Recupera la lista delle scansioni dell'utente
+
 ```bash
 curl /api/card-scans?status=completed&per_page=10 \
   -H "Authorization: Bearer {token}"
 ```
 
 #### GET /api/card-scans/{id}
+
 Dettagli di una specifica scansione
+
 ```bash
 curl /api/card-scans/123 \
   -H "Authorization: Bearer {token}"
 ```
 
 #### POST /api/card-scans/{id}/retry
+
 Riprova una scansione fallita
+
 ```bash
 curl -X POST /api/card-scans/123/retry \
   -H "Authorization: Bearer {token}"
 ```
 
 #### PUT /api/card-scans/{id}/blueprint
+
 Assegna manualmente una carta alla scansione
+
 ```bash
 curl -X PUT /api/card-scans/123/blueprint \
   -H "Authorization: Bearer {token}" \
@@ -86,7 +100,9 @@ curl -X PUT /api/card-scans/123/blueprint \
 ```
 
 #### POST /api/card-scans/{id}/create-user-card
+
 Crea una UserCard dalla scansione
+
 ```bash
 curl -X POST /api/card-scans/123/create-user-card \
   -H "Authorization: Bearer {token}" \
@@ -102,26 +118,31 @@ curl -X POST /api/card-scans/123/create-user-card \
 ## Workflow del Riconoscimento
 
 ### 1. Cattura/Upload Immagine
+
 - **Camera**: Accesso camera con preferenza per camera posteriore su mobile
 - **Upload**: Supporto per file immagine fino a 10MB
 - **Validazione**: Controllo formato e dimensioni minime
 
 ### 2. Preprocessing Immagine
+
 - **Ridimensionamento**: Max 1200px larghezza per performance
 - **Ottimizzazione OCR**: Conversione grayscale, contrast enhancement
 - **Pulizia**: Rimozione noise e miglioramento qualità
 
 ### 3. OCR Processing
+
 - **Tesseract**: Engine OCR multi-lingua (EN, JP, IT)
 - **Configurazione**: Ottimizzata per testo su carte
 - **Whitelist**: Caratteri consentiti per ridurre errori
 
 ### 4. Card Matching
+
 - **Elasticsearch**: Ricerca fuzzy nel database carte
 - **Similarity Score**: Algoritmo Levenshtein per matching
 - **Confidence Ranking**: Ordinamento risultati per probabilità
 
 ### 5. Auto-Assignment
+
 - **High Confidence**: Auto-assegnazione per confidence >= 80%
 - **Manual Review**: Suggerimenti per confidence 50-80%
 - **Manual Assignment**: Ricerca manuale per casi difficili
@@ -129,12 +150,14 @@ curl -X POST /api/card-scans/123/create-user-card \
 ## Configurazione
 
 ### Dipendenze Backend
+
 ```bash
 composer require thiagoalessio/tesseract_ocr
 composer require intervention/image
 ```
 
 ### Tesseract Setup
+
 ```bash
 # Ubuntu/Debian
 sudo apt-get install tesseract-ocr tesseract-ocr-eng tesseract-ocr-jpn tesseract-ocr-ita
@@ -147,6 +170,7 @@ RUN apt-get update && apt-get install -y tesseract-ocr tesseract-ocr-eng tessera
 ```
 
 ### Frontend Dependencies
+
 ```bash
 npm install @heroicons/vue
 ```
@@ -154,6 +178,7 @@ npm install @heroicons/vue
 ## Utilizzo
 
 ### Integrazione in AddCardModal
+
 ```vue
 <template>
   <!-- Pulsante scansione -->
@@ -163,13 +188,13 @@ npm install @heroicons/vue
   </button>
 
   <!-- Componenti modali -->
-  <CardScanModal 
+  <CardScanModal
     :show="showScanModal"
     @close="closeScanModal"
     @scan-complete="handleScanComplete"
   />
-  
-  <ScanResultsModal 
+
+  <ScanResultsModal
     :show="showScanResults"
     :scan="currentScan"
     @close="closeScanResults"
@@ -178,20 +203,22 @@ npm install @heroicons/vue
 </template>
 
 <script setup>
-import CardScanModal from '@/Components/CardScanModal.vue'
-import ScanResultsModal from '@/Components/ScanResultsModal.vue'
+import CardScanModal from '@/Components/CardScanModal.vue';
+import ScanResultsModal from '@/Components/ScanResultsModal.vue';
 
 const handleScanComplete = (scan) => {
   // Gestisci risultati scansione
   if (scan.blueprint) {
-    selectBlueprint(scan.blueprint)
+    selectBlueprint(scan.blueprint);
   }
-}
+};
 </script>
 ```
 
 ### Standalone Scanner Page
+
 Pagina dedicata disponibile in `resources/js/Pages/CardScan/Index.vue` con:
+
 - Interfaccia completa di scansione
 - Storico scansioni precedenti
 - Informazioni sulla funzionalità
@@ -200,12 +227,14 @@ Pagina dedicata disponibile in `resources/js/Pages/CardScan/Index.vue` con:
 ## Performance & Ottimizzazioni
 
 ### Backend
+
 - **Async Processing**: OCR in background con queue jobs (opzionale)
 - **Image Caching**: Storage ottimizzato con hash per evitare duplicati
 - **Database Indexing**: Indici su user_id, status, confidence_score
 - **Error Handling**: Retry automatico per fallimenti temporanei
 
 ### Frontend
+
 - **Lazy Loading**: Componenti caricati solo quando necessari
 - **Image Optimization**: Preprocessing client-side prima dell'upload
 - **Responsive Design**: Interfaccia ottimizzata per mobile
@@ -214,15 +243,16 @@ Pagina dedicata disponibile in `resources/js/Pages/CardScan/Index.vue` con:
 ## Testing
 
 ### Backend Tests
+
 ```php
 // Test OCR service
 public function test_card_ocr_service_processes_image()
 {
     $service = app(CardOcrService::class);
     $file = UploadedFile::fake()->image('test_card.jpg');
-    
+
     $scan = $service->processCardImage($file, 1, 'upload');
-    
+
     $this->assertEquals('completed', $scan->status);
     $this->assertNotNull($scan->ocr_text);
 }
@@ -234,44 +264,49 @@ public function test_upload_endpoint()
         'image' => UploadedFile::fake()->image('card.jpg'),
         'source' => 'camera'
     ]);
-    
+
     $response->assertStatus(201)
              ->assertJsonStructure(['success', 'scan']);
 }
 ```
 
 ### Frontend Tests
+
 ```javascript
 // Test camera functionality
 describe('CardScanModal', () => {
   it('should access camera when available', async () => {
     // Mock getUserMedia
-    navigator.mediaDevices.getUserMedia = jest.fn()
-      .mockResolvedValue(mockStream)
-    
-    const wrapper = mount(CardScanModal)
-    await wrapper.vm.startCamera()
-    
-    expect(wrapper.vm.cameraActive).toBe(true)
-  })
-})
+    navigator.mediaDevices.getUserMedia = jest
+      .fn()
+      .mockResolvedValue(mockStream);
+
+    const wrapper = mount(CardScanModal);
+    await wrapper.vm.startCamera();
+
+    expect(wrapper.vm.cameraActive).toBe(true);
+  });
+});
 ```
 
 ## Security Considerations
 
 ### File Upload Security
+
 - **Validation**: Controllo MIME type e dimensioni
 - **Storage**: File memorizzati fuori da webroot
 - **Hash**: Prevenzione duplicati e integrity check
 - **Cleanup**: Rimozione automatica file temporanei
 
 ### API Security
+
 - **Authentication**: Sanctum token per tutte le API
 - **Authorization**: Accesso solo alle proprie scansioni
 - **Rate Limiting**: Throttling per prevenire abusi
 - **Input Validation**: Sanitizzazione completa input
 
 ### Privacy
+
 - **Data Retention**: Policy per rimozione scansioni vecchie
 - **Encryption**: Storage crittografato per dati sensibili
 - **Logs**: No logging di dati utente sensibili
@@ -281,26 +316,34 @@ describe('CardScanModal', () => {
 ### Errori Comuni
 
 #### Tesseract non installato
+
 ```bash
 Error: TesseractOCR: executable not found
 ```
+
 **Soluzione**: Installare Tesseract e verificare PATH
 
 #### Camera non accessibile
+
 ```javascript
 Error: getUserMedia not supported
 ```
+
 **Soluzione**: HTTPS obbligatorio per camera API
 
 #### OCR risultati poveri
+
 **Soluzioni**:
+
 - Migliorare qualità immagine
 - Aumentare illuminazione
 - Usare contrasto maggiore
 - Verificare orientamento carta
 
 #### Performance lente
+
 **Soluzioni**:
+
 - Ridurre dimensioni immagine
 - Usare queue jobs per OCR
 - Ottimizzare preprocessing
@@ -309,6 +352,7 @@ Error: getUserMedia not supported
 ## Future Enhancements
 
 ### Planned Features
+
 - **AI Enhancement**: Integrazione GPT-4 Vision per recognition avanzato
 - **Batch Processing**: Scansione multipla carte contemporaneamente
 - **Mobile App**: App nativa per performance migliori
@@ -316,6 +360,7 @@ Error: getUserMedia not supported
 - **Real-time Processing**: WebSocket per aggiornamenti in tempo reale
 
 ### Optimizations
+
 - **Edge Detection**: Riconoscimento automatico bordi carta
 - **Perspective Correction**: Correzione automatica angolo foto
 - **Multi-language**: Supporto lingue aggiuntive
@@ -325,6 +370,7 @@ Error: getUserMedia not supported
 ## Contribuire
 
 ### Setup Sviluppo
+
 1. Clone repository
 2. Install dependencies: `composer install && npm install`
 3. Configure Tesseract
@@ -332,8 +378,9 @@ Error: getUserMedia not supported
 5. Start development: `npm run dev`
 
 ### Guidelines
+
 - Seguire PSR-12 per PHP
 - Usare TypeScript per Vue components
 - Testare funzionalità OCR con immagini reali
 - Documentare nuove API endpoints
-- Aggiornare questo README per nuove features 
+- Aggiornare questo README per nuove features
