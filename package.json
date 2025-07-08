@@ -3,13 +3,7 @@
     "type": "module",
     "scripts": {
         "build": "vue-tsc && vite build && vite build --ssr",
-        "dev": "vite",
-        "prepare": "husky",
-        "lint:fix": "npm run lint:php:fix && npm run lint:js:fix",
-        "lint:js": "eslint . --ext .js,.ts,.vue",
-        "lint:js:fix": "eslint . --ext .js,.ts,.vue --fix",
-        "lint:php": "vendor/bin/pint",
-        "lint:php:fix": "vendor/bin/pint -v"
+        "dev": "vite"
     },
     "devDependencies": {
         "@inertiajs/vue3": "^2.0.0",
@@ -27,9 +21,7 @@
         "eslint-config-prettier": "^10.1.5",
         "eslint-plugin-vue": "^10.3.0",
         "globals": "^16.3.0",
-        "husky": "^9.1.7",
         "laravel-vite-plugin": "^1.2.0",
-        "lint-staged": "^16.1.2",
         "postcss": "^8.4.31",
         "prettier": "^3.6.2",
         "tailwindcss": "^3.2.1",
@@ -47,14 +39,5 @@
         "lodash": "^4.17.21",
         "pinia": "^3.0.2",
         "vue-chartjs": "^5.3.2"
-    },
-    "lint-staged": {
-        "*.php": [
-            "npm run lint:php"
-        ],
-        "*.{js,ts,vue}": [
-            "npm run lint:js",
-            "npm run format:js"
-        ]
     }
 }

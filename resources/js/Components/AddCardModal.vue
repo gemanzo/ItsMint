@@ -540,11 +540,7 @@ import { useCurrency } from '@/composables/useCurrency';
 import { useCardPricing } from '@/composables/useCardPricing';
 import { useApiError } from '@/composables/useApiError';
 import { CARD_LANGUAGES } from '@/constants/cardLanguages';
-
-interface ScanResult {
-  blueprint?: Blueprint;
-  [key: string]: unknown;
-}
+import type { CardScan } from '@/types';
 
 const props = defineProps<{
   portfolioId?: number | null;
@@ -573,7 +569,7 @@ const isSearching = ref(false);
 // Scan modal states
 const showScanModal = ref(false);
 const showScanResults = ref(false);
-const currentScan = ref<ScanResult | null>(null);
+const currentScan = ref<CardScan | null>(null);
 
 const cardDetails = reactive({
   condition: 'NM',
@@ -814,7 +810,7 @@ const closeScanModal = () => {
   showScanModal.value = false;
 };
 
-const handleScanComplete = (scan: ScanResult) => {
+const handleScanComplete = (scan: CardScan) => {
   currentScan.value = scan;
   showScanModal.value = false;
   showScanResults.value = true;
@@ -825,7 +821,7 @@ const closeScanResults = () => {
   currentScan.value = null;
 };
 
-const handleCardCreated = (scan: ScanResult) => {
+const handleCardCreated = (scan: CardScan) => {
   // If scan has an assigned blueprint, auto-select it
   if (scan.blueprint) {
     selectBlueprint(scan.blueprint);

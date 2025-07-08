@@ -52,7 +52,7 @@
                   <p class="text-sm text-gray-500 dark:text-gray-400">
                     Status:
                     <span :class="getStatusClass()">{{
-                      formatStatus(scan?.status)
+                      formatStatus(scan?.status || 'unknown')
                     }}</span>
                     <span v-if="scan?.confidence_score" class="ml-2">
                       • Confidence: {{ scan.confidence_score }}%
@@ -116,7 +116,7 @@
                       :key="index"
                       class="border rounded-lg p-3 transition-all duration-200 cursor-pointer dark:border-gray-600"
                       :class="[
-                        selectedCard === card.blueprint_id
+                        selectedCard === (card.blueprint_id || 0)
                           ? 'border-indigo-500 bg-indigo-50 dark:border-indigo-400 dark:bg-indigo-900/30 ring-2 ring-indigo-500 ring-opacity-50'
                           : index === 0
                             ? 'border-green-300 bg-green-50 dark:border-green-600 dark:bg-green-900/20'
@@ -126,7 +126,7 @@
                                 ? 'border-yellow-300 hover:border-yellow-400'
                                 : 'border-red-300 hover:border-red-400',
                       ]"
-                      @click="selectCard(card.blueprint_id)"
+                      @click="selectCard(card.blueprint_id || 0)"
                     >
                       <div class="flex items-start space-x-3">
                         <!-- Card Image -->
@@ -170,7 +170,7 @@
                                   Best Match
                                 </span>
                                 <span
-                                  v-if="selectedCard === card.blueprint_id"
+                                  v-if="selectedCard === (card.blueprint_id || 0)"
                                   class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200"
                                 >
                                   ✓ Selected
@@ -194,21 +194,21 @@
                             <div class="ml-3 text-right flex-shrink-0">
                               <span
                                 class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                                :class="getConfidenceClass(card.confidence)"
+                                :class="getConfidenceClass(card.confidence || 0)"
                               >
-                                {{ Math.round(card.confidence) }}%
+                                {{ Math.round(card.confidence || 0) }}%
                               </span>
                               <button
                                 class="block mt-1 w-full px-3 py-1 text-xs rounded transition-colors"
                                 :class="
-                                  selectedCard === card.blueprint_id
+                                  selectedCard === (card.blueprint_id || 0)
                                     ? 'bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600'
                                     : 'bg-gray-600 text-white hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600'
                                 "
-                                @click.stop="selectCard(card.blueprint_id)"
+                                @click.stop="selectCard(card.blueprint_id || 0)"
                               >
                                 {{
-                                  selectedCard === card.blueprint_id
+                                  selectedCard === (card.blueprint_id || 0)
                                     ? 'Selected'
                                     : 'Select'
                                 }}
@@ -296,7 +296,7 @@
                         v-for="result in searchResults"
                         :key="result.id"
                         class="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 border-b last:border-b-0 dark:border-gray-600"
-                        @click="assignBlueprint(result.id)"
+                        @click="assignBlueprint(result.id || 0)"
                       >
                         <div
                           class="text-sm font-medium text-gray-900 dark:text-gray-100"
@@ -414,7 +414,7 @@ import {
   XMarkIcon,
 } from '@heroicons/vue/24/outline';
 import axios from 'axios';
-import type { CardScan } from '@/types';
+import type { CardScan, Blueprint } from '@/types';
 
 interface Props {
   show: boolean;
@@ -432,7 +432,7 @@ const emit = defineEmits<Emits>();
 // Reactive variables
 const imageUrl = ref<string | null>(null);
 const searchQuery = ref('');
-const searchResults = ref<CardScan[]>([]);
+const searchResults = ref<Blueprint[]>([]);
 const selectedCard = ref<number | null>(null);
 
 // Methods
@@ -528,7 +528,9 @@ const retryScan = async () => {
 const createUserCard = () => {
   // This will open another modal or redirect to add card form
   // For now, we'll emit an event
-  emit('card-created', props.scan);
+  if (props.scan) {
+    emit('card-created', props.scan);
+  }
 };
 
 const tryAgain = () => {

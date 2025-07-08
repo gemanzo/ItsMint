@@ -19,6 +19,7 @@ export interface User {
 export interface Blueprint {
   id: number;
   name: string;
+  image_url?: string;
   expansion?: {
     id: number;
     name: string;
@@ -27,6 +28,8 @@ export interface Blueprint {
   collector_number?: string;
   latest_price?: {
     price_cents: number;
+    is_foil?: boolean;
+    language?: string;
   };
 }
 
@@ -35,6 +38,14 @@ export interface DetectedCard {
   name: string;
   confidence: number;
   blueprint_id?: number;
+  image_url?: string;
+  expansion?: {
+    id: number;
+    name: string;
+    code: string;
+  };
+  card_number?: string;
+  matched_text?: string;
 }
 
 export interface CardScan {
@@ -44,6 +55,41 @@ export interface CardScan {
   detected_cards?: DetectedCard[];
   created_at: string;
   confidence_score?: number;
+  error_message?: string;
+  name?: string;
+  expansion?: {
+    id: number;
+    name: string;
+    code: string;
+  };
+}
+
+export interface Portfolio {
+  id: number;
+  name: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+  user_id: number;
+  user_cards?: UserCard[];
+}
+
+export interface UserCard {
+  id: number;
+  blueprint_id: number;
+  condition: string;
+  language: string;
+  is_foil: boolean;
+  purchase_price_cents?: number;
+  estimated_value_cents?: number;
+  acquired_at?: string;
+  notes?: string;
+  blueprint?: Blueprint;
+  pivot?: {
+    quantity: number;
+    portfolio_id: number;
+    user_card_id: number;
+  };
 }
 
 export type PageProps<
