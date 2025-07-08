@@ -58,17 +58,20 @@ OCR_SAVE_PROCESSED=false
 ### 2.2 Posizionamento Service Account Key
 
 **Opzione A: Directory del progetto (consigliata per sviluppo)**
+
 ```bash
 mkdir storage/credentials
 cp ~/Downloads/service-account-key.json storage/credentials/google-vision.json
 ```
 
 Poi nel `.env`:
+
 ```bash
 GOOGLE_APPLICATION_CREDENTIALS=/path/completo/al/progetto/storage/credentials/google-vision.json
 ```
 
 **Opzione B: Directory sistema (consigliata per produzione)**
+
 ```bash
 # Su server Linux
 sudo mkdir -p /etc/google-cloud/
@@ -79,6 +82,7 @@ sudo chmod 600 /etc/google-cloud/itsmint-vision.json
 ### 2.3 Sicurezza
 
 **IMPORTANTE**: Aggiungi al `.gitignore`:
+
 ```
 # Google Cloud credentials
 storage/credentials/
@@ -117,11 +121,11 @@ php artisan ocr:test-vision /path/to/card-image.jpg
 
 ### 4.2 Costi Attesi
 
-| Volume Mensile | Costo |
-|----------------|-------|
+| Volume Mensile    | Costo      |
+| ----------------- | ---------- |
 | < 1.000 richieste | **GRATIS** |
-| 1.000 - 5.000 | ~$3-7 |
-| 5.000 - 10.000 | ~$7-15 |
+| 1.000 - 5.000     | ~$3-7      |
+| 5.000 - 10.000    | ~$7-15     |
 
 ### 4.3 Ottimizzazione
 
@@ -134,16 +138,19 @@ php artisan ocr:test-vision /path/to/card-image.jpg
 ### 5.1 Errori Comuni
 
 **"Google Vision API is not properly configured"**
+
 - Verifica che `GOOGLE_VISION_ENABLED=true`
 - Controlla che il file JSON esista e sia leggibile
 - Verifica che `GOOGLE_CLOUD_PROJECT_ID` sia corretto
 
 **"Vision API error: PERMISSION_DENIED"**
+
 - Verifica che Vision API sia abilitata nel progetto
 - Controlla che il service account abbia i permessi corretti
 - Verifica che il project ID sia corretto
 
 **"Failed to read image file"**
+
 - Controlla che il file immagine esista
 - Verifica i permessi di lettura
 - Assicurati che il formato sia supportato (JPG, PNG, etc.)
@@ -159,6 +166,7 @@ LOG_LEVEL=debug
 ```
 
 Poi controlla i log:
+
 ```bash
 tail -f storage/logs/laravel.log
 ```
@@ -166,6 +174,7 @@ tail -f storage/logs/laravel.log
 ### 5.3 Performance
 
 Se l'OCR è lento:
+
 - Riduci la dimensione delle immagini (max 2000px width)
 - Controlla la connessione internet
 - Verifica la latenza verso Google Cloud
@@ -183,6 +192,7 @@ Una volta configurato correttamente:
 ## 📞 Support
 
 Se hai problemi:
+
 1. Controlla i log di Laravel
 2. Verifica la configurazione Google Cloud
 3. Testa con il comando `ocr:test-vision`
@@ -191,6 +201,7 @@ Se hai problemi:
 ---
 
 ✅ **Configurazione completata con successo quando:**
+
 - Il comando `php artisan ocr:test-vision` funziona
 - Le immagini caricate tramite web interface vengono processate
-- I log mostrano confidence scores > 80% 
+- I log mostrano confidence scores > 80%

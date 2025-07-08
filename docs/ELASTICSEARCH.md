@@ -51,6 +51,7 @@ This project has **completely replaced** the legacy database-based Blueprint sea
 **Location**: `app/Services/ElasticsearchService.php`
 
 **Key Methods**:
+
 - `createIndex()` - Creates index with custom analyzers
 - `searchBlueprints()` - Intelligent search with scoring
 - `bulkIndexBlueprints()` - Batch indexing for performance
@@ -60,6 +61,7 @@ This project has **completely replaced** the legacy database-based Blueprint sea
 ### 2. Smart Analyzers
 
 #### Expansion Code Analyzer
+
 ```json
 {
   "expansion_code_analyzer": {
@@ -78,10 +80,11 @@ This project has **completely replaced** the legacy database-based Blueprint sea
 **Result**: `op-01` = `op01` = `OP-01` = `OP01`
 
 #### Blueprint Analyzer
+
 ```json
 {
   "blueprint_analyzer": {
-    "type": "custom", 
+    "type": "custom",
     "tokenizer": "standard",
     "filter": ["lowercase", "asciifolding", "synonym_filter"]
   }
@@ -89,6 +92,7 @@ This project has **completely replaced** the legacy database-based Blueprint sea
 ```
 
 **Features**:
+
 - Lowercasing
 - Accent removal
 - Condition synonyms (NM = Near Mint)
@@ -102,8 +106,8 @@ This project has **completely replaced** the legacy database-based Blueprint sea
       "type": "text",
       "analyzer": "blueprint_analyzer",
       "fields": {
-        "keyword": {"type": "keyword"},
-        "completion": {"type": "completion"}
+        "keyword": { "type": "keyword" },
+        "completion": { "type": "completion" }
       }
     },
     "expansion": {
@@ -112,8 +116,11 @@ This project has **completely replaced** the legacy database-based Blueprint sea
           "type": "text",
           "analyzer": "expansion_code_analyzer",
           "fields": {
-            "keyword": {"type": "keyword"},
-            "normalized": {"type": "text", "analyzer": "expansion_code_analyzer"}
+            "keyword": { "type": "keyword" },
+            "normalized": {
+              "type": "text",
+              "analyzer": "expansion_code_analyzer"
+            }
           }
         }
       }
@@ -126,13 +133,13 @@ This project has **completely replaced** the legacy database-based Blueprint sea
 
 #### Multi-Level Scoring System
 
-| Query Type | Boost | Example |
-|------------|-------|---------|
-| **Exact Name Match** | 3.0 | "Luffy" → "Monkey.D.Luffy" |
-| **Expansion Exact** | 3.0 | "op-01" → "op-01" |
-| **Expansion Normalized** | 2.8 | "op01" → "op-01" |
-| **Fuzzy Name** | 2.0 | "Lufy" → "Luffy" |
-| **Wildcard** | 1.0-2.0 | "op" → "op-*" |
+| Query Type               | Boost   | Example                    |
+| ------------------------ | ------- | -------------------------- |
+| **Exact Name Match**     | 3.0     | "Luffy" → "Monkey.D.Luffy" |
+| **Expansion Exact**      | 3.0     | "op-01" → "op-01"          |
+| **Expansion Normalized** | 2.8     | "op01" → "op-01"           |
+| **Fuzzy Name**           | 2.0     | "Lufy" → "Luffy"           |
+| **Wildcard**             | 1.0-2.0 | "op" → "op-\*"             |
 
 #### Search Process
 
@@ -151,16 +158,19 @@ This project has **completely replaced** the legacy database-based Blueprint sea
 **Endpoint**: `GET /api/blueprints/search`
 
 **Parameters**:
+
 - `q` (required): Search query
-- `size` (optional): Results per page (default: 20, max: 100) 
+- `size` (optional): Results per page (default: 20, max: 100)
 - `from` (optional): Pagination offset (default: 0)
 
 **Example**:
+
 ```bash
 curl "/api/blueprints/search?q=luffy+op01&size=5"
 ```
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -196,10 +206,12 @@ curl "/api/blueprints/search?q=luffy+op01&size=5"
 **Endpoint**: `GET /api/blueprints/suggestions`
 
 **Parameters**:
+
 - `q` (required): Partial query
 - `limit` (optional): Max suggestions (default: 5, max: 10)
 
 **Example**:
+
 ```bash
 curl "/api/blueprints/suggestions?q=luf&limit=3"
 ```
@@ -209,6 +221,7 @@ curl "/api/blueprints/suggestions?q=luf&limit=3"
 **Endpoint**: `GET /api/blueprints/search/stats`
 
 **Response**:
+
 ```json
 {
   "success": true,
@@ -244,7 +257,7 @@ elasticsearch:
     - discovery.type=single-node
     - xpack.security.enabled=false
   ports:
-    - "9200:9200"
+    - '9200:9200'
 ```
 
 ---
@@ -298,8 +311,9 @@ php artisan tinker
 **Location**: `app/Observers/BlueprintObserver.php`
 
 **Triggers**:
+
 - ✅ **Created**: New blueprint → Auto-indexed
-- ✅ **Updated**: Blueprint changes → Re-indexed  
+- ✅ **Updated**: Blueprint changes → Re-indexed
 - ✅ **Deleted**: Blueprint removed → Removed from index
 
 **Registration**: `app/Providers/AppServiceProvider.php`
@@ -311,8 +325,9 @@ Blueprint::observe(BlueprintObserver::class);
 ### Real-Time Updates
 
 When blueprints are modified via:
+
 - Admin panel updates
-- API modifications  
+- API modifications
 - Database migrations
 - CardTrader sync jobs
 
@@ -327,12 +342,14 @@ The Elasticsearch index is **automatically updated** in real-time.
 **Location**: `app/Http/Middleware/ElasticsearchFallback.php`
 
 **Behavior**:
+
 1. **Check**: Is Elasticsearch available?
 2. **Fallback**: If NO → Use legacy database search
 3. **Transform**: Convert DB results to ES format
 4. **Indicate**: Add `"fallback": true` to response
 
 **Benefits**:
+
 - Zero downtime during ES maintenance
 - Graceful degradation
 - Transparent to frontend
@@ -344,23 +361,23 @@ The Elasticsearch index is **automatically updated** in real-time.
 
 ### Search Performance
 
-| Dataset Size | Response Time | Memory Usage |
-|--------------|---------------|--------------|
-| **4,286 Blueprints** | ~5-20ms | ~50MB |
+| Dataset Size         | Response Time | Memory Usage       |
+| -------------------- | ------------- | ------------------ |
+| **4,286 Blueprints** | ~5-20ms       | ~50MB              |
 | **Query Complexity** | 8 sub-queries | Parallel execution |
-| **Throughput** | 1000+ req/sec | CPU optimized |
+| **Throughput**       | 1000+ req/sec | CPU optimized      |
 
 ### Search Intelligence Examples
 
-| User Input | Matched Results | Intelligence Type |
-|------------|-----------------|-------------------|
-| `"luffy"` | 97 results | Name matching |
-| `"op-01"` | 2,762 results | Exact expansion |
-| `"op01"` | 165 results | Normalized expansion |
-| `"OP01"` | 165 results | Case insensitive |
-| `"st03"` | 36 results | Series normalization |
-| `"lufy"` | 85 results | Fuzzy matching |
-| `"sangi"` | 97 results | Character typos |
+| User Input | Matched Results | Intelligence Type    |
+| ---------- | --------------- | -------------------- |
+| `"luffy"`  | 97 results      | Name matching        |
+| `"op-01"`  | 2,762 results   | Exact expansion      |
+| `"op01"`   | 165 results     | Normalized expansion |
+| `"OP01"`   | 165 results     | Case insensitive     |
+| `"st03"`   | 36 results      | Series normalization |
+| `"lufy"`   | 85 results      | Fuzzy matching       |
+| `"sangi"`  | 97 results      | Character typos      |
 
 ### Index Statistics
 
@@ -393,6 +410,7 @@ curl localhost:9200/blueprints/_stats?pretty
 **Problem**: `"index_not_found_exception"`
 
 **Solution**:
+
 ```bash
 php artisan elasticsearch:index-blueprints --fresh
 ```
@@ -402,12 +420,14 @@ php artisan elasticsearch:index-blueprints --fresh
 **Problem**: `"Connection refused to elasticsearch:9200"`
 
 **Check**:
+
 ```bash
 docker compose ps elasticsearch
 curl localhost:9200/_cluster/health
 ```
 
 **Fix**:
+
 ```bash
 docker compose up elasticsearch -d
 ```
@@ -415,6 +435,7 @@ docker compose up elasticsearch -d
 #### 3. Search Returns 0 Results
 
 **Debug**:
+
 ```bash
 # Check index content
 curl localhost:9200/blueprints/_count
@@ -481,7 +502,7 @@ echo $response->getContent();
 ```javascript
 // Browser Console
 fetch('/api/blueprints/search?q=luffy')
-  .then(r => r.json())
+  .then((r) => r.json())
   .then(console.log);
 
 // Vue DevTools
@@ -508,27 +529,31 @@ curl -X GET "localhost:9200/blueprints/_analyze" -H 'Content-Type: application/j
 ### Custom Search Scenarios
 
 #### 1. Character Names + Expansion
+
 ```
 Input: "luffy op01"
 → Finds: Monkey.D.Luffy from OP-01
 → Score: High (name + expansion match)
 ```
 
-#### 2. Partial Expansion Codes  
+#### 2. Partial Expansion Codes
+
 ```
-Input: "op"  
+Input: "op"
 → Finds: All OP series cards
 → Score: Medium (wildcard match)
 ```
 
 #### 3. Fuzzy Character Names
+
 ```
 Input: "sangi" (typo)
-→ Finds: Sanji cards  
+→ Finds: Sanji cards
 → Score: Medium (fuzzy correction)
 ```
 
 #### 4. Mixed Case
+
 ```
 Input: "ZORO St03"
 → Finds: Zoro from ST-03
@@ -538,6 +563,7 @@ Input: "ZORO St03"
 ### Future Enhancements
 
 **Ready for Implementation**:
+
 - ✅ Completion suggester for real-time autocomplete
 - ✅ Aggregations for faceted search (by expansion, rarity, etc.)
 - ✅ Geographic search (if card locations added)
@@ -550,7 +576,8 @@ Input: "ZORO St03"
 
 ### From Database to Elasticsearch
 
-**Before**: 
+**Before**:
+
 - SQL `LIKE` queries
 - Regex parsing for expansion codes
 - Case-sensitive exact matching
@@ -558,8 +585,9 @@ Input: "ZORO St03"
 - Performance degradation with growth
 
 **After**:
+
 - Intelligent multi-field search
-- Native expansion code normalization  
+- Native expansion code normalization
 - Fuzzy matching and typo tolerance
 - Relevance-based scoring
 - Linear performance scaling
@@ -577,13 +605,13 @@ Input: "ZORO St03"
 
 ### Performance Improvements
 
-| Metric | Database (Before) | Elasticsearch (After) | Improvement |
-|--------|-------------------|----------------------|-------------|
-| **Search Time** | 200-500ms | 5-20ms | **25x faster** |
-| **Relevance** | Exact match only | Smart scoring | **Intelligent** |
-| **Typo Tolerance** | None | Automatic | **User-friendly** |
-| **Expansion Matching** | Regex hack | Native | **Robust** |
-| **Scalability** | Degrades | Linear | **Future-proof** |
+| Metric                 | Database (Before) | Elasticsearch (After) | Improvement       |
+| ---------------------- | ----------------- | --------------------- | ----------------- |
+| **Search Time**        | 200-500ms         | 5-20ms                | **25x faster**    |
+| **Relevance**          | Exact match only  | Smart scoring         | **Intelligent**   |
+| **Typo Tolerance**     | None              | Automatic             | **User-friendly** |
+| **Expansion Matching** | Regex hack        | Native                | **Robust**        |
+| **Scalability**        | Degrades          | Linear                | **Future-proof**  |
 
 ### User Experience
 
@@ -598,22 +626,25 @@ Input: "ZORO St03"
 ## 📚 Resources
 
 ### Documentation
+
 - [Elasticsearch Official Docs](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html)
 - [Laravel Elasticsearch](https://laravel.com/docs/elasticsearch)
 - [PHP Elasticsearch Client](https://www.elastic.co/guide/en/elasticsearch/client/php-api/current/index.html)
 
 ### Tools
+
 - **Kibana**: `http://localhost:5601` (if enabled)
 - **Elasticsearch Head**: Browser-based ES manager
 - **Laravel Telescope**: Query monitoring and debugging
 
 ### Team Knowledge
+
 - **ElasticsearchService**: Core search logic
-- **BlueprintObserver**: Real-time synchronization  
+- **BlueprintObserver**: Real-time synchronization
 - **AddCardModal**: Frontend implementation
 - **Fallback Middleware**: Reliability layer
 
 ---
 
-*Last Updated: January 2025*  
-*Implementation Status: ✅ Production Ready* 
+_Last Updated: January 2025_  
+_Implementation Status: ✅ Production Ready_
