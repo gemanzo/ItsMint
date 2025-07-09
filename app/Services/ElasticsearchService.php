@@ -40,16 +40,12 @@ class ElasticsearchService
                     'number_of_shards' => 1,
                     'number_of_replicas' => 0,
                     'analysis' => [
-                        'analyzer' => [
-                            'blueprint_analyzer' => [
-                                'type' => 'custom',
-                                'tokenizer' => 'standard',
-                                'filter' => ['lowercase', 'asciifolding', 'synonym_filter'],
-                            ],
-                            'expansion_code_analyzer' => [
-                                'type' => 'custom',
-                                'tokenizer' => 'keyword',
-                                'filter' => ['lowercase', 'expansion_normalizer'],
+                        'tokenizer' => [
+                            'edge_ngram_tokenizer' => [
+                                'type' => 'edge_ngram',
+                                'min_gram' => 2,
+                                'max_gram' => 20,
+                                'token_chars' => ['letter', 'digit'],
                             ],
                         ],
                         'filter' => [
@@ -65,8 +61,25 @@ class ElasticsearchService
                             ],
                             'expansion_normalizer' => [
                                 'type' => 'pattern_replace',
-                                'pattern' => '[\\-\\.]',
+                                'pattern' => '[\\-\\.:\\s]',
                                 'replacement' => '',
+                            ],
+                        ],
+                        'analyzer' => [
+                            'autocomplete_indexing' => [
+                                'type' => 'custom',
+                                'tokenizer' => 'edge_ngram_tokenizer',
+                                'filter' => ['lowercase', 'asciifolding'],
+                            ],
+                            'autocomplete_search' => [
+                                'type' => 'custom',
+                                'tokenizer' => 'standard',
+                                'filter' => ['lowercase', 'asciifolding'],
+                            ],
+                            'expansion_code_analyzer' => [
+                                'type' => 'custom',
+                                'tokenizer' => 'keyword',
+                                'filter' => ['lowercase', 'expansion_normalizer'],
                             ],
                         ],
                     ],
@@ -76,25 +89,30 @@ class ElasticsearchService
                         'id' => ['type' => 'integer'],
                         'name' => [
                             'type' => 'text',
-                            'analyzer' => 'blueprint_analyzer',
+                            'analyzer' => 'autocomplete_indexing',
+                            'search_analyzer' => 'autocomplete_search',
                             'fields' => [
                                 'keyword' => ['type' => 'keyword'],
-                                'completion' => [
-                                    'type' => 'completion',
-                                    'analyzer' => 'simple',
-                                ],
                             ],
                         ],
                         'collector_number' => [
                             'type' => 'keyword',
                             'index' => true,
                         ],
+                        'search_text' => [
+                            'type' => 'text',
+                            'analyzer' => 'autocomplete_indexing',
+                            'search_analyzer' => 'autocomplete_search',
+                            'fields' => [
+                                'keyword' => ['type' => 'keyword'],
+                            ],
+                        ],
                         'expansion' => [
                             'properties' => [
-                                'id' => ['type' => 'integer'],
                                 'name' => [
                                     'type' => 'text',
-                                    'analyzer' => 'blueprint_analyzer',
+                                    'analyzer' => 'autocomplete_indexing',
+                                    'search_analyzer' => 'autocomplete_search',
                                     'fields' => ['keyword' => ['type' => 'keyword']],
                                 ],
                                 'code' => [
@@ -108,12 +126,13 @@ class ElasticsearchService
                                         ],
                                     ],
                                 ],
-                            ],
-                        ],
-                        'category' => [
-                            'properties' => [
-                                'id' => ['type' => 'integer'],
-                                'name' => ['type' => 'keyword'],
+                                'normalized_name' => [
+                                    'type' => 'text',
+                                    'analyzer' => 'expansion_code_analyzer',
+                                    'fields' => [
+                                        'keyword' => ['type' => 'keyword'],
+                                    ],
+                                ],
                             ],
                         ],
                         'image_url' => ['type' => 'keyword', 'index' => false],
@@ -273,24 +292,146 @@ class ElasticsearchService
         int $from = 0,
         int $size = 30,
         ?string $language = null,
-        ?int $expansionId = null,
-        ?int $categoryId = null
+        ?int $expansionId = null
     ): array {
         $mustClauses = [];
         $filterClauses = [];
 
-        // Main search query using multi_match for flexibility
+        // Main search query using hybrid approach: wildcard for recall + multi_match for scoring
         if (! empty($query)) {
-            $mustClauses[] = [
+            $shouldClauses = [];
+            $queryLower = strtolower($query);
+
+            // 1. Exact matches get highest boost
+            $shouldClauses[] = [
+                'term' => [
+                    'name.keyword' => [
+                        'value' => $query,
+                        'boost' => 5.0,
+                    ],
+                ],
+            ];
+
+            $shouldClauses[] = [
+                'term' => [
+                    'collector_number' => [
+                        'value' => strtoupper($query),
+                        'boost' => 4.5,
+                    ],
+                ],
+            ];
+
+            // 2. Smart collector number pattern matching
+            if (preg_match('/^[a-z]{2,3}[\-]?\d{2,3}[\-]?\w*$/i', $query)) {
+                // This looks like a collector number (op05-119, st01-011, etc.)
+                $normalizedQuery = strtoupper(preg_replace('/[\-]/', '-', $query));
+
+                $shouldClauses[] = [
+                    'term' => [
+                        'collector_number' => [
+                            'value' => $normalizedQuery,
+                            'boost' => 4.0,
+                        ],
+                    ],
+                ];
+
+                // Also try variations (with/without dash)
+                $withoutDash = str_replace('-', '', $normalizedQuery);
+                $withDash = preg_replace('/([a-z]+)(\d+)/i', '$1-$2', strtoupper($query));
+
+                $shouldClauses[] = [
+                    'wildcard' => [
+                        'collector_number' => [
+                            'value' => "*{$withoutDash}*",
+                            'boost' => 3.5,
+                        ],
+                    ],
+                ];
+
+                $shouldClauses[] = [
+                    'wildcard' => [
+                        'collector_number' => [
+                            'value' => "*{$withDash}*",
+                            'boost' => 3.5,
+                        ],
+                    ],
+                ];
+            } else {
+                // 3. Regular name matching for non-collector queries
+                $shouldClauses[] = [
+                    'wildcard' => [
+                        'name' => [
+                            'value' => "*{$queryLower}*",
+                            'case_insensitive' => true,
+                            'boost' => 2.0,
+                        ],
+                    ],
+                ];
+
+                $shouldClauses[] = [
+                    'wildcard' => [
+                        'search_text' => [
+                            'value' => "*{$queryLower}*",
+                            'case_insensitive' => true,
+                            'boost' => 1.8,
+                        ],
+                    ],
+                ];
+            }
+
+            // 4. Multi-match for better scoring
+            $shouldClauses[] = [
                 'multi_match' => [
                     'query' => $query,
                     'fields' => [
-                        'name^3', // Boost name field
-                        'expansion.name',
+                        'name^3',
+                        'search_text^2.5',
+                        'collector_number^2',
+                        'expansion.name^2',
+                        'expansion.code^2',
                     ],
                     'type' => 'best_fields',
-                    'fuzziness' => 'AUTO',
-                    'prefix_length' => 2,
+                    'operator' => 'or',
+                    'boost' => 1.5,
+                ],
+            ];
+
+            // 5. Handle multi-term queries (like "luffy op05")
+            $terms = explode(' ', trim($query));
+            if (count($terms) > 1) {
+                foreach ($terms as $term) {
+                    $termLower = strtolower(trim($term));
+                    if (strlen($termLower) >= 2) {
+                        // Check if term looks like collector number
+                        if (preg_match('/^[a-z]{2,3}[\-]?\d{2,3}[\-]?\w*$/i', $term)) {
+                            $shouldClauses[] = [
+                                'wildcard' => [
+                                    'collector_number' => [
+                                        'value' => "*{$termLower}*",
+                                        'case_insensitive' => true,
+                                        'boost' => 2.5,
+                                    ],
+                                ],
+                            ];
+                        } else {
+                            $shouldClauses[] = [
+                                'wildcard' => [
+                                    'name' => [
+                                        'value' => "*{$termLower}*",
+                                        'case_insensitive' => true,
+                                        'boost' => 1.5,
+                                    ],
+                                ],
+                            ];
+                        }
+                    }
+                }
+            }
+
+            $mustClauses[] = [
+                'bool' => [
+                    'should' => $shouldClauses,
+                    'minimum_should_match' => 1,
                 ],
             ];
         }
@@ -299,8 +440,14 @@ class ElasticsearchService
         if ($expansionId) {
             $filterClauses[] = ['term' => ['expansion.id' => $expansionId]];
         }
-        if ($categoryId) {
-            $filterClauses[] = ['term' => ['category.id' => $categoryId]];
+
+        // Determine minimum score based on query type
+        $minScore = 2.0; // Default for name searches
+        $queryLower = strtolower($query);
+
+        // Higher threshold for collector number searches (more precision needed)
+        if (preg_match('/^[a-z]{2,3}[\-]?\d{2,3}[\-]?\w*$/i', $query)) {
+            $minScore = 25.0; // High precision for collector numbers
         }
 
         $params = [
@@ -308,6 +455,7 @@ class ElasticsearchService
             'body' => [
                 'from' => $from,
                 'size' => $size,
+                'min_score' => $minScore,
                 'query' => [
                     'bool' => [
                         'must' => $mustClauses,

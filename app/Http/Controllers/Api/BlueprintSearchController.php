@@ -33,7 +33,6 @@ final class BlueprintSearchController extends Controller
         $from = $validated['from'] ?? 0;
         $size = $validated['size'] ?? 50;
         $expansionId = $validated['expansion_id'] ?? null;
-        $categoryId = 192; // Only search single cards
         $groupByName = $validated['group_by_name'] ?? true;
 
         try {
@@ -42,9 +41,7 @@ final class BlueprintSearchController extends Controller
                 $from,
                 $size,
                 null,
-                $expansionId,
-                $categoryId,
-                $groupByName
+                $expansionId
             );
 
             $response = [

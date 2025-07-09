@@ -115,14 +115,11 @@ class BlueprintObserver
                 'name' => $blueprint->name,
                 'image_url' => $blueprint->image_url,
                 'collector_number' => $blueprint->collector_number,
+                'search_text' => $this->buildSearchText($blueprint),
                 'expansion' => $blueprint->expansion ? [
                     'id' => $blueprint->expansion->id,
                     'name' => $blueprint->expansion->name,
                     'code' => $blueprint->expansion->code,
-                ] : null,
-                'category' => $blueprint->category ? [
-                    'id' => $blueprint->category->id,
-                    'name' => $blueprint->category->name,
                 ] : null,
                 'latest_price' => $blueprint->latestPrice ? [
                     'price_cents' => $blueprint->latestPrice->price_cents,
