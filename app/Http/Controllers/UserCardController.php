@@ -44,8 +44,14 @@ class UserCardController extends Controller
 
         $quantity = $validated['quantity'];
 
-        // Auto-populate purchase_price if not provided, using language and condition-specific pricing
-        if (! isset($validated['purchase_price']) || is_null($validated['purchase_price'])) {
+        // Auto-populate purchase_price only if not provided by user (null, empty, or not set)
+        // Note: 0 is a valid purchase price (free card), so we don't override it
+        if (
+            ! array_key_exists('purchase_price', $validated) ||
+            is_null($validated['purchase_price']) ||
+            $validated['purchase_price'] === ''
+        ) {
+
             $userLanguage = strtolower($validated['language']);
             $userCondition = $validated['condition'];
 

@@ -23,7 +23,7 @@
         :placeholder="placeholder"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 pr-10"
         :class="{ 'border-red-300': error }"
-        @update:model-value="$emit('update:modelValue', $event)"
+        @input="handleInput"
       />
       <span
         class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 text-sm"
@@ -77,9 +77,23 @@ withDefaults(defineProps<Props>(), {
   hint: '',
 });
 
-defineEmits<{
+const emit = defineEmits<{
   'update:modelValue': [value: number | null];
 }>();
 
 const { formatCurrency } = useCurrency();
+
+const handleInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const value = target.value;
+  
+  // Convert empty string to null, otherwise parse as number
+  if (value === '' || value === null || value === undefined) {
+    emit('update:modelValue', null);
+  } else {
+    const numericValue = parseFloat(value);
+    // Only emit valid numbers, otherwise null
+    emit('update:modelValue', isNaN(numericValue) ? null : numericValue);
+  }
+};
 </script>

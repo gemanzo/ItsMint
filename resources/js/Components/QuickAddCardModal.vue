@@ -209,6 +209,7 @@ import { useApiError } from '@/composables/useApiError';
 import ConditionSelect from '@/Components/Forms/ConditionSelect.vue';
 import LanguageSelect from '@/Components/Forms/LanguageSelect.vue';
 import PriceInput from '@/Components/Forms/PriceInput.vue';
+import { useToast } from '@/composables/useToast';
 
 const props = defineProps<{
   blueprint: Blueprint;
@@ -218,6 +219,7 @@ const emit = defineEmits(['close', 'card-added']);
 
 const portfolioStore = usePortfolioStore();
 const { isLoading: isSubmitting } = useApiError();
+const { success: showSuccessToast, error: showErrorToast } = useToast();
 
 const isOpen = ref(true);
 const selectedPortfolioId = ref<number | null>(null);
@@ -295,6 +297,17 @@ const submitAddCard = async () => {
         );
       }
 
+      // Get portfolio name for success message
+      const selectedPortfolio = portfolioStore.portfolios.find(
+        p => p.id === selectedPortfolioId.value
+      );
+      
+      // Show success toast
+      showSuccessToast(
+        'Card added successfully!',
+        `${props.blueprint.name} has been added to "${selectedPortfolio?.name || 'Portfolio'}" (${cardDetails.quantity}x)`
+      );
+
       emit('card-added', {
         portfolioId: selectedPortfolioId.value,
         cards: createdCards,
@@ -311,7 +324,15 @@ const submitAddCard = async () => {
     const errorMessage =
       error instanceof Error ? error.message : 'An unknown error occurred.';
     const axiosError = error as { response?: { data?: { message?: string } } };
-    formErrors.general = axiosError.response?.data?.message || errorMessage;
+    const finalErrorMessage = axiosError.response?.data?.message || errorMessage;
+    
+    // Show error toast
+    showErrorToast(
+      'Error adding card',
+      finalErrorMessage
+    );
+    
+    formErrors.general = finalErrorMessage;
   } finally {
     isSubmitting.value = false;
   }

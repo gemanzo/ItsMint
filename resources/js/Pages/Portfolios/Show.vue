@@ -2,70 +2,160 @@
   <AuthenticatedLayout>
     <Head :title="portfolio.name" />
 
-    <div class="py-12">
-      <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div
-          class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg"
-        >
-          <div class="p-6 text-gray-900 dark:text-gray-100">
-            <div class="flex justify-between items-center mb-4">
-              <div>
-                <h1 class="text-3xl font-semibold">
-                  {{ portfolio.name }}
-                </h1>
-                <p
-                  v-if="portfolio.description"
-                  class="mt-1 text-sm text-gray-600 dark:text-gray-400"
-                >
-                  {{ portfolio.description }}
-                </p>
-              </div>
-              <button
-                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow"
-                @click="openAddCardModal"
-              >
-                + Add Cards to this Portfolio
-              </button>
-            </div>
+    <!-- Header Section -->
+    <div class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <nav class="flex mb-4" aria-label="Breadcrumb">
+              <ol class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                <li>
+                  <a :href="route('portfolios.index')" class="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                    Portfolios
+                  </a>
+                </li>
+                <li class="flex items-center">
+                  <svg class="h-4 w-4 mx-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                  </svg>
+                  <span class="font-medium text-gray-900 dark:text-gray-100">{{ portfolio.name }}</span>
+                </li>
+              </ol>
+            </nav>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+              {{ portfolio.name }}
+            </h1>
+            <p
+              v-if="portfolio.description"
+              class="text-gray-600 dark:text-gray-400 max-w-2xl"
+            >
+              {{ portfolio.description }}
+            </p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button
+              class="inline-flex items-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              @click="openAddCardModal"
+            >
+              <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Add Cards
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-            <!-- Summary Section -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow">
-                <h3 class="text-md font-semibold mb-1">Total Cards</h3>
-                <p class="text-2xl font-bold">
-                  {{ portfolio.user_cards?.length || 0 }}
-                </p>
-              </div>
-              <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow">
-                <h3 class="text-md font-semibold mb-1">Estimated Value</h3>
-                <p class="text-2xl font-bold">
-                  {{ formatCurrency(totalEstimatedValue) }}
-                </p>
-              </div>
-              <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow">
-                <h3 class="text-md font-semibold mb-1">Total Purchase Cost</h3>
-                <p class="text-2xl font-bold">
-                  {{ formatCurrency(totalPurchaseCost) }}
-                </p>
+    <div class="py-8">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="space-y-8">
+
+          <!-- Portfolio Stats -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Portfolio Overview</h2>
+            </div>
+            <div class="p-6">
+              <div class="stats-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="text-center">
+                  <div class="inline-flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg mb-3">
+                    <svg class="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                  <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {{ portfolio.user_cards?.length || 0 }}
+                  </div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">Total Cards</div>
+                </div>
+                
+                <div class="text-center">
+                  <div class="inline-flex items-center justify-center w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg mb-3">
+                    <svg class="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                  </div>
+                  <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {{ formatCurrency(totalEstimatedValue) }}
+                  </div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">Estimated Value</div>
+                </div>
+                
+                <div class="text-center">
+                  <div class="inline-flex items-center justify-center w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg mb-3">
+                    <svg class="h-6 w-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                  </div>
+                  <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {{ formatCurrency(totalPurchaseCost) }}
+                  </div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">Purchase Cost</div>
+                </div>
+                
+                <div class="text-center">
+                  <div class="inline-flex items-center justify-center w-12 h-12 rounded-lg mb-3"
+                       :class="profitLoss >= 0 ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-red-100 dark:bg-red-900/30'">
+                    <svg class="h-6 w-6" :class="profitLoss >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path v-if="profitLoss >= 0" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                      <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                    </svg>
+                  </div>
+                  <div class="text-2xl font-bold" :class="profitLoss >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
+                    {{ formatCurrency(Math.abs(profitLoss)) }}
+                  </div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ profitLoss >= 0 ? 'Profit' : 'Loss' }}
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
 
-            <!-- Cards List -->
-            <div>
-              <h2 class="text-xl font-semibold mb-4">Cards in Portfolio</h2>
+          <!-- Cards Section -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Cards in Portfolio
+                </h2>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                  {{ groupedCards.length }} unique {{ groupedCards.length === 1 ? 'card' : 'cards' }}
+                </span>
+              </div>
+            </div>
+            
+            <div class="divide-y divide-gray-200 dark:divide-gray-700">
+              <!-- Loading State -->
+              <div v-if="isLoading" class="p-12 text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-full mb-4">
+                  <svg class="animate-spin h-8 w-8 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                  Updating portfolio...
+                </h3>
+                <p class="text-gray-500 dark:text-gray-400">
+                  Please wait while we refresh your cards
+                </p>
+              </div>
+              
               <div
-                v-if="groupedCards && groupedCards.length > 0"
-                class="space-y-6"
+                v-else-if="groupedCards && groupedCards.length > 0"
+                class="space-y-0"
               >
                 <div
                   v-for="group in groupedCards"
                   :key="group.groupKey"
-                  class="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden"
+                  class="card-hover hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 animate-fade-in"
                 >
                   <div class="p-6">
-                    <div class="flex items-start space-x-6">
+                    <div class="card-content flex items-start space-x-6">
                       <!-- Card Image - Larger -->
-                      <div class="flex-shrink-0">
+                      <div class="card-image flex-shrink-0">
                         <img
                           v-if="group.blueprint?.image_url"
                           :src="group.blueprint.image_url"
@@ -227,13 +317,13 @@
                             </div>
 
                             <!-- Actions -->
-                            <div class="flex flex-col space-y-2">
+                            <div class="flex flex-col gap-2 min-w-0">
                               <button
-                                class="px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-md transition-colors duration-150 flex items-center justify-center"
+                                class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-150"
                                 @click="editCard(getFirstCardFromGroup(group))"
                               >
                                 <svg
-                                  class="h-3 w-3 mr-1"
+                                  class="h-4 w-4 mr-1.5"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -248,13 +338,13 @@
                                 Edit
                               </button>
                               <button
-                                class="px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-md transition-colors duration-150 flex items-center justify-center"
+                                class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-150"
                                 @click="
                                   removeCard(getFirstCardFromGroup(group))
                                 "
                               >
                                 <svg
-                                  class="h-3 w-3 mr-1"
+                                  class="h-4 w-4 mr-1.5"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -276,9 +366,28 @@
                   </div>
                 </div>
               </div>
-              <p v-else class="text-gray-500 dark:text-gray-300">
-                No cards in this portfolio yet.
-              </p>
+              <div v-else class="p-12 text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
+                  <svg class="h-8 w-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                  No cards in this portfolio yet
+                </h3>
+                <p class="text-gray-500 dark:text-gray-400 mb-6">
+                  Start building your collection by adding cards to this portfolio.
+                </p>
+                <button
+                  class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  @click="openAddCardModal"
+                >
+                  <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add Your First Card
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -325,6 +434,7 @@ import {
   Blueprint as BlueprintInterface,
 } from '@/stores/portfolioStore';
 import { useCurrency } from '@/composables/useCurrency';
+import { useToast } from '@/composables/useToast';
 
 type UserCardData = UserCardInterface;
 
@@ -351,12 +461,14 @@ const props = defineProps<{
 
 const portfolioStore = usePortfolioStore();
 const { formatCurrency } = useCurrency();
+const { success: showSuccessToast, error: showErrorToast } = useToast();
 
 const showAddCardModal = ref(false);
 const showEditCardModal = ref(false);
 const showConfirmRemoveModal = ref(false);
 const cardToEdit = ref<UserCardData | null>(null);
 const cardToRemove = ref<UserCardData | null>(null);
+const isLoading = ref(false);
 
 const openAddCardModal = () => {
   showAddCardModal.value = true;
@@ -369,7 +481,13 @@ const closeAddCardModal = () => {
 const handleCardAddedToCurrentPortfolio = () => {
   // Quando una carta è aggiunta al portfolio corrente, la prop `portfolio` non si aggiorna automaticamente.
   // Dobbiamo ricaricare i dati per questa pagina.
-  router.reload({ only: ['portfolio'] });
+  isLoading.value = true;
+  router.reload({ 
+    only: ['portfolio'],
+    onFinish: () => {
+      isLoading.value = false;
+    }
+  });
   // In alternativa, potremmo aggiornare manualmente lo store e sperare che la prop si aggiorni,
   // ma router.reload() è più diretto per le props da Inertia.
 };
@@ -385,8 +503,18 @@ const closeEditCardModal = () => {
 };
 
 const handleCardUpdated = () => {
+  showSuccessToast(
+    'Card updated successfully!',
+    'Card details have been updated in your portfolio'
+  );
   closeEditCardModal();
-  router.reload({ only: ['portfolio'] });
+  isLoading.value = true;
+  router.reload({ 
+    only: ['portfolio'],
+    onFinish: () => {
+      isLoading.value = false;
+    }
+  });
 };
 
 const removeCard = (card: UserCardData) => {
@@ -410,11 +538,26 @@ const confirmRemoveCard = async () => {
       props.portfolio.id,
       cardToRemove.value.id
     );
+    
+    showSuccessToast(
+      'Card removed successfully!',
+      `${cardToRemove.value.blueprint?.name} has been removed from "${props.portfolio.name}"`
+    );
+    
     closeConfirmRemoveModal();
-    router.reload({ only: ['portfolio'] });
+    isLoading.value = true;
+    router.reload({ 
+      only: ['portfolio'],
+      onFinish: () => {
+        isLoading.value = false;
+      }
+    });
   } catch (error) {
     console.error('Error removing card from portfolio:', error);
-    alert('Failed to remove card. Please try again.');
+    showErrorToast(
+      'Error removing card',
+      'Failed to remove card from portfolio. Please try again.'
+    );
     closeConfirmRemoveModal();
   }
 };
@@ -457,6 +600,10 @@ const totalPurchaseCost = computed(() => {
   );
 });
 
+const profitLoss = computed(() => {
+  return totalEstimatedValue.value - totalPurchaseCost.value;
+});
+
 const groupedCards = computed(() => {
   const cards = props.portfolio.user_cards || [];
   const grouped: Record<string, CardGroup> = {};
@@ -491,3 +638,57 @@ const groupedCards = computed(() => {
   return Object.values(grouped);
 });
 </script>
+
+<style scoped>
+/* Smooth transitions for hover effects */
+.hover\:bg-gray-50:hover {
+  transition: background-color 0.15s ease-in-out;
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Focus styles for better accessibility */
+button:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+/* Improved card hover effect */
+.card-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease-in-out;
+}
+
+/* Responsive improvements */
+@media (max-width: 640px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .card-content {
+    flex-direction: column;
+    space-y: 1rem;
+  }
+  
+  .card-image {
+    align-self: center;
+    margin-bottom: 1rem;
+  }
+}
+</style>
