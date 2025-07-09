@@ -37,7 +37,9 @@
               </DialogTitle>
 
               <!-- Card Preview -->
-              <div class="mt-4 p-3 border rounded-md dark:border-gray-600 flex items-center space-x-4">
+              <div
+                class="mt-4 p-3 border rounded-md dark:border-gray-600 flex items-center space-x-4"
+              >
                 <img
                   v-if="props.blueprint.image_url"
                   :src="props.blueprint.image_url"
@@ -55,7 +57,9 @@
                     {{ props.blueprint.name }}
                   </p>
                   <p class="text-xs dark:text-gray-300">
-                    {{ props.blueprint.expansion?.name }} ({{ props.blueprint.expansion?.code }})
+                    {{ props.blueprint.expansion?.name }} ({{
+                      props.blueprint.expansion?.code
+                    }})
                   </p>
                   <p
                     v-if="props.blueprint.collector_number"
@@ -298,11 +302,14 @@ const submitAddCard = async () => {
       });
       closeModal();
     } else {
-      throw new Error('Failed to create cards or associate them with portfolio.');
+      throw new Error(
+        'Failed to create cards or associate them with portfolio.'
+      );
     }
   } catch (error: unknown) {
     console.error('Error adding card:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+    const errorMessage =
+      error instanceof Error ? error.message : 'An unknown error occurred.';
     const axiosError = error as { response?: { data?: { message?: string } } };
     formErrors.general = axiosError.response?.data?.message || errorMessage;
   } finally {
@@ -326,4 +333,4 @@ onMounted(async () => {
     cardDetails.language = props.blueprint.latest_price.language.toUpperCase();
   }
 });
-</script> 
+</script>
