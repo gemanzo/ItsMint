@@ -15,6 +15,7 @@ export interface Blueprint {
     is_foil?: boolean;
     language?: string;
   };
+  collector_number?: string;
 }
 
 export interface UserCard {
