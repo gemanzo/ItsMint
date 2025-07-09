@@ -45,8 +45,8 @@ class ElasticsearchService
                                 'type' => 'edge_ngram',
                                 'min_gram' => 2,
                                 'max_gram' => 20,
-                                'token_chars' => ['letter', 'digit']
-                            ]
+                                'token_chars' => ['letter', 'digit'],
+                            ],
                         ],
                         'filter' => [
                             'synonym_filter' => [
@@ -69,20 +69,20 @@ class ElasticsearchService
                             'autocomplete_indexing' => [
                                 'type' => 'custom',
                                 'tokenizer' => 'edge_ngram_tokenizer',
-                                'filter' => ['lowercase', 'asciifolding']
+                                'filter' => ['lowercase', 'asciifolding'],
                             ],
                             'autocomplete_search' => [
                                 'type' => 'custom',
                                 'tokenizer' => 'standard',
-                                'filter' => ['lowercase', 'asciifolding']
+                                'filter' => ['lowercase', 'asciifolding'],
                             ],
                             'expansion_code_analyzer' => [
                                 'type' => 'custom',
                                 'tokenizer' => 'keyword',
-                                'filter' => ['lowercase', 'expansion_normalizer']
-                            ]
-                        ]
-                    ]
+                                'filter' => ['lowercase', 'expansion_normalizer'],
+                            ],
+                        ],
+                    ],
                 ],
                 'mappings' => [
                     'properties' => [
@@ -92,7 +92,7 @@ class ElasticsearchService
                             'analyzer' => 'autocomplete_indexing',
                             'search_analyzer' => 'autocomplete_search',
                             'fields' => [
-                                'keyword' => ['type' => 'keyword']
+                                'keyword' => ['type' => 'keyword'],
                             ],
                         ],
                         'collector_number' => [
@@ -133,7 +133,7 @@ class ElasticsearchService
                                         'keyword' => ['type' => 'keyword'],
                                     ],
                                 ],
-                            ]
+                            ],
                         ],
                         'image_url' => ['type' => 'keyword', 'index' => false],
                         'latest_price' => [
@@ -308,8 +308,8 @@ class ElasticsearchService
                     'name.keyword' => [
                         'value' => $query,
                         'boost' => 5.0,
-                    ]
-                ]
+                    ],
+                ],
             ];
 
             $shouldClauses[] = [
@@ -317,8 +317,8 @@ class ElasticsearchService
                     'collector_number' => [
                         'value' => strtoupper($query),
                         'boost' => 4.5,
-                    ]
-                ]
+                    ],
+                ],
             ];
 
             // 2. Smart collector number pattern matching
@@ -331,8 +331,8 @@ class ElasticsearchService
                         'collector_number' => [
                             'value' => $normalizedQuery,
                             'boost' => 4.0,
-                        ]
-                    ]
+                        ],
+                    ],
                 ];
 
                 // Also try variations (with/without dash)
@@ -344,8 +344,8 @@ class ElasticsearchService
                         'collector_number' => [
                             'value' => "*{$withoutDash}*",
                             'boost' => 3.5,
-                        ]
-                    ]
+                        ],
+                    ],
                 ];
 
                 $shouldClauses[] = [
@@ -353,8 +353,8 @@ class ElasticsearchService
                         'collector_number' => [
                             'value' => "*{$withDash}*",
                             'boost' => 3.5,
-                        ]
-                    ]
+                        ],
+                    ],
                 ];
             } else {
                 // 3. Regular name matching for non-collector queries
@@ -364,8 +364,8 @@ class ElasticsearchService
                             'value' => "*{$queryLower}*",
                             'case_insensitive' => true,
                             'boost' => 2.0,
-                        ]
-                    ]
+                        ],
+                    ],
                 ];
 
                 $shouldClauses[] = [
@@ -374,8 +374,8 @@ class ElasticsearchService
                             'value' => "*{$queryLower}*",
                             'case_insensitive' => true,
                             'boost' => 1.8,
-                        ]
-                    ]
+                        ],
+                    ],
                 ];
             }
 
@@ -410,8 +410,8 @@ class ElasticsearchService
                                         'value' => "*{$termLower}*",
                                         'case_insensitive' => true,
                                         'boost' => 2.5,
-                                    ]
-                                ]
+                                    ],
+                                ],
                             ];
                         } else {
                             $shouldClauses[] = [
@@ -420,8 +420,8 @@ class ElasticsearchService
                                         'value' => "*{$termLower}*",
                                         'case_insensitive' => true,
                                         'boost' => 1.5,
-                                    ]
-                                ]
+                                    ],
+                                ],
                             ];
                         }
                     }
@@ -432,7 +432,7 @@ class ElasticsearchService
                 'bool' => [
                     'should' => $shouldClauses,
                     'minimum_should_match' => 1,
-                ]
+                ],
             ];
         }
 
