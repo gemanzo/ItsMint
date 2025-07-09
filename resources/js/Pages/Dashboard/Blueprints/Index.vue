@@ -4,7 +4,7 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch, reactive, computed } from 'vue';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
-import AddCardModal from '@/Components/AddCardModal.vue';
+import QuickAddCardModal from '@/Components/QuickAddCardModal.vue';
 
 // --- Types ---
 interface Blueprint {
@@ -888,10 +888,10 @@ watch(
       @click="showFilters = false"
     />
 
-    <!-- Add to Portfolio Modal -->
-    <AddCardModal
+    <!-- Quick Add to Portfolio Modal -->
+    <QuickAddCardModal
       v-if="showAddToPortfolioModal && selectedBlueprint"
-      :initial-blueprint="selectedBlueprint"
+      :blueprint="selectedBlueprint"
       @close="closeAddToPortfolioModal"
       @card-added="handleCardAdded"
     />
