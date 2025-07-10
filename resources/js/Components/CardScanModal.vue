@@ -418,7 +418,14 @@ const processCapturedImage = async () => {
       },
     });
 
-    emit('scan-complete', result.data.scan);
+    // Pass along message and suggestions from response if available
+    const scanData = {
+      ...result.data.scan,
+      responseMessage: result.data.message,
+      responseSuggestions: result.data.suggestions,
+    };
+
+    emit('scan-complete', scanData);
     closeModal();
   } catch (err: any) {
     error.value = err.response?.data?.message || 'Failed to process image';
@@ -461,7 +468,14 @@ const processUploadedFile = async () => {
       },
     });
 
-    emit('scan-complete', result.data.scan);
+    // Pass along message and suggestions from response if available
+    const scanData = {
+      ...result.data.scan,
+      responseMessage: result.data.message,
+      responseSuggestions: result.data.suggestions,
+    };
+
+    emit('scan-complete', scanData);
     closeModal();
   } catch (err: any) {
     error.value = err.response?.data?.message || 'Failed to process image';
