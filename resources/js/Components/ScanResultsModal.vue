@@ -187,23 +187,10 @@
                                   >• {{ card.card_number }}</span
                                 >
                               </p>
-                              <p
-                                class="text-xs text-gray-500 dark:text-gray-400 mt-1"
-                              >
-                                Matched: "{{ card.matched_text }}"
-                              </p>
                             </div>
                             <div class="ml-3 text-right flex-shrink-0">
-                              <span
-                                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                                :class="
-                                  getConfidenceClass(card.confidence || 0)
-                                "
-                              >
-                                {{ Math.round(card.confidence || 0) }}%
-                              </span>
                               <button
-                                class="block mt-1 w-full px-3 py-1 text-xs rounded transition-colors"
+                                class="block w-full px-3 py-1 text-xs rounded transition-colors"
                                 :class="
                                   selectedCard === (card.blueprint_id || 0)
                                     ? 'bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600'
@@ -245,8 +232,7 @@
                         Card recognition failed
                       </p>
                       <p class="text-xs text-gray-600 dark:text-gray-400">
-                        Could not find the expansion code (e.g., OP01-100) in
-                        the image.
+                        {{ scan.responseMessage || 'Could not find the expansion code (e.g., OP01-100) in the image.' }}
                       </p>
                       <div
                         class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-600 rounded p-3 mt-3"
@@ -259,13 +245,12 @@
                         <ul
                           class="text-xs text-blue-700 dark:text-blue-300 space-y-1"
                         >
-                          <li>
-                            • Make sure the card code in the bottom-right corner
-                            is clearly visible
+                          <li
+                            v-for="(suggestion, index) in (scan.responseSuggestions || defaultSuggestions)"
+                            :key="index"
+                          >
+                            • {{ suggestion }}
                           </li>
-                          <li>• Avoid shadows and reflections on the card</li>
-                          <li>• Take the photo straight-on, not at an angle</li>
-                          <li>• Ensure good lighting on the entire card</li>
                         </ul>
                       </div>
                       <p class="text-sm text-gray-600 dark:text-gray-400 mt-3">
@@ -284,33 +269,112 @@
                     Manual Assignment
                   </h4>
                   <div class="space-y-3">
-                    <input
-                      v-model="searchQuery"
-                      type="text"
-                      placeholder="Search for a card..."
-                      class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-                      @input="searchCards"
-                    />
-
-                    <div
-                      v-if="searchResults.length > 0"
-                      class="max-h-32 overflow-y-auto border rounded-md dark:border-gray-600"
-                    >
-                      <button
-                        v-for="result in searchResults"
-                        :key="result.id"
-                        class="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 border-b last:border-b-0 dark:border-gray-600"
-                        @click="assignBlueprint(result.id || 0)"
+                    <div class="relative">
+                      <input
+                        v-model="searchQuery"
+                        type="text"
+                        placeholder="Type to search... e.g., Luffy OP01-001"
+                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                        autocomplete="off"
+                        @input="handleSearchInput"
+                      />
+                      
+                      <!-- Search Results Dropdown -->
+                      <div
+                        v-if="searchQuery.length > 1"
+                        class="absolute z-20 mt-1 w-full max-h-72 overflow-auto rounded-md bg-white dark:bg-gray-700 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
                       >
+                        <!-- Loading State -->
                         <div
-                          class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                          v-if="isSearching && searchResults.length === 0"
+                          class="p-4 text-center text-sm text-gray-500 dark:text-gray-400"
                         >
-                          {{ result.name }}
+                          Searching for cards...
                         </div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                          {{ result.expansion?.name }}
+
+                        <!-- No Results -->
+                        <div
+                          v-else-if="!isSearching && searchResults.length === 0"
+                          class="p-4 text-center text-sm text-gray-500 dark:text-gray-400"
+                        >
+                          No cards found for "{{ searchQuery }}".
                         </div>
-                      </button>
+
+                        <!-- Search Results -->
+                        <ul v-else class="py-1">
+                          <li
+                            v-for="bp in searchResults"
+                            :key="bp.id"
+                            class="group cursor-pointer select-none relative p-3 text-gray-900 dark:text-gray-200 hover:bg-indigo-600 hover:text-white flex items-center space-x-3 transition-colors duration-150"
+                            @click="selectBlueprint(bp)"
+                          >
+                            <img
+                              v-if="bp.image_url"
+                              :src="bp.image_url"
+                              alt="Card image"
+                              class="h-16 w-auto flex-shrink-0 object-contain rounded-sm"
+                            />
+                            <span
+                              v-else
+                              class="h-16 w-12 flex-shrink-0 flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded-sm text-xs text-gray-500 dark:text-gray-400"
+                              >No Img</span
+                            >
+
+                            <div class="flex-1 min-w-0">
+                              <p class="font-medium truncate" :title="bp.name">
+                                {{ bp.name }}
+                              </p>
+                              <p
+                                class="text-xs text-gray-500 dark:text-gray-400 group-hover:text-indigo-200 truncate"
+                                :title="`${bp.expansion?.name} (${bp.expansion?.code})`"
+                              >
+                                {{ bp.expansion?.name }} ({{
+                                  bp.expansion?.code
+                                }})
+                              </p>
+                            </div>
+
+                            <div
+                              v-if="bp.latest_price?.price_cents"
+                              class="text-right flex-shrink-0 pl-2"
+                            >
+                              <p
+                                class="font-semibold text-sm text-green-600 dark:text-green-400"
+                              >
+                                {{
+                                  formatCurrency(
+                                    bp.latest_price.price_cents / 100
+                                  )
+                                }}
+                              </p>
+                              <p
+                                class="text-xs text-gray-500 dark:text-gray-400 group-hover:text-indigo-200"
+                              >
+                                Market
+                              </p>
+                            </div>
+                            <div v-else class="text-right flex-shrink-0 pl-2">
+                              <p
+                                class="text-xs text-gray-400 dark:text-gray-500"
+                              >
+                                No price
+                              </p>
+                            </div>
+                          </li>
+                          <li
+                            v-if="hasMoreResults"
+                            class="p-2 text-center sticky bottom-0 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm"
+                          >
+                            <button
+                              :disabled="isSearching"
+                              class="w-full text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50 py-2"
+                              @click="loadMoreBlueprints"
+                            >
+                              {{ isSearching ? 'Loading...' : 'Load More' }}
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -418,6 +482,8 @@ import {
   XMarkIcon,
 } from '@heroicons/vue/24/outline';
 import axios from 'axios';
+import debounce from 'lodash/debounce';
+import { useCurrency } from '@/composables/useCurrency';
 import type { CardScan, Blueprint } from '@/types';
 
 interface Props {
@@ -433,11 +499,24 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
+const { formatCurrency } = useCurrency();
+
 // Reactive variables
 const imageUrl = ref<string | null>(null);
 const searchQuery = ref('');
 const searchResults = ref<Blueprint[]>([]);
 const selectedCard = ref<number | null>(null);
+const isSearching = ref(false);
+const searchPage = ref(1);
+const hasMoreResults = ref(false);
+
+// Default suggestions for fallback
+const defaultSuggestions = [
+  'Make sure the card code in the bottom-right corner is clearly visible',
+  'Avoid shadows and reflections on the card',
+  'Take the photo straight-on, not at an angle',
+  'Ensure good lighting on the entire card'
+];
 
 // Methods
 const closeModal = () => {
@@ -468,16 +547,6 @@ const getStatusClass = () => {
   }
 };
 
-const getConfidenceClass = (confidence: number) => {
-  if (confidence >= 80) {
-    return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-  } else if (confidence >= 60) {
-    return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-  } else {
-    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-  }
-};
-
 const selectCard = (cardId: number) => {
   selectedCard.value = cardId;
   assignBlueprint(cardId);
@@ -493,29 +562,76 @@ const assignBlueprint = async (blueprintId: number) => {
 
     // Update the scan object
     Object.assign(props.scan, response.data.scan);
+    
+    // Clear search after successful assignment
+    searchQuery.value = '';
+    searchResults.value = [];
   } catch (error) {
     console.error('Failed to assign blueprint:', error);
   }
 };
 
-const searchCards = async () => {
+const searchBlueprints = async (loadMore = false) => {
   if (searchQuery.value.length < 2) {
     searchResults.value = [];
     return;
   }
 
+  if (!loadMore) {
+    searchPage.value = 1;
+    searchResults.value = [];
+  }
+
+  isSearching.value = true;
+
   try {
-    const response = await axios.get('/api/blueprints/search', {
+    // Use Elasticsearch API
+    const response = await axios.get('/blueprints/search', {
       params: {
         q: searchQuery.value,
+        from: (searchPage.value - 1) * 10,
         size: 10,
       },
     });
-    searchResults.value = response.data.data || [];
+
+    // Handle Elasticsearch response format
+    if (response.data.success && response.data.data) {
+      if (loadMore) {
+        searchResults.value.push(...response.data.data);
+      } else {
+        searchResults.value = response.data.data;
+      }
+      hasMoreResults.value = response.data.pagination.has_more;
+    } else {
+      searchResults.value = [];
+      hasMoreResults.value = false;
+    }
   } catch (error) {
     console.error('Search failed:', error);
     searchResults.value = [];
+    hasMoreResults.value = false;
+  } finally {
+    isSearching.value = false;
   }
+};
+
+const loadMoreBlueprints = () => {
+  if (hasMoreResults.value && !isSearching.value) {
+    searchPage.value++;
+    searchBlueprints(true);
+  }
+};
+
+const debouncedSearchBlueprints = debounce(searchBlueprints, 300);
+
+const handleSearchInput = () => {
+  debouncedSearchBlueprints();
+};
+
+const selectBlueprint = (blueprint: Blueprint) => {
+  assignBlueprint(blueprint.id);
+  searchQuery.value = `${blueprint.name} - ${blueprint.expansion?.code}`;
+  searchResults.value = [];
 };
 
 const retryScan = async () => {
@@ -574,6 +690,8 @@ watch(
       console.log('Scan data received:', newScan);
       console.log('Detected cards:', newScan.detected_cards);
       selectedCard.value = null; // Reset selection when new scan arrives
+      searchQuery.value = ''; // Reset search
+      searchResults.value = []; // Reset search results
       loadImage();
     }
   },
@@ -585,8 +703,17 @@ watch(
   (newShow) => {
     if (newShow && props.scan) {
       selectedCard.value = null; // Reset selection when modal opens
+      searchQuery.value = ''; // Reset search
+      searchResults.value = []; // Reset search results
       loadImage();
     }
   }
 );
+
+// Watch for changes in search query to auto-clear results when empty
+watch(searchQuery, (newValue) => {
+  if (newValue.length < 2) {
+    searchResults.value = [];
+  }
+});
 </script>
