@@ -28,6 +28,7 @@ class Blueprint extends Model
         'card_market_ids',
         'tcg_player_id',
         'properties',
+        'ocr_match_string',
     ];
 
     /**

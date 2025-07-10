@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Blueprint;
 use App\Services\ElasticsearchService;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 
 class BlueprintObserver
@@ -20,6 +21,7 @@ class BlueprintObserver
      */
     public function created(Blueprint $blueprint): void
     {
+        $this->updateOcrMatchString($blueprint);
         $this->indexBlueprint($blueprint);
     }
 
@@ -28,6 +30,7 @@ class BlueprintObserver
      */
     public function updated(Blueprint $blueprint): void
     {
+        $this->updateOcrMatchString($blueprint);
         $this->indexBlueprint($blueprint);
     }
 
@@ -61,6 +64,24 @@ class BlueprintObserver
     public function forceDeleted(Blueprint $blueprint): void
     {
         //
+    }
+
+    /**
+     * Update OCR match string for a blueprint using Artisan command
+     */
+    private function updateOcrMatchString(Blueprint $blueprint): void
+    {
+        try {
+            Artisan::call('itsmint:generate-blueprint-ocr-match-string', [
+                'blueprint_id' => $blueprint->id,
+                '--force' => true
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to update OCR match string via command', [
+                'blueprint_id' => $blueprint->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -148,6 +169,39 @@ class BlueprintObserver
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Build search text for Elasticsearch indexing
+     */
+    private function buildSearchText(Blueprint $blueprint): string
+    {
+        $searchParts = [
+            $blueprint->name,
+            $blueprint->collector_number,
+            $blueprint->expansion?->name,
+            $blueprint->expansion?->code,
+        ];
+
+        // Include OneLog card data if available
+        $primaryOneLogCard = $blueprint->getPrimaryOneLogCardAttribute();
+        if ($primaryOneLogCard) {
+            $searchParts = array_merge($searchParts, [
+                $primaryOneLogCard->serial,
+                $primaryOneLogCard->type,
+                $primaryOneLogCard->attribute,
+                $primaryOneLogCard->feature,
+                $primaryOneLogCard->effect,
+                is_array($primaryOneLogCard->colors) ? implode(' ', $primaryOneLogCard->colors) : '',
+            ]);
+        }
+
+        // Include OCR match string if available
+        if ($blueprint->ocr_match_string) {
+            $searchParts[] = $blueprint->ocr_match_string;
+        }
+
+        return implode(' ', array_filter($searchParts));
     }
 
     /**
