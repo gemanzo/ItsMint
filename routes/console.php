@@ -36,3 +36,11 @@ Schedule::command('elasticsearch:index-blueprints --fresh')
 Schedule::command('itsmint:queue-price-updates')
     ->everySixHours()
     ->withoutOverlapping();
+
+//clean the horizon.log file
+Schedule::exec(function () {
+    $logFile = storage_path('logs/horizon.log');
+    if (file_exists($logFile)) {
+        file_put_contents($logFile, '');
+    }
+})->weeklyOn(1, '00:00');

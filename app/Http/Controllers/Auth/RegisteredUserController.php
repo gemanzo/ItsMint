@@ -27,8 +27,8 @@ final class RegisteredUserController extends Controller
         $inviteCode = $request->query('invite');
 
         return Inertia::render('Auth/Register', [
-            'invite_code' => $inviteCode,
-            'requires_invite' => config('app.alpha_mode', true), // You can toggle this in config
+            'inviteCode' => $inviteCode,
+            'requiresInvite' => config('app.alpha_mode', true), // You can toggle this in config
         ]);
     }
 
@@ -42,17 +42,17 @@ final class RegisteredUserController extends Controller
         // Validate basic user data
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         // Check if alpha mode is enabled
         if (config('app.alpha_mode', true)) {
             $request->validate([
-                'invite_code' => 'required|string',
+                'inviteCode' => 'required|string',
             ]);
 
-            $invitation = $this->validateInvitationCode($request->invite_code, $request->email);
+            $invitation = $this->validateInvitationCode($request->inviteCode, $request->email);
         }
 
         // Create user
@@ -83,13 +83,13 @@ final class RegisteredUserController extends Controller
 
         if (! $invitation) {
             throw ValidationException::withMessages([
-                'invite_code' => 'Code not valid or expired.',
+                'inviteCode' => 'Code not valid or expired.',
             ]);
         }
 
         if (! $invitation->canBeUsedBy($email)) {
             throw ValidationException::withMessages([
-                'invite_code' => 'This invitation code cannot be used with this email.',
+                'inviteCode' => 'This invitation code cannot be used with this email.',
             ]);
         }
 
