@@ -232,7 +232,7 @@
                         Card recognition failed
                       </p>
                       <p class="text-xs text-gray-600 dark:text-gray-400">
-                        {{ scan.responseMessage || 'Could not find the expansion code (e.g., OP01-100) in the image.' }}
+                        {{ scan.message || 'Could not find the expansion code (e.g., OP01-100) in the image.' }}
                       </p>
                       <div
                         class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-600 rounded p-3 mt-3"
@@ -246,7 +246,7 @@
                           class="text-xs text-blue-700 dark:text-blue-300 space-y-1"
                         >
                           <li
-                            v-for="(suggestion, index) in (scan.responseSuggestions || defaultSuggestions)"
+                            v-for="(suggestion, index) in (scan.suggestions || defaultSuggestions)"
                             :key="index"
                           >
                             • {{ suggestion }}

@@ -62,6 +62,8 @@ export interface CardScan {
     name: string;
     code: string;
   };
+  message?: string;
+  suggestions?: string[];
 }
 
 export interface Portfolio {
