@@ -1,171 +1,149 @@
 <template>
-  <TransitionRoot appear :show="isOpen" as="template">
-    <Dialog as="div" class="relative z-10" @close="closeModal">
-      <TransitionChild
-        as="template"
-        enter="duration-300 ease-out"
-        enter-from="opacity-0"
-        enter-to="opacity-100"
-        leave="duration-200 ease-in"
-        leave-from="opacity-100"
-        leave-to="opacity-0"
+  <FormModal
+    :is-open="isOpen"
+    title="Create New Portfolio"
+    subtitle="Enter the details for your new portfolio"
+    :is-loading="isLoading"
+    :can-submit="isFormValid"
+    submit-text="Create Portfolio"
+    loading-text="Creating..."
+    @close="closeModal"
+    @submit="submitCreatePortfolio"
+  >
+    <div>
+      <label
+        for="portfolioName"
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
       >
-        <div class="fixed inset-0 bg-black bg-opacity-25" />
-      </TransitionChild>
+        Portfolio Name *
+      </label>
+      <TextInput
+        id="portfolioName"
+        v-model="portfolioDetails.name"
+        type="text"
+        required
+        class="mt-1 block w-full"
+        :class="{
+          'border-red-500 focus:border-red-500 focus:ring-red-500': errors.name
+        }"
+        placeholder="Enter portfolio name"
+        maxlength="255"
+      />
+      <p v-if="errors.name" class="mt-1 text-sm text-red-600 dark:text-red-400">
+        {{ errors.name[0] }}
+      </p>
+    </div>
 
-      <div class="fixed inset-0 overflow-y-auto">
-        <div
-          class="flex min-h-full items-center justify-center p-4 text-center"
-        >
-          <TransitionChild
-            as="template"
-            enter="duration-300 ease-out"
-            enter-from="opacity-0 scale-95"
-            enter-to="opacity-100 scale-100"
-            leave="duration-200 ease-in"
-            leave-from="opacity-100 scale-100"
-            leave-to="opacity-0 scale-95"
-          >
-            <DialogPanel
-              class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all"
-            >
-              <DialogTitle
-                as="h3"
-                class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100"
-              >
-                Create New Portfolio
-              </DialogTitle>
-              <form @submit.prevent="submitCreatePortfolio">
-                <div class="mt-4 space-y-4">
-                  <div>
-                    <label
-                      for="portfolioName"
-                      class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                      >Portfolio Name</label
-                    >
-                    <input
-                      id="portfolioName"
-                      v-model="portfolioDetails.name"
-                      type="text"
-                      required
-                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-                    />
-                    <p v-if="formErrors.name" class="text-xs text-red-500 mt-1">
-                      {{ formErrors.name }}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label
-                      for="portfolioDescription"
-                      class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                      >Description (Optional)</label
-                    >
-                    <textarea
-                      id="portfolioDescription"
-                      v-model="portfolioDetails.description"
-                      rows="3"
-                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-                    />
-                  </div>
-                </div>
-
-                <div class="mt-6 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                    @click="closeModal"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    :disabled="isSubmitting"
-                    class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50"
-                  >
-                    {{ isSubmitting ? 'Creating...' : 'Create Portfolio' }}
-                  </button>
-                </div>
-                <p
-                  v-if="formErrors.general"
-                  class="text-xs text-red-500 mt-2 text-right"
-                >
-                  {{ formErrors.general }}
-                </p>
-              </form>
-            </DialogPanel>
-          </TransitionChild>
-        </div>
-      </div>
-    </Dialog>
-  </TransitionRoot>
+    <div>
+      <label
+        for="portfolioDescription"
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+      >
+        Description
+      </label>
+      <textarea
+        id="portfolioDescription"
+        v-model="portfolioDetails.description"
+        rows="3"
+        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+        :class="{
+          'border-red-500 focus:border-red-500 focus:ring-red-500': errors.description
+        }"
+        placeholder="Optional description for your portfolio"
+        maxlength="1000"
+      />
+      <p v-if="errors.description" class="mt-1 text-sm text-red-600 dark:text-red-400">
+        {{ errors.description[0] }}
+      </p>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        {{ portfolioDetails.description?.length || 0 }}/1000 characters
+      </p>
+    </div>
+  </FormModal>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
-import {
-  Dialog,
-  DialogPanel,
-  DialogTitle,
-  TransitionRoot,
-  TransitionChild,
-} from '@headlessui/vue';
-import { usePortfolioStore } from '@/stores/portfolioStore'; // Adjusted path assuming common alias
+import { computed, reactive, watch, ref } from 'vue';
+import { usePortfolioStore } from '@/stores/portfolioStore';
+import { useToast } from '@/composables/useToast';
+import FormModal from '@/Components/Base/FormModal.vue';
+import TextInput from '@/Components/TextInput.vue';
 
-const emit = defineEmits(['close', 'portfolio-created']);
+interface Props {
+  isOpen: boolean;
+}
+
+const props = defineProps<Props>();
+const emit = defineEmits(['close', 'created']);
+
+const { addToast } = useToast();
 const portfolioStore = usePortfolioStore();
-
-const isOpen = ref(true); // Modal is open by default
-const isSubmitting = ref(false);
 
 const portfolioDetails = reactive({
   name: '',
-  description: '',
+  description: ''
 });
 
-const formErrors = reactive<Record<string, string>>({});
+const errors = reactive<Record<string, string[]>>({});
+const isLoading = ref(false);
+
+// Form validation
+const isFormValid = computed(() => {
+  return portfolioDetails.name.trim().length >= 2 && 
+         portfolioDetails.name.trim().length <= 255 &&
+         portfolioDetails.description.length <= 1000;
+});
+
+// Clear form when modal opens/closes
+watch(() => props.isOpen, (newValue) => {
+  if (newValue) {
+    // Reset form when opening
+    portfolioDetails.name = '';
+    portfolioDetails.description = '';
+    Object.keys(errors).forEach(key => delete errors[key]);
+  }
+});
 
 const closeModal = () => {
-  isOpen.value = false;
-  setTimeout(() => emit('close'), 300); // Allow time for transition
-};
-
-const validateForm = (): boolean => {
-  Object.keys(formErrors).forEach((key) => delete formErrors[key]);
-  let isValid = true;
-  if (!portfolioDetails.name.trim()) {
-    formErrors.name = 'Portfolio name is required.';
-    isValid = false;
+  if (!isLoading.value) {
+    emit('close');
   }
-  return isValid;
 };
 
 const submitCreatePortfolio = async () => {
-  if (!validateForm()) return;
+  if (!isFormValid.value || isLoading.value) return;
 
-  isSubmitting.value = true;
-  formErrors.general = '';
+  isLoading.value = true;
+  Object.keys(errors).forEach(key => delete errors[key]);
 
   try {
     await portfolioStore.createPortfolio(
-      portfolioDetails.name,
-      portfolioDetails.description
+      portfolioDetails.name.trim(),
+      portfolioDetails.description.trim() || undefined
     );
-    emit('portfolio-created');
-    closeModal();
-  } catch (error) {
+
+    addToast({
+      type: 'success',
+      title: 'Portfolio created successfully!',
+      description: `"${portfolioDetails.name}" has been added to your portfolios.`
+    });
+
+    emit('created');
+    emit('close');
+  } catch (error: any) {
     console.error('Error creating portfolio:', error);
-    // Use type assertion to avoid 'any' and TS error
-    const err = error as {
-      response?: { data?: { message?: string } };
-      message?: string;
-    };
-    formErrors.general =
-      err.response?.data?.message ??
-      err.message ??
-      'An unknown error occurred while creating the portfolio.';
+    
+    if (error.response?.status === 422 && error.response?.data?.errors) {
+      Object.assign(errors, error.response.data.errors);
+    } else {
+      addToast({
+        type: 'error',
+        title: 'Failed to create portfolio',
+        description: error.response?.data?.message || 'An unexpected error occurred. Please try again.'
+      });
+    }
   } finally {
-    isSubmitting.value = false;
+    isLoading.value = false;
   }
 };
 </script>

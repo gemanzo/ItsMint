@@ -563,17 +563,28 @@ const confirmRemoveCard = async () => {
 };
 
 const getFirstCardFromGroup = (group: CardGroup): UserCardData => {
-  // Find the first card that matches this group (simplified matching)
+  // Find the first card that matches this group
   const card = props.portfolio.user_cards?.find(
     (c) =>
       c.blueprint?.name === group.blueprint?.name &&
       c.condition === group.condition &&
       c.language === group.language
-    // Note: Not matching price since cards in same group should have same characteristics
-    // and we just need to remove one instance
   );
 
-  return card as UserCardData;
+  if (!card) {
+    throw new Error('Card not found in group');
+  }
+
+  // Create a representative card with the correct total quantity
+  const representativeCard: UserCardData = {
+    ...card,
+    pivot: {
+      ...card.pivot,
+      quantity: group.totalQuantity // Use the total quantity from the group
+    }
+  };
+
+  return representativeCard;
 };
 
 // formatCurrency now imported from useCurrency() composable
@@ -625,8 +636,12 @@ const groupedCards = computed(() => {
       };
     }
     grouped[groupKey].totalQuantity += card.pivot.quantity;
-    grouped[groupKey].estimatedValueCents += card.estimated_value_cents || 0;
-    grouped[groupKey].purchasePriceCents += card.purchase_price_cents || 0;
+    
+    // Calculate total values (price per card × quantity)
+    grouped[groupKey].estimatedValueCents += (card.estimated_value_cents || 0) * card.pivot.quantity;
+    grouped[groupKey].purchasePriceCents += (card.purchase_price_cents || 0) * card.pivot.quantity;
+    
+    // Calculate single card values (these remain the same per card)
     grouped[groupKey].singleEstimatedValue = card.estimated_value_cents
       ? card.estimated_value_cents / 100
       : 0;

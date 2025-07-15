@@ -149,7 +149,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         const response = await axios.get<{ data: Portfolio } | Portfolio>(
           `portfolios/${portfolioId}`
         );
-        console.log('getPortfolioById response:', response.data);
 
         let portfolioData: Portfolio | null = null;
 
@@ -314,8 +313,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         payload.purchase_currency = 'EUR';
       }
 
-      console.log('Payload being sent to API:', payload);
-
       try {
         const response = await axios.post<UserCard | UserCard[]>(
           'user-cards',
@@ -445,6 +442,26 @@ export const usePortfolioStore = defineStore('portfolio', {
       }
     },
 
+    async updatePortfolio(id: number, data: { name?: string; description?: string }) {
+      try {
+        const response = await axios.put(`portfolios/${id}`, data);
+        
+        // Update the portfolio in the store if it exists
+        const portfolioIndex = this.portfolios.findIndex((p: Portfolio) => p.id === id);
+        if (portfolioIndex !== -1) {
+          this.portfolios[portfolioIndex] = {
+            ...this.portfolios[portfolioIndex],
+            ...response.data,
+          };
+        }
+        
+        return response.data;
+      } catch (error) {
+        console.error('Error updating portfolio:', error);
+        throw error;
+      }
+    },
+
     async deletePortfolio(id: number) {
       try {
         await axios.delete(`portfolios/${id}`);
@@ -454,6 +471,5 @@ export const usePortfolioStore = defineStore('portfolio', {
         throw error; // Rilancia l'errore per gestirlo nel componente
       }
     },
-    // Altre azioni: updatePortfolio, deletePortfolio, updateUserCardInPortfolio, removeUserCardFromPortfolio, ecc.
   },
 });

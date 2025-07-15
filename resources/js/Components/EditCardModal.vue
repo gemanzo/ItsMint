@@ -1,173 +1,128 @@
 <template>
-  <TransitionRoot appear :show="isOpen" as="template">
-    <Dialog as="div" class="relative z-10" @close="closeModal">
-      <TransitionChild
-        as="template"
-        enter="duration-300 ease-out"
-        enter-from="opacity-0"
-        enter-to="opacity-100"
-        leave="duration-200 ease-in"
-        leave-from="opacity-100"
-        leave-to="opacity-0"
+  <FormModal
+    :is-open="isOpen"
+    title="Edit Card"
+    subtitle="Update your card details"
+    size="md"
+    :is-loading="isSubmitting"
+    :can-submit="isFormValid"
+    submit-text="Update Card"
+    loading-text="Updating..."
+    @close="closeModal"
+    @submit="submitEdit"
+  >
+    <!-- Card Preview -->
+    <div
+      v-if="userCard.blueprint"
+      class="mb-4 p-3 border rounded-md dark:border-gray-600 flex items-center space-x-4"
+    >
+      <img
+        v-if="userCard.blueprint.image_url"
+        :src="userCard.blueprint.image_url"
+        alt="Card image"
+        class="h-20 w-auto object-contain rounded-md"
+      />
+      <span
+        v-else
+        class="h-20 w-14 flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded-md text-sm text-gray-500 dark:text-gray-400"
       >
-        <div class="fixed inset-0 bg-black bg-opacity-25" />
-      </TransitionChild>
-
-      <div class="fixed inset-0 overflow-y-auto">
-        <div
-          class="flex min-h-full items-center justify-center p-4 text-center"
-        >
-          <TransitionChild
-            as="template"
-            enter="duration-300 ease-out"
-            enter-from="opacity-0 scale-95"
-            enter-to="opacity-100 scale-100"
-            leave="duration-200 ease-in"
-            leave-from="opacity-100 scale-100"
-            leave-to="opacity-0 scale-95"
-          >
-            <DialogPanel
-              class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all"
-            >
-              <DialogTitle
-                as="h3"
-                class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100"
-              >
-                Edit Card
-              </DialogTitle>
-
-              <!-- Card Info -->
-              <div
-                v-if="userCard.blueprint"
-                class="mt-4 p-3 border rounded-md dark:border-gray-600 flex items-center space-x-4"
-              >
-                <img
-                  v-if="userCard.blueprint.image_url"
-                  :src="userCard.blueprint.image_url"
-                  alt="Card image"
-                  class="h-20 w-auto object-contain rounded-md"
-                />
-                <span
-                  v-else
-                  class="h-20 w-14 flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded-md text-sm text-gray-500 dark:text-gray-400"
-                  >No Img</span
-                >
-                <div>
-                  <p class="text-sm font-semibold dark:text-gray-100">
-                    {{ userCard.blueprint.name }}
-                  </p>
-                  <p class="text-xs dark:text-gray-300">
-                    {{ userCard.blueprint.expansion?.name }} ({{
-                      userCard.blueprint.expansion?.code
-                    }})
-                  </p>
-                </div>
-              </div>
-
-              <form @submit.prevent="submitEdit">
-                <div class="mt-4 space-y-4">
-                  <!-- Quantity in Portfolio -->
-                  <div>
-                    <label
-                      for="quantity"
-                      class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                      >Quantity in Portfolio</label
-                    >
-                    <input
-                      id="quantity"
-                      v-model.number="formData.quantity"
-                      type="number"
-                      min="1"
-                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-                    />
-                  </div>
-
-                  <!-- Purchase Price -->
-                  <PriceInput
-                    id="purchasePrice"
-                    v-model="formData.purchase_price"
-                    label="Purchase Price"
-                    :estimated-price="estimatedPrice"
-                  />
-
-                  <!-- Acquired Date -->
-                  <div>
-                    <label
-                      for="acquiredAt"
-                      class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                      >Acquired Date (Optional)</label
-                    >
-                    <input
-                      id="acquiredAt"
-                      v-model="formData.acquired_at"
-                      type="date"
-                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-                    />
-                  </div>
-
-                  <!-- Notes -->
-                  <div>
-                    <label
-                      for="notes"
-                      class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                      >Notes (Optional)</label
-                    >
-                    <textarea
-                      id="notes"
-                      v-model="formData.notes"
-                      rows="3"
-                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
-                      placeholder="Any additional notes about this card..."
-                    />
-                  </div>
-                </div>
-
-                <div class="mt-6 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                    @click="closeModal"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    :disabled="isSubmitting"
-                    class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50"
-                  >
-                    {{ isSubmitting ? 'Updating...' : 'Update Card' }}
-                  </button>
-                </div>
-                <p
-                  v-if="formError"
-                  class="text-xs text-red-500 mt-2 text-right"
-                >
-                  {{ formError }}
-                </p>
-              </form>
-            </DialogPanel>
-          </TransitionChild>
-        </div>
+        No Img
+      </span>
+      <div>
+        <p class="text-sm font-semibold dark:text-gray-100">
+          {{ userCard.blueprint.name }}
+        </p>
+        <p class="text-xs dark:text-gray-300">
+          {{ userCard.blueprint.expansion?.name }} ({{
+            userCard.blueprint.expansion?.code
+          }})
+        </p>
       </div>
-    </Dialog>
-  </TransitionRoot>
+    </div>
+
+    <!-- Quantity in Portfolio -->
+    <div>
+      <label
+        for="quantity"
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+      >
+        Quantity in Portfolio *
+      </label>
+      <input
+        id="quantity"
+        v-model.number="formData.quantity"
+        type="number"
+        min="1"
+        max="999"
+        required
+        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+      />
+    </div>
+
+    <!-- Purchase Price -->
+    <PriceInput
+      id="purchasePrice"
+      v-model="formData.purchase_price"
+      label="Purchase Price"
+      :estimated-price="estimatedPrice"
+    />
+
+    <!-- Acquired Date -->
+    <div>
+      <label
+        for="acquiredAt"
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+      >
+        Acquired Date
+      </label>
+      <input
+        id="acquiredAt"
+        v-model="formData.acquired_at"
+        type="date"
+        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+      />
+    </div>
+
+    <!-- Notes -->
+    <div>
+      <label
+        for="notes"
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+      >
+        Notes
+      </label>
+      <textarea
+        id="notes"
+        v-model="formData.notes"
+        rows="3"
+        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+        placeholder="Any additional notes about this card..."
+        maxlength="1000"
+      />
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        {{ formData.notes?.length || 0 }}/1000 characters
+      </p>
+    </div>
+
+    <!-- Error Display -->
+    <div v-if="formError" class="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md">
+      <p class="text-sm text-red-600 dark:text-red-400">
+        {{ formError }}
+      </p>
+    </div>
+  </FormModal>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
-import {
-  Dialog,
-  DialogPanel,
-  DialogTitle,
-  TransitionRoot,
-  TransitionChild,
-} from '@headlessui/vue';
 import {
   usePortfolioStore,
   UserCard as UserCardInterface,
 } from '@/stores/portfolioStore';
 import { useCardPricing } from '@/composables/useCardPricing';
 import { useApiError } from '@/composables/useApiError';
+import { useToast } from '@/composables/useToast';
+import FormModal from '@/Components/Base/FormModal.vue';
 import PriceInput from '@/Components/Forms/PriceInput.vue';
 
 interface Props {
@@ -179,6 +134,7 @@ const props = defineProps<Props>();
 const emit = defineEmits(['close', 'card-updated']);
 
 const portfolioStore = usePortfolioStore();
+const { addToast } = useToast();
 const {
   error: formError,
   isLoading: isSubmitting,
@@ -203,31 +159,56 @@ const blueprintRef = computed(() => props.userCard.blueprint || null);
 const conditionRef = computed(() => props.userCard.condition);
 const { estimatedPrice } = useCardPricing(blueprintRef, conditionRef);
 
+// Form validation
+const isFormValid = computed(() => {
+  return formData.quantity >= 1 && 
+         formData.quantity <= 999 &&
+         (!formData.notes || formData.notes.length <= 1000);
+});
+
 const closeModal = () => {
   isOpen.value = false;
   setTimeout(() => emit('close'), 300);
 };
 
 const submitEdit = async () => {
+  if (!isFormValid.value) return;
+
   await withLoading(async () => {
-    // Update the UserCard properties
-    await portfolioStore.updateUserCard(props.userCard.id, {
-      purchase_price: formData.purchase_price,
-      acquired_at: formData.acquired_at || null,
-      notes: formData.notes || null,
-    });
+    try {
+      // Update the UserCard properties
+      await portfolioStore.updateUserCard(props.userCard.id, {
+        purchase_price: formData.purchase_price,
+        acquired_at: formData.acquired_at || null,
+        notes: formData.notes || null,
+      });
 
-    // Update quantity in portfolio if changed
-    if (formData.quantity !== (props.userCard.pivot?.quantity || 1)) {
-      await portfolioStore.updateUserCardQuantityInPortfolio(
-        props.portfolioId,
-        props.userCard.id,
-        formData.quantity
-      );
+      // Update quantity in portfolio if changed
+      if (formData.quantity !== (props.userCard.pivot?.quantity || 1)) {
+        await portfolioStore.updateUserCardQuantityInPortfolio(
+          props.portfolioId,
+          props.userCard.id,
+          formData.quantity
+        );
+      }
+
+      addToast({
+        type: 'success',
+        title: 'Card updated successfully!',
+        description: `"${props.userCard.blueprint?.name}" has been updated.`
+      });
+
+      emit('card-updated');
+      closeModal();
+    } catch (error: any) {
+      console.error('Error updating card:', error);
+      
+      addToast({
+        type: 'error',
+        title: 'Failed to update card',
+        description: error.response?.data?.message || 'An unexpected error occurred. Please try again.'
+      });
     }
-
-    emit('card-updated');
-    closeModal();
   });
 };
 </script>

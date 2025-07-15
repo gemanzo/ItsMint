@@ -498,12 +498,19 @@
       @portfolio-created="handlePortfolioCreated"
     />
 
+    <EditPortfolioModal
+      :show="showEditPortfolioModal"
+      :portfolio="portfolioToEdit"
+      @close="closeEditPortfolioModal"
+      @portfolio-updated="handlePortfolioUpdated"
+    />
+
     <DeletePortfolioModal
       :show="showConfirmDeleteModal"
       :portfolio-name="portfolioToDelete?.name || ''"
-      :is-deleting="isDeletingPortfolio"
+      :portfolio-id="portfolioToDelete?.id || 0"
       @close="showConfirmDeleteModal = false"
-      @confirm="confirmDeletePortfolio"
+      @deleted="handlePortfolioDeleted"
     />
   </AuthenticatedLayout>
 </template>
@@ -513,6 +520,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import CreatePortfolioModal from '@/Components/CreatePortfolioModal.vue';
+import EditPortfolioModal from '@/Components/EditPortfolioModal.vue';
 import DeletePortfolioModal from '@/Components/DeletePortfolioModal.vue';
 import { usePortfolioStore } from '@/stores/portfolioStore';
 import { useToast } from '@/composables/useToast';
@@ -535,12 +543,14 @@ const { success, error } = useToast();
 
 // Reactive variables
 const showCreatePortfolioModal = ref(false);
+const showEditPortfolioModal = ref(false);
+const portfolioToEdit = ref<PortfolioData | null>(null);
 const viewMode = ref<'grid' | 'list'>('grid');
 const searchQuery = ref('');
 const sortBy = ref('name');
 const showConfirmDeleteModal = ref(false);
 const portfolioToDelete = ref<PortfolioData | null>(null);
-const isDeletingPortfolio = ref(false);
+
 
 // Computed properties
 const totalCards = computed(() => {
@@ -621,9 +631,8 @@ const calculatePortfolioValue = (portfolio: PortfolioData) => {
 };
 
 const editPortfolio = (portfolio: PortfolioData) => {
-  // TODO: Implementare edit portfolio modal
-  console.log('Edit portfolio:', portfolio.id);
-  // router.visit(route('portfolios.edit', portfolio.id));
+  portfolioToEdit.value = portfolio;
+  showEditPortfolioModal.value = true;
 };
 
 const deletePortfolio = (portfolio: PortfolioData) => {
@@ -631,39 +640,33 @@ const deletePortfolio = (portfolio: PortfolioData) => {
   showConfirmDeleteModal.value = true;
 };
 
-const confirmDeletePortfolio = async () => {
-  if (!portfolioToDelete.value || isDeletingPortfolio.value) return;
-  
-  const portfolioName = portfolioToDelete.value.name;
-  isDeletingPortfolio.value = true;
-  
-  try {
-    await portfolioStore.deletePortfolio(portfolioToDelete.value.id);
-    
-    success(
-      'Portfolio deleted successfully!',
-      `"${portfolioName}" has been permanently deleted.`
-    );
-    
-    router.reload({ only: ['portfolios'] });
-  } catch (err) {
-    console.error('Error deleting portfolio:', err);
-    
-    error(
-      'Failed to delete portfolio',
-      'An error occurred while deleting the portfolio. Please try again.'
-    );
-  } finally {
-    isDeletingPortfolio.value = false;
-    showConfirmDeleteModal.value = false;
-    portfolioToDelete.value = null;
-  }
+const handlePortfolioDeleted = () => {
+  router.reload({ only: ['portfolios'] });
+  showConfirmDeleteModal.value = false;
+  portfolioToDelete.value = null;
 };
 
 const handlePortfolioCreated = () => {
   console.log('Portfolio created, refreshing list');
   portfolioStore.fetchPortfolios();
   router.reload({ only: ['portfolios'] });
+};
+
+const handlePortfolioUpdated = () => {
+  showEditPortfolioModal.value = false;
+  portfolioToEdit.value = null;
+  
+  success(
+    'Portfolio updated successfully!',
+    'Portfolio details have been updated.'
+  );
+  
+  router.reload({ only: ['portfolios'] });
+};
+
+const closeEditPortfolioModal = () => {
+  showEditPortfolioModal.value = false;
+  portfolioToEdit.value = null;
 };
 </script>
 

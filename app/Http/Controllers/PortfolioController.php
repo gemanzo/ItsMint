@@ -83,9 +83,9 @@ class PortfolioController extends Controller
 
         // Eager load necessary relationships for the detailed view
         $portfolio->load([
+            'userCards.blueprint.expansion',
             'userCards.blueprint.latestPrice',
-            // 'userCards.user' // if you need to display user info per card, usually not for own portfolio view
-        ]);
+        ])->loadCount('userCards');
         // If you need userCards to be paginated within the show view, adjust query accordingly.
         // For example, an alternative to loading all user_cards:
         // $userCards = $portfolio->userCards()->with('blueprint.latestPrice')->paginate(15);
@@ -227,9 +227,33 @@ class PortfolioController extends Controller
         ]);
 
         if ($portfolio->userCards()->where('user_card_id', $userCard->id)->exists()) {
-            $portfolio->userCards()->updateExistingPivot($userCard->id, ['quantity' => $validated['quantity']]);
+            // Find all cards in the portfolio that match the same "group" 
+            // (same blueprint, condition, language, purchase_price)
+            $groupCards = $portfolio->userCards()
+                ->where('blueprint_id', $userCard->blueprint_id)
+                ->where('condition', $userCard->condition)
+                ->where('language', $userCard->language)
+                ->where('purchase_price_cents', $userCard->purchase_price_cents)
+                ->get();
 
-            return response()->json($portfolio->load('userCards'));
+            // Remove all cards from this group in the portfolio
+            foreach ($groupCards as $groupCard) {
+                $portfolio->userCards()->detach($groupCard->id);
+            }
+
+            // Add the card back with the new quantity
+            $portfolio->userCards()->attach($userCard->id, [
+                'quantity' => $validated['quantity'],
+                'added_to_portfolio_at' => now(),
+            ]);
+
+            // Load all necessary relationships that the frontend expects
+            $portfolio->load([
+                'userCards.blueprint.expansion',
+                'userCards.blueprint.latestPrice',
+            ])->loadCount('userCards');
+
+            return response()->json($portfolio);
         }
 
         return response()->json(['message' => 'Card not in portfolio'], 404);

@@ -46,7 +46,19 @@ class PortfolioController extends Controller
     /**
      * Update the specified portfolio in storage.
      */
-    // ... existing code ...
+    public function update(Request $request, Portfolio $portfolio): JsonResource
+    {
+        $this->authorize('update', $portfolio);
+
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+        ]);
+
+        $portfolio->update($validated);
+
+        return new PortfolioResource($portfolio);
+    }
 
     /**
      * Remove the specified resource from storage.
