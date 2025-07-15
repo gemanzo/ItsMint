@@ -197,7 +197,7 @@ const submitEdit = async () => {
       addToast({
         type: 'success',
         title: 'Card updated successfully!',
-        description: `"${props.userCard.blueprint?.name}" has been updated.`
+        message: `"${props.userCard.blueprint?.name}" has been updated.`
       });
 
       emit('card-updated');
@@ -208,7 +208,7 @@ const submitEdit = async () => {
       addToast({
         type: 'error',
         title: 'Failed to update card',
-        description: error.response?.data?.message || 'An unexpected error occurred. Please try again.'
+        message: error.response?.data?.message || 'An unexpected error occurred. Please try again.'
       });
     }
   });

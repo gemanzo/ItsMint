@@ -125,7 +125,7 @@ const submitCreatePortfolio = async () => {
     addToast({
       type: 'success',
       title: 'Portfolio created successfully!',
-      description: `"${portfolioDetails.name}" has been added to your portfolios.`
+      message: `"${portfolioDetails.name}" has been added to your portfolios.`
     });
 
     emit('created');
@@ -139,7 +139,7 @@ const submitCreatePortfolio = async () => {
       addToast({
         type: 'error',
         title: 'Failed to create portfolio',
-        description: error.response?.data?.message || 'An unexpected error occurred. Please try again.'
+        message: error.response?.data?.message || 'An unexpected error occurred. Please try again.'
       });
     }
   } finally {

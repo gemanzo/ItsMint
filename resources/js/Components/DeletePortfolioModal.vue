@@ -1,6 +1,6 @@
 <template>
   <ConfirmationModal
-    :is-open="show"
+    :show="show"
     title="Delete Portfolio"
     :message="`This action cannot be undone. This will permanently delete the '${portfolioName}' portfolio and all of its data.`"
     type="danger"
@@ -89,7 +89,7 @@ const handleDelete = async () => {
     addToast({
       type: 'success',
       title: 'Portfolio deleted successfully!',
-      description: `"${props.portfolioName}" has been permanently deleted.`
+      message: `"${props.portfolioName}" has been permanently deleted.`
     });
 
     emit('deleted');
@@ -100,7 +100,7 @@ const handleDelete = async () => {
     addToast({
       type: 'error',
       title: 'Failed to delete portfolio',
-      description: error.response?.data?.message || 'An unexpected error occurred. Please try again.'
+      message: error.response?.data?.message || 'An unexpected error occurred. Please try again.'
     });
   } finally {
     isDeleting.value = false;

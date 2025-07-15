@@ -5,7 +5,7 @@
     subtitle="Search for a card and add it to your portfolio"
     size="2xl"
     :is-loading="isSubmitting"
-    :can-submit="isFormValid"
+    :canSubmit="isFormValid"
     submit-text="Add Card"
     loading-text="Adding..."
     @close="closeModal"
@@ -452,7 +452,8 @@ interface Props {
 
 interface CardScan {
   id: number;
-  // Add other scan properties as needed
+  status: string;
+  created_at: string;
 }
 
 const props = defineProps<Props>();
@@ -514,7 +515,7 @@ const selectedPortfolioName = computed(() => {
 const isFormValid = computed(() => {
   return selectedPortfolioId.value !== null &&
          selectedBlueprint.value !== null &&
-         cardDetails.condition &&
+         !!cardDetails.condition &&
          cardDetails.quantity >= 1 &&
          cardDetails.quantity <= 999;
 });

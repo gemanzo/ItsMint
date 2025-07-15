@@ -5,7 +5,7 @@
     subtitle="Add this card to one of your portfolios"
     size="lg"
     :is-loading="isSubmitting"
-    :can-submit="isFormValid"
+    :canSubmit="isFormValid"
     submit-text="Add Card"
     loading-text="Adding..."
     @close="closeModal"
@@ -189,8 +189,8 @@ const isFormValid = computed(() => {
   return selectedPortfolioId.value !== null &&
          cardDetails.quantity >= 1 &&
          cardDetails.quantity <= 999 &&
-         cardDetails.condition &&
-         cardDetails.language;
+         !!cardDetails.condition &&
+         !!cardDetails.language;
 });
 
 const closeModal = () => {
@@ -231,21 +231,26 @@ const submitAddCard = async () => {
   isSubmitting.value = true;
 
   try {
-    // Call addUserCardToPortfolio which will create the UserCard and associate it
-    const createdCards = await portfolioStore.addUserCardToPortfolio(
-      selectedPortfolioId.value!,
-      {
-        blueprint_id: props.blueprint.id,
-        condition: cardDetails.condition,
-        language: cardDetails.language,
-        purchase_price: cardDetails.purchase_price,
-        acquired_at: cardDetails.acquired_at || null,
-        notes: null,
-      },
-      cardDetails.quantity
-    );
+    // First create the user card
+    const createdCard = await portfolioStore.createUserCard({
+      blueprint_id: props.blueprint.id,
+      condition: cardDetails.condition,
+      language: cardDetails.language,
+      purchase_price: cardDetails.purchase_price,
+      acquired_at: cardDetails.acquired_at || undefined,
+      notes: undefined,
+      quantity: cardDetails.quantity
+    });
 
-    if (createdCards && createdCards.length > 0) {
+    // Then add it to the portfolio
+    const userCards = Array.isArray(createdCard) ? createdCard : [createdCard];
+    if (userCards.length > 0) {
+      await portfolioStore.addUserCardToPortfolio(
+        selectedPortfolioId.value!,
+        userCards[0].id,
+        cardDetails.quantity
+      );
+
       // Get portfolio name for success message
       const selectedPortfolio = portfolioStore.portfolios.find(
         p => p.id === selectedPortfolioId.value
@@ -259,9 +264,10 @@ const submitAddCard = async () => {
 
       emit('card-added', {
         portfolioId: selectedPortfolioId.value,
-        cards: createdCards,
+        cards: userCards,
         totalQuantity: cardDetails.quantity,
       });
+
       closeModal();
     } else {
       throw new Error(

@@ -140,7 +140,7 @@ const submitEdit = async () => {
     addToast({
       type: 'success',
       title: 'Portfolio updated successfully!',
-      description: `"${formData.name}" has been updated.`
+      message: `"${formData.name}" has been updated.`
     });
 
     emit('portfolio-updated');
@@ -154,7 +154,7 @@ const submitEdit = async () => {
       addToast({
         type: 'error',
         title: 'Failed to update portfolio',
-        description: error.response?.data?.message || 'An unexpected error occurred. Please try again.'
+        message: error.response?.data?.message || 'An unexpected error occurred. Please try again.'
       });
     }
   } finally {
