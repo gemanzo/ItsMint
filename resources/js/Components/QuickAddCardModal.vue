@@ -304,9 +304,7 @@ onMounted(async () => {
     selectedPortfolioId.value = portfolioStore.portfolios[0].id;
   }
 
-  // Set default language based on blueprint latest price
-  if (props.blueprint.latest_price?.language) {
-    cardDetails.language = props.blueprint.latest_price.language.toUpperCase();
-  }
+  // Only set language if user hasn't explicitly changed it
+  // Keep EN as default to avoid confusion
 });
 </script>

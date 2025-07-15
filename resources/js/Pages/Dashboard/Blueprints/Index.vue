@@ -5,6 +5,7 @@ import { ref, watch, reactive, computed } from 'vue';
 import axios from 'axios';
 import debounce from 'lodash/debounce';
 import QuickAddCardModal from '@/Components/QuickAddCardModal.vue';
+import BlueprintCard from '@/Components/BlueprintCard.vue';
 
 // --- Types ---
 interface Blueprint {
@@ -78,20 +79,7 @@ const sortOptions = [
   { value: 'name_desc', label: 'Name: Z-A' },
 ];
 
-const placeholderImage =
-  'data:image/svg+xml;base64,' +
-  btoa(`
-<svg width="300" height="420" xmlns="http://www.w3.org/2000/svg">
-  <rect width="300" height="420" fill="#f3f4f6"/>
-  <rect x="20" y="20" width="260" height="380" fill="#e5e7eb" rx="8"/>
-  <circle cx="150" cy="150" r="30" fill="#d1d5db"/>
-  <rect x="100" y="200" width="100" height="8" fill="#d1d5db" rx="4"/>
-  <rect x="80" y="220" width="140" height="6" fill="#d1d5db" rx="3"/>
-  <rect x="90" y="240" width="120" height="6" fill="#d1d5db" rx="3"/>
-  <text x="150" y="320" text-anchor="middle" fill="#9ca3af" font-family="Arial" font-size="12">No Image</text>
-  <text x="150" y="340" text-anchor="middle" fill="#9ca3af" font-family="Arial" font-size="12">Available</text>
-</svg>
-`);
+
 
 // --- Computed ---
 const activeFiltersCount = computed(() => {
@@ -600,231 +588,26 @@ watch(
             v-if="viewMode === 'grid'"
             class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
           >
-            <Link
+            <BlueprintCard
               v-for="blueprint in displayData"
               :key="blueprint.id"
-              :href="route('blueprints.show', blueprint.id)"
-              class="group bg-white dark:bg-gray-800 rounded-card border border-gray-200 dark:border-gray-700 hover:shadow-card-hover transition-all duration-150 overflow-hidden"
-            >
-              <!-- Card Image -->
-              <div class="aspect-[3/4] relative overflow-hidden">
-                <img
-                  :src="
-                    blueprint.image_url ? blueprint.image_url : placeholderImage
-                  "
-                  :alt="blueprint.name"
-                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  @error="
-                    (event: Event) =>
-                      ((event.target as HTMLImageElement).src =
-                        placeholderImage)
-                  "
-                />
-              </div>
-
-              <!-- Card Content -->
-              <div class="p-2.5">
-                <!-- Card Name -->
-                <h3
-                  class="font-medium text-xs text-gray-900 dark:text-white mb-1 line-clamp-2 leading-tight"
-                  :title="blueprint.name"
-                >
-                  {{ blueprint.name }}
-                </h3>
-
-                <!-- Expansion & Collector Number -->
-                <div v-if="blueprint.expansion" class="mb-1.5 space-y-1">
-                  <div
-                    class="text-xs text-gray-500 dark:text-gray-400 font-normal"
-                  >
-                    {{ blueprint.expansion.code }}
-                    <span
-                      v-if="blueprint.expansion.name"
-                      class="text-gray-400 dark:text-gray-500"
-                    >
-                      • {{ blueprint.expansion.name }}
-                    </span>
-                  </div>
-                  <div
-                    v-if="blueprint.collector_number"
-                    class="text-xs text-gray-400 dark:text-gray-500 font-mono"
-                  >
-                    #{{ blueprint.collector_number }}
-                  </div>
-                </div>
-
-                <!-- Price Section -->
-                <div
-                  class="mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-700"
-                >
-                  <div
-                    v-if="blueprint.latest_price"
-                    class="flex items-center justify-between"
-                  >
-                    <span
-                      class="text-sm font-semibold text-gray-900 dark:text-white"
-                    >
-                      €{{
-                        (blueprint.latest_price.price_cents / 100).toFixed(2)
-                      }}
-                    </span>
-                    <button
-                      class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-600 hover:bg-gray-700 transition-colors duration-150"
-                      title="Add to portfolio"
-                      @click.prevent="openAddToPortfolioModal(blueprint)"
-                    >
-                      <svg
-                        class="w-2.5 h-2.5 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                  <div v-else class="flex items-center justify-between">
-                    <span class="text-xs text-gray-400 dark:text-gray-500">
-                      --
-                    </span>
-                    <button
-                      class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors duration-150"
-                      title="Add to portfolio"
-                      @click.prevent="openAddToPortfolioModal(blueprint)"
-                    >
-                      <svg
-                        class="w-2.5 h-2.5 text-gray-600 dark:text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </Link>
+              :blueprint="blueprint"
+              view-mode="grid"
+              @add-to-portfolio="openAddToPortfolioModal"
+            />
           </div>
           <div
             v-else
             class="bg-white dark:bg-gray-800 rounded-card border border-gray-200 dark:border-gray-700 overflow-hidden"
           >
             <div class="divide-y divide-gray-200 dark:divide-gray-700">
-              <Link
+              <BlueprintCard
                 v-for="blueprint in displayData"
                 :key="blueprint.id"
-                :href="route('blueprints.show', blueprint.id)"
-                class="flex items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 group"
-              >
-                <div
-                  class="flex-shrink-0 w-16 h-22 rounded-card overflow-hidden"
-                >
-                  <img
-                    :src="
-                      blueprint.image_url
-                        ? blueprint.image_url
-                        : placeholderImage
-                    "
-                    :alt="blueprint.name"
-                    class="w-full h-full object-cover"
-                    @error="
-                      (event: Event) =>
-                        ((event.target as HTMLImageElement).src =
-                          placeholderImage)
-                    "
-                  />
-                </div>
-                <div class="ml-4 flex-1">
-                  <div class="flex items-center justify-between">
-                    <div class="flex-1 min-w-0">
-                      <h3
-                        class="text-sm font-medium text-gray-900 dark:text-white truncate"
-                      >
-                        {{ blueprint.name }}
-                      </h3>
-                      <div class="mt-1 space-y-1">
-                        <div
-                          v-if="blueprint.expansion"
-                          class="flex items-center space-x-2"
-                        >
-                          <span
-                            class="text-xs text-gray-500 dark:text-gray-400"
-                          >
-                            {{ blueprint.expansion.code }}
-                            <span
-                              v-if="blueprint.expansion.name"
-                              class="text-gray-400 dark:text-gray-500"
-                            >
-                              • {{ blueprint.expansion.name }}
-                            </span>
-                          </span>
-                          <span
-                            v-if="blueprint.latest_price"
-                            class="text-sm font-semibold text-gray-900 dark:text-white"
-                          >
-                            €{{
-                              (
-                                blueprint.latest_price.price_cents / 100
-                              ).toFixed(2)
-                            }}
-                          </span>
-                        </div>
-                        <div
-                          v-if="blueprint.collector_number"
-                          class="text-xs text-gray-400 dark:text-gray-500 font-mono"
-                        >
-                          #{{ blueprint.collector_number }}
-                        </div>
-                      </div>
-                    </div>
-                    <div class="ml-3 flex items-center space-x-2">
-                      <button
-                        class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-600 hover:bg-gray-700 transition-colors duration-150"
-                        title="Add to portfolio"
-                        @click.prevent="openAddToPortfolioModal(blueprint)"
-                      >
-                        <svg
-                          class="w-2.5 h-2.5 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M12 4v16m8-8H4"
-                          />
-                        </svg>
-                      </button>
-                      <svg
-                        class="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors duration-150"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </Link>
+                :blueprint="blueprint"
+                view-mode="list"
+                @add-to-portfolio="openAddToPortfolioModal"
+              />
             </div>
           </div>
           <div
@@ -935,11 +718,4 @@ watch(
   </AuthenticatedLayout>
 </template>
 
-<style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style>
+
