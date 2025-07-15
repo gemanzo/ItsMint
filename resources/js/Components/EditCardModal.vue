@@ -66,20 +66,6 @@
 
               <form @submit.prevent="submitEdit">
                 <div class="mt-4 space-y-4">
-                  <!-- Condition -->
-                  <ConditionSelect
-                    id="condition"
-                    v-model="formData.condition"
-                    label="Condition"
-                  />
-
-                  <!-- Language -->
-                  <LanguageSelect
-                    id="language"
-                    v-model="formData.language"
-                    label="Language"
-                  />
-
                   <!-- Quantity in Portfolio -->
                   <div>
                     <label
@@ -182,8 +168,6 @@ import {
 } from '@/stores/portfolioStore';
 import { useCardPricing } from '@/composables/useCardPricing';
 import { useApiError } from '@/composables/useApiError';
-import ConditionSelect from '@/Components/Forms/ConditionSelect.vue';
-import LanguageSelect from '@/Components/Forms/LanguageSelect.vue';
 import PriceInput from '@/Components/Forms/PriceInput.vue';
 
 interface Props {
@@ -204,8 +188,6 @@ const {
 const isOpen = ref(true);
 
 const formData = reactive({
-  condition: props.userCard.condition,
-  language: props.userCard.language,
   quantity: props.userCard.pivot?.quantity || 1,
   purchase_price: props.userCard.purchase_price_cents
     ? props.userCard.purchase_price_cents / 100
@@ -218,7 +200,7 @@ const formData = reactive({
 
 // Use pricing composable
 const blueprintRef = computed(() => props.userCard.blueprint || null);
-const conditionRef = computed(() => formData.condition);
+const conditionRef = computed(() => props.userCard.condition);
 const { estimatedPrice } = useCardPricing(blueprintRef, conditionRef);
 
 const closeModal = () => {
@@ -230,8 +212,6 @@ const submitEdit = async () => {
   await withLoading(async () => {
     // Update the UserCard properties
     await portfolioStore.updateUserCard(props.userCard.id, {
-      condition: formData.condition,
-      language: formData.language,
       purchase_price: formData.purchase_price,
       acquired_at: formData.acquired_at || null,
       notes: formData.notes || null,
