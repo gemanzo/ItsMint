@@ -19,18 +19,59 @@ class BlueprintController extends Controller
     {
         $request->validate([
             'expansion_id' => 'nullable|integer|exists:expansions,id',
+            'sort' => 'nullable|string|in:price_asc,price_desc,name_asc,name_desc',
         ]);
 
         $selectedExpansionId = $request->input('expansion_id');
+        $sort = $request->input('sort');
 
         $blueprints = Blueprint::with(['expansion', 'latestPrice'])
             ->where('ct_category_id', 192) // Only show single cards
             ->when($selectedExpansionId, function ($query, $expansionId) {
                 return $query->where('expansion_id', $expansionId);
-            })
-            ->orderBy('name')
-            ->paginate(30)
-            ->withQueryString();
+            });
+
+        // Apply sorting
+        if ($sort) {
+            switch ($sort) {
+                case 'price_asc':
+                    $blueprints->leftJoin('card_prices as cp', function ($join) {
+                        $join->on('blueprints.id', '=', 'cp.blueprint_id')
+                            ->whereRaw('cp.id = (
+                                SELECT id FROM card_prices 
+                                WHERE blueprint_id = blueprints.id 
+                                ORDER BY fetched_at DESC 
+                                LIMIT 1
+                            )');
+                    })->orderByRaw('COALESCE(cp.price_cents, 999999999) ASC')
+                        ->select('blueprints.*');
+                    break;
+                case 'price_desc':
+                    $blueprints->leftJoin('card_prices as cp', function ($join) {
+                        $join->on('blueprints.id', '=', 'cp.blueprint_id')
+                            ->whereRaw('cp.id = (
+                                SELECT id FROM card_prices 
+                                WHERE blueprint_id = blueprints.id 
+                                ORDER BY fetched_at DESC 
+                                LIMIT 1
+                            )');
+                    })->orderByRaw('COALESCE(cp.price_cents, 0) DESC')
+                        ->select('blueprints.*');
+                    break;
+                case 'name_asc':
+                    $blueprints->orderBy('name', 'asc');
+                    break;
+                case 'name_desc':
+                    $blueprints->orderBy('name', 'desc');
+                    break;
+                default:
+                    $blueprints->orderBy('name');
+            }
+        } else {
+            $blueprints->orderBy('name');
+        }
+
+        $blueprints = $blueprints->paginate(30)->withQueryString();
 
         // Get available expansions that have at least one blueprint
         $availableExpansions = Expansion::whereHas('blueprints')
@@ -41,6 +82,7 @@ class BlueprintController extends Controller
             'blueprints' => $blueprints,
             'filters' => [
                 'expansion_id' => $selectedExpansionId,
+                'sort' => $sort,
             ],
             'availableExpansions' => $availableExpansions,
         ]);
@@ -107,7 +149,7 @@ class BlueprintController extends Controller
         $query = Blueprint::query()->with(['expansion', 'latestPrice']);
 
         if (! empty($searchQuery)) {
-            $query->where('name', 'ILIKE', '%'.$searchQuery.'%');
+            $query->where('name', 'ILIKE', '%' . $searchQuery . '%');
         }
 
         // Use the normalized expansion code for querying the relationship

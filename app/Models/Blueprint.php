@@ -67,12 +67,26 @@ class Blueprint extends Model
 
     /**
      * Get the latest price for the Blueprint.
-     * Note: With language-based pricing, this returns the most recent price regardless of language/condition.
-     * Consider using latestPriceForLanguage() for more specific needs.
+     * Now returns the best condition price (Near Mint first, then highest price within condition).
      */
     public function latestPrice()
     {
-        return $this->hasOne(CardPrice::class)->latestOfMany('fetched_at');
+        return $this->hasOne(CardPrice::class)
+            ->selectRaw('*, CASE 
+                WHEN condition = ? THEN 1
+                WHEN condition = ? THEN 2  
+                WHEN condition = ? THEN 3
+                WHEN condition = ? THEN 4
+                WHEN condition = ? THEN 5
+                ELSE 6
+            END as condition_priority', [
+                'Near Mint',
+                'Slightly Played',
+                'Moderately Played',
+                'Played',
+                'Poor'
+            ])
+            ->orderByRaw('condition_priority ASC, price_cents DESC, fetched_at DESC');
     }
 
     /**

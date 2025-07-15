@@ -27,6 +27,7 @@ final class BlueprintSearchController extends Controller
             'size' => 'sometimes|integer|min:1|max:100',
             'expansion_id' => 'nullable|integer|exists:expansions,id',
             'group_by_name' => 'sometimes|boolean',
+            'sort' => 'nullable|string|in:price_asc,price_desc,name_asc,name_desc',
         ]);
 
         $query = $validated['q'];
@@ -34,6 +35,7 @@ final class BlueprintSearchController extends Controller
         $size = $validated['size'] ?? 50;
         $expansionId = $validated['expansion_id'] ?? null;
         $groupByName = $validated['group_by_name'] ?? true;
+        $sort = $validated['sort'] ?? null;
 
         try {
             $results = $this->elasticsearch->searchBlueprints(
@@ -41,13 +43,15 @@ final class BlueprintSearchController extends Controller
                 $from,
                 $size,
                 null,
-                $expansionId
+                $expansionId,
+                $sort
             );
 
             $response = [
                 'success' => true,
                 'query' => $query,
                 'group_by_name' => $groupByName,
+                'sort' => $sort,
                 'pagination' => [
                     'total' => $results['total'],
                     'size' => $size,

@@ -2,7 +2,6 @@
   <AuthenticatedLayout>
     <Head title="Dashboard" />
 
-    <!-- Enhanced Header -->
     <div
       class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700"
     >
@@ -39,7 +38,7 @@
                 <p
                   class="text-2xl font-bold text-gray-900 dark:text-white mt-2"
                 >
-                  {{ formatCurrency(totalEstimatedValue) }}
+                  {{ formatCurrency(totalEstimatedPortfolioValue) }}
                 </p>
                 <div class="flex items-center mt-2">
                   <svg
@@ -94,7 +93,7 @@
                 <p
                   class="text-2xl font-bold text-gray-900 dark:text-white mt-2"
                 >
-                  {{ formatCurrency(totalPurchaseCost) }}
+                  {{ formatCurrency(totalPurchasePortfolioCost) }}
                 </p>
                 <div class="flex items-center mt-2">
                   <svg
@@ -471,7 +470,7 @@
                     >Total Cards</span
                   >
                   <span class="font-medium text-gray-900 dark:text-white">{{
-                    totalCards
+                    totalCardsFromStore
                   }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
@@ -572,9 +571,9 @@
 
     <!-- Modals -->
     <CreatePortfolioModal
-      v-if="showCreatePortfolioModal"
+      :is-open="showCreatePortfolioModal"
       @close="showCreatePortfolioModal = false"
-      @portfolio-created="handlePortfolioCreated"
+      @created="handlePortfolioCreated"
     />
 
     <!-- Price Alerts Modal (Placeholder for now) -->
@@ -612,17 +611,8 @@ import { Head, Link } from '@inertiajs/vue3';
 import { ref, onMounted, computed } from 'vue';
 import { usePortfolioStore } from '../../stores/portfolioStore';
 import CreatePortfolioModal from '../../Components/CreatePortfolioModal.vue';
-import type { Portfolio, UserCard } from '@/types';
 
 const portfolioStore = usePortfolioStore();
-
-defineProps<{
-  portfolios: Portfolio[];
-  totalCards: number;
-  totalPurchaseCost: number;
-  totalEstimatedValue: number;
-  userCards: UserCard[];
-}>();
 
 // Reactive variables
 const showCreatePortfolioModal = ref(false);
@@ -708,6 +698,17 @@ const totalProfitLoss = computed(() => {
 });
 
 // Computed properties for portfolio statistics
+const totalCardsFromStore = computed(() => {
+  if (!Array.isArray(portfolioStore.portfolios)) {
+    return 0;
+  }
+  return portfolioStore.portfolios.reduce((total, portfolio) => {
+    const portfolioCardCount = portfolio.user_cards?.reduce((sum, card) => {
+      return sum + (card.pivot?.quantity || 1);
+    }, 0) || 0;
+    return total + portfolioCardCount;
+  }, 0);
+});
 
 const averagePortfolioValue = computed(() => {
   const portfolioCount = portfolioStore.portfolios.length;

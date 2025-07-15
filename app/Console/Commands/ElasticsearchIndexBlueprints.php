@@ -91,7 +91,7 @@ class ElasticsearchIndexBlueprints extends Command
                         $indexedCount += count($batchData);
                     } else {
                         $errorCount += count($batchData);
-                        $this->error("\n❌ Failed to index batch of ".count($batchData).' blueprints');
+                        $this->error("\n❌ Failed to index batch of " . count($batchData) . ' blueprints');
                     }
                 }
             });
@@ -106,7 +106,7 @@ class ElasticsearchIndexBlueprints extends Command
                 ['Total Blueprints', $totalBlueprints],
                 ['Successfully Indexed', $indexedCount],
                 ['Errors', $errorCount],
-                ['Success Rate', $totalBlueprints > 0 ? round(($indexedCount / $totalBlueprints) * 100, 2).'%' : '0%'],
+                ['Success Rate', $totalBlueprints > 0 ? round(($indexedCount / $totalBlueprints) * 100, 2) . '%' : '0%'],
             ]
         );
 
@@ -223,12 +223,12 @@ class ElasticsearchIndexBlueprints extends Command
         $searchText = $blueprint->name;
 
         if ($blueprint->collector_number) {
-            $searchText .= ' '.$blueprint->collector_number;
+            $searchText .= ' ' . $blueprint->collector_number;
         }
 
         // Add expansion code if available for broader matching
         if ($blueprint->expansion && $blueprint->expansion->code) {
-            $searchText .= ' '.$blueprint->expansion->code;
+            $searchText .= ' ' . $blueprint->expansion->code;
         }
 
         return trim($searchText);

@@ -292,7 +292,8 @@ class ElasticsearchService
         int $from = 0,
         int $size = 30,
         ?string $language = null,
-        ?int $expansionId = null
+        ?int $expansionId = null,
+        ?string $sort = null
     ): array {
         $mustClauses = [];
         $filterClauses = [];
@@ -450,6 +451,43 @@ class ElasticsearchService
             $minScore = 25.0; // High precision for collector numbers
         }
 
+        // Build sort array based on sort parameter
+        $sortArray = [];
+        if ($sort) {
+            switch ($sort) {
+                case 'price_asc':
+                    $sortArray[] = [
+                        'latest_price.price_cents' => [
+                            'order' => 'asc',
+                            'missing' => '_last', // Cards without price appear at the end
+                        ],
+                    ];
+                    // Add secondary sort for cards with same price
+                    $sortArray[] = ['name.keyword' => ['order' => 'asc']];
+                    break;
+                case 'price_desc':
+                    $sortArray[] = [
+                        'latest_price.price_cents' => [
+                            'order' => 'desc',
+                            'missing' => '_last', // Cards without price appear at the end
+                        ],
+                    ];
+                    // Add secondary sort for cards with same price
+                    $sortArray[] = ['name.keyword' => ['order' => 'asc']];
+                    break;
+                case 'name_asc':
+                    $sortArray[] = ['name.keyword' => ['order' => 'asc']];
+                    break;
+                case 'name_desc':
+                    $sortArray[] = ['name.keyword' => ['order' => 'desc']];
+                    break;
+            }
+        } else {
+            // Default: sort by relevance first, then alphabetically
+            $sortArray[] = ['_score' => ['order' => 'desc']];
+            $sortArray[] = ['name.keyword' => ['order' => 'asc']];
+        }
+
         $params = [
             'index' => $this->indexName,
             'body' => [
@@ -462,10 +500,7 @@ class ElasticsearchService
                         'filter' => $filterClauses,
                     ],
                 ],
-                'sort' => [
-                    '_score' => ['order' => 'desc'], // Sort by relevance first
-                    'name.keyword' => ['order' => 'asc'], // Then alphabetically
-                ],
+                'sort' => $sortArray,
             ],
         ];
 

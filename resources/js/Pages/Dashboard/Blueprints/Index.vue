@@ -47,6 +47,7 @@ const props = defineProps<{
   blueprints: PaginatedBlueprints;
   filters: {
     expansion_id?: number | null;
+    sort?: string | null;
   };
   availableExpansions: Expansion[];
 }>();
@@ -54,6 +55,7 @@ const props = defineProps<{
 // --- State ---
 const currentFilters = reactive({
   expansion: props.filters.expansion_id || '',
+  sort: props.filters.sort || '',
 });
 const showFilters = ref(false);
 const searchQuery = ref('');
@@ -68,6 +70,14 @@ const showAddToPortfolioModal = ref(false);
 const selectedBlueprint = ref<Blueprint | null>(null);
 
 // --- Constants ---
+const sortOptions = [
+  { value: '', label: 'Default' },
+  { value: 'price_asc', label: 'Price: Low to High' },
+  { value: 'price_desc', label: 'Price: High to Low' },
+  { value: 'name_asc', label: 'Name: A-Z' },
+  { value: 'name_desc', label: 'Name: Z-A' },
+];
+
 const placeholderImage =
   'data:image/svg+xml;base64,' +
   btoa(`
@@ -87,6 +97,7 @@ const placeholderImage =
 const activeFiltersCount = computed(() => {
   let count = 0;
   if (currentFilters.expansion) count++;
+  if (currentFilters.sort) count++;
   return count;
 });
 const displayData = computed(() =>
@@ -108,6 +119,7 @@ const clearSearchResults = () => {
 
 const clearFilters = () => {
   currentFilters.expansion = '';
+  currentFilters.sort = '';
   if (!isSearchMode.value) {
     router.get(
       route('blueprints.index'),
@@ -144,6 +156,8 @@ const searchBlueprints = async (loadMore = false) => {
     };
     if (currentFilters.expansion)
       params.expansion_id = Number(currentFilters.expansion);
+    if (currentFilters.sort)
+      params.sort = currentFilters.sort;
 
     const { data } = await axios.get('/blueprints/search', { params });
     if (data.success && data.data) {
@@ -224,6 +238,7 @@ watch(
         route('blueprints.index'),
         {
           expansion_id: newFilters.expansion || undefined,
+          sort: newFilters.sort || undefined,
         },
         {
           preserveState: true,
@@ -263,6 +278,26 @@ watch(
             </p>
           </div>
           <div class="mt-3 sm:mt-0 flex items-center space-x-2">
+            <!-- Sort Controls -->
+            <div class="flex items-center space-x-2">
+              <label class="text-sm text-gray-600 dark:text-gray-300">
+                Sort:
+              </label>
+              <select
+                v-model="currentFilters.sort"
+                class="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-gray-500 transition-colors"
+              >
+                <option
+                  v-for="option in sortOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
+                  {{ option.label }}
+                </option>
+              </select>
+            </div>
+
+            <!-- View Mode Toggle -->
             <div
               class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-button p-0.5"
             >
@@ -313,6 +348,8 @@ watch(
                 </svg>
               </button>
             </div>
+
+            <!-- Filters Button -->
             <div class="relative">
               <button
                 class="inline-flex items-center px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-button text-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-1 focus:ring-gray-500 transition-colors"
