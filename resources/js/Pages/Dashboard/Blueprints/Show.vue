@@ -13,6 +13,7 @@ import ConditionSelect from '@/Components/Forms/ConditionSelect.vue';
 import LanguageSelect from '@/Components/Forms/LanguageSelect.vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
+import { useToast } from '@/composables/useToast';
 
 const props = defineProps({
   blueprint: {
@@ -35,6 +36,9 @@ const isLoadingChart = ref(true);
 const portfolios = ref([]);
 const isLoadingPortfolios = ref(false);
 const selectedLanguage = ref('en'); // Default to English
+
+// Toast system
+const { success, error } = useToast();
 
 const form = reactive({
   portfolio_id: null,
@@ -233,6 +237,11 @@ const addToPortfolio = () => {
 
 const submitAddToPortfolio = () => {
   form.errors = {};
+  
+  // Find the selected portfolio name for better user feedback
+  const selectedPortfolio = portfolios.value.find(p => p.id === form.portfolio_id);
+  const portfolioName = selectedPortfolio?.name || 'portfolio';
+  
   axios
     .post(
       route('api.portfolios.addBlueprint', { portfolio: form.portfolio_id }),
@@ -243,16 +252,33 @@ const submitAddToPortfolio = () => {
     )
     .then((response) => {
       showAddToPortfolioModal.value = false;
-      // TODO: Show success toast
+      
+      // Show success toast
+      success(
+        'Card added to portfolio!',
+        `"${props.blueprint.name}" has been successfully added to "${portfolioName}".`
+      );
+      
       console.log('Card added successfully', response.data);
       // Optionally, redirect or update UI
     })
     .catch((error) => {
       if (error.response && error.response.status === 422) {
         form.errors = error.response.data.errors;
+        
+        // Show validation error toast
+        error(
+          'Validation errors',
+          'Please check the highlighted fields and try again.'
+        );
       } else {
         console.error('An unexpected error occurred:', error);
-        // TODO: Show generic error toast
+        
+        // Show generic error toast
+        error(
+          'Error adding card',
+          'An unexpected error occurred. Please try again later.'
+        );
       }
     });
 };
