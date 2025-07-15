@@ -145,7 +145,7 @@ const isOpen = ref(true);
 
 const formData = reactive({
   quantity: props.userCard.pivot?.quantity || 1,
-  purchase_price: props.userCard.purchase_price_cents
+  purchase_price: props.userCard.purchase_price_cents !== null && props.userCard.purchase_price_cents !== undefined
     ? props.userCard.purchase_price_cents / 100
     : null,
   acquired_at: props.userCard.acquired_at
@@ -153,6 +153,8 @@ const formData = reactive({
     : '',
   notes: props.userCard.notes || '',
 });
+
+
 
 // Use pricing composable
 const blueprintRef = computed(() => props.userCard.blueprint || null);

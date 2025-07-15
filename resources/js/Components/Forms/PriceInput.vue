@@ -16,7 +16,7 @@
     <div class="relative">
       <input
         :id="id"
-        :model-value="modelValue"
+        :value="modelValue"
         type="number"
         step="0.01"
         min="0"

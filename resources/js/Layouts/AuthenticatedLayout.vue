@@ -57,10 +57,10 @@ const user = computed(() => page.props.auth.user);
                   Dashboard
                 </NavLink>
                 <NavLink
-                  :href="route('dashboard.blueprints.index')"
+                  :href="route('blueprints.index')"
                   :active="
-                    route().current('dashboard.blueprints.index') ||
-                    route().current('dashboard.blueprints.show')
+                    route().current('blueprints.index') ||
+                    route().current('blueprints.show')
                   "
                   class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
                 >
@@ -292,10 +292,10 @@ const user = computed(() => page.props.auth.user);
               Dashboard
             </ResponsiveNavLink>
             <ResponsiveNavLink
-              :href="route('dashboard.blueprints.index')"
+              :href="route('blueprints.index')"
               :active="
-                route().current('dashboard.blueprints.index') ||
-                route().current('dashboard.blueprints.show')
+                route().current('blueprints.index') ||
+                route().current('blueprints.show')
               "
             >
               Blueprints

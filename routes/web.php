@@ -28,13 +28,13 @@ Route::middleware('auth')->group(function () {
     })->name('card-scanner');
 
     // Blueprint routes
-    Route::prefix('dashboard/blueprints')->name('dashboard.blueprints.')->group(function () {
+    Route::prefix('blueprints')->name('blueprints.')->group(function () {
         Route::get('/', [BlueprintController::class, 'index'])
             ->middleware(['verified'])
-            ->name('index'); // Will be dashboard.blueprints.index
+            ->name('index'); // Will be blueprints.index
         Route::get('/{blueprint}', [BlueprintController::class, 'show'])
             ->middleware(['verified'])
-            ->name('show'); // Will be dashboard.blueprints.show
+            ->name('show'); // Will be blueprints.show
     });
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -44,4 +44,4 @@ Route::middleware('auth')->group(function () {
     Route::get('/portfolios/{portfolio}', [WebPortfolioController::class, 'show'])->name('portfolios.show');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

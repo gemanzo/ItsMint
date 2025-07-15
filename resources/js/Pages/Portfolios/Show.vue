@@ -339,9 +339,7 @@
                               </button>
                               <button
                                 class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-150"
-                                @click="
-                                  removeCard(getFirstCardFromGroup(group))
-                                "
+                                @click="openRemoveCardModal(group)"
                               >
                                 <svg
                                   class="h-4 w-4 mr-1.5"
@@ -410,12 +408,11 @@
       @card-updated="handleCardUpdated"
     />
 
-    <ConfirmationModal
-      :show="showConfirmRemoveModal"
-      title="Remove Card from Portfolio"
-      :message="`Are you sure you want to remove ${cardToRemove?.blueprint?.name} from this portfolio?`"
-      @confirm="confirmRemoveCard"
-      @close="closeConfirmRemoveModal"
+    <RemoveCardModal
+      :show="showRemoveCardModal"
+      :card-group="cardGroupToRemove"
+      @close="closeRemoveCardModal"
+      @confirm="confirmRemoveCards"
     />
   </AuthenticatedLayout>
 </template>
@@ -424,7 +421,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import AddCardModal from '@/Components/AddCardModal.vue';
 import EditCardModal from '@/Components/EditCardModal.vue';
-import ConfirmationModal from '@/Components/ConfirmationModal.vue';
+import RemoveCardModal from '@/Components/RemoveCardModal.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import {
@@ -465,9 +462,9 @@ const { success: showSuccessToast, error: showErrorToast } = useToast();
 
 const showAddCardModal = ref(false);
 const showEditCardModal = ref(false);
-const showConfirmRemoveModal = ref(false);
+const showRemoveCardModal = ref(false);
 const cardToEdit = ref<UserCardData | null>(null);
-const cardToRemove = ref<UserCardData | null>(null);
+const cardGroupToRemove = ref<CardGroup | null>(null);
 const isLoading = ref(false);
 
 const openAddCardModal = () => {
@@ -517,34 +514,64 @@ const handleCardUpdated = () => {
   });
 };
 
-const removeCard = (card: UserCardData) => {
-  cardToRemove.value = card;
-  showConfirmRemoveModal.value = true;
+const openRemoveCardModal = (group: CardGroup) => {
+  cardGroupToRemove.value = group;
+  showRemoveCardModal.value = true;
 };
 
-const closeConfirmRemoveModal = () => {
-  showConfirmRemoveModal.value = false;
-  cardToRemove.value = null;
+const closeRemoveCardModal = () => {
+  showRemoveCardModal.value = false;
+  cardGroupToRemove.value = null;
 };
 
-const confirmRemoveCard = async () => {
-  if (!cardToRemove.value) {
-    closeConfirmRemoveModal();
+const confirmRemoveCards = async (quantityToRemove: number) => {
+  if (!cardGroupToRemove.value) {
+    closeRemoveCardModal();
     return;
   }
 
   try {
-    await portfolioStore.removeUserCardFromPortfolio(
-      props.portfolio.id,
-      cardToRemove.value.id
-    );
+    // Find all cards in this group and remove the specified quantity
+    const cardsInGroup = props.portfolio.user_cards?.filter(
+      (card) =>
+        card.blueprint?.name === cardGroupToRemove.value?.blueprint?.name &&
+        card.condition === cardGroupToRemove.value?.condition &&
+        card.language === cardGroupToRemove.value?.language
+    ) || [];
+
+    // Remove cards one by one until we reach the desired quantity
+    let remainingToRemove = quantityToRemove;
+    
+    for (const card of cardsInGroup) {
+      if (remainingToRemove <= 0) break;
+      
+      const cardQuantity = card.pivot?.quantity || 1;
+      const quantityToRemoveFromThisCard = Math.min(remainingToRemove, cardQuantity);
+      
+      // If we're removing all cards from this specific card entry, remove the entire entry
+      if (quantityToRemoveFromThisCard === cardQuantity) {
+        await portfolioStore.removeUserCardFromPortfolio(
+          props.portfolio.id,
+          card.id
+        );
+      } else {
+        // Update the quantity for this card
+        await portfolioStore.updateUserCardQuantityInPortfolio(
+          props.portfolio.id,
+          card.id,
+          cardQuantity - quantityToRemoveFromThisCard
+        );
+      }
+      
+      remainingToRemove -= quantityToRemoveFromThisCard;
+    }
     
     showSuccessToast(
-      'Card removed successfully!',
-      `${cardToRemove.value.blueprint?.name} has been removed from "${props.portfolio.name}"`
+      'Cards removed successfully!',
+      `${quantityToRemove} ${quantityToRemove === 1 ? 'copy' : 'copies'} of ${cardGroupToRemove.value.blueprint?.name} ${quantityToRemove === 1 ? 'has' : 'have'} been removed from "${props.portfolio.name}"`
     );
     
-    closeConfirmRemoveModal();
+    closeRemoveCardModal();
     isLoading.value = true;
     router.reload({ 
       only: ['portfolio'],
@@ -553,12 +580,12 @@ const confirmRemoveCard = async () => {
       }
     });
   } catch (error) {
-    console.error('Error removing card from portfolio:', error);
+    console.error('Error removing cards from portfolio:', error);
     showErrorToast(
-      'Error removing card',
-      'Failed to remove card from portfolio. Please try again.'
+      'Error removing cards',
+      'Failed to remove cards from portfolio. Please try again.'
     );
-    closeConfirmRemoveModal();
+    closeRemoveCardModal();
   }
 };
 
@@ -568,11 +595,24 @@ const getFirstCardFromGroup = (group: CardGroup): UserCardData => {
     (c) =>
       c.blueprint?.name === group.blueprint?.name &&
       c.condition === group.condition &&
-      c.language === group.language
+      c.language === group.language &&
+      c.purchase_price_cents === (group.singlePurchasePrice ? Math.round(group.singlePurchasePrice * 100) : null)
   );
 
   if (!card) {
-    throw new Error('Card not found in group');
+    // Fallback: take the first card with matching name/condition/language
+    const fallbackCard = props.portfolio.user_cards?.find(
+      (c) =>
+        c.blueprint?.name === group.blueprint?.name &&
+        c.condition === group.condition &&
+        c.language === group.language
+    );
+    
+    if (!fallbackCard) {
+      throw new Error('Card not found in group');
+    }
+    
+    return fallbackCard;
   }
 
   // Create a representative card with the correct total quantity

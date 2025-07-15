@@ -110,7 +110,7 @@ const clearFilters = () => {
   currentFilters.expansion = '';
   if (!isSearchMode.value) {
     router.get(
-      route('dashboard.blueprints.index'),
+      route('blueprints.index'),
       {},
       {
         preserveState: true,
@@ -221,7 +221,7 @@ watch(
       debouncedSearch();
     } else {
       router.get(
-        route('dashboard.blueprints.index'),
+        route('blueprints.index'),
         {
           expansion_id: newFilters.expansion || undefined,
         },
@@ -566,7 +566,7 @@ watch(
             <Link
               v-for="blueprint in displayData"
               :key="blueprint.id"
-              :href="route('dashboard.blueprints.show', blueprint.id)"
+              :href="route('blueprints.show', blueprint.id)"
               class="group bg-white dark:bg-gray-800 rounded-card border border-gray-200 dark:border-gray-700 hover:shadow-card-hover transition-all duration-150 overflow-hidden"
             >
               <!-- Card Image -->
@@ -687,7 +687,7 @@ watch(
               <Link
                 v-for="blueprint in displayData"
                 :key="blueprint.id"
-                :href="route('dashboard.blueprints.show', blueprint.id)"
+                :href="route('blueprints.show', blueprint.id)"
                 class="flex items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 group"
               >
                 <div

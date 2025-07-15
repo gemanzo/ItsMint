@@ -294,7 +294,7 @@
             </Link>
 
             <Link
-              :href="route('dashboard.blueprints.index')"
+              :href="route('blueprints.index')"
               class="group flex flex-col items-center p-4 rounded-card bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-colors duration-200"
             >
               <div
@@ -559,7 +559,7 @@
                 Create Your First Portfolio
               </button>
               <Link
-                :href="route('dashboard.blueprints.index')"
+                :href="route('blueprints.index')"
                 class="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium rounded-button transition-colors"
               >
                 Browse Card Catalog

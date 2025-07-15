@@ -493,9 +493,9 @@
     </div>
 
     <CreatePortfolioModal
-      v-if="showCreatePortfolioModal"
+      :is-open="showCreatePortfolioModal"
       @close="showCreatePortfolioModal = false"
-      @portfolio-created="handlePortfolioCreated"
+      @created="handlePortfolioCreated"
     />
 
     <EditPortfolioModal

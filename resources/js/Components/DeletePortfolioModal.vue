@@ -2,7 +2,7 @@
   <ConfirmationModal
     :is-open="show"
     title="Delete Portfolio"
-    :message="`This action cannot be undone. This will permanently delete the \"${portfolioName}\" portfolio and all of its data.`"
+    :message="`This action cannot be undone. This will permanently delete the '${portfolioName}' portfolio and all of its data.`"
     type="danger"
     :is-loading="isDeleting"
     :can-confirm="isNameValid"
@@ -39,7 +39,7 @@
 import { computed, nextTick, ref, watch } from 'vue';
 import { usePortfolioStore } from '@/stores/portfolioStore';
 import { useToast } from '@/composables/useToast';
-import ConfirmationModal from '@/Components/Base/ConfirmationModal.vue';
+import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 import TextInput from '@/Components/TextInput.vue';
 
 interface Props {

@@ -368,7 +368,7 @@ onMounted(() => {
             />
           </svg>
           <Link
-            :href="route('dashboard.blueprints.index')"
+            :href="route('blueprints.index')"
             class="hover:text-white transition-colors text-xs"
           >
             Blueprints
@@ -501,7 +501,7 @@ onMounted(() => {
                   Copy ID
                 </button> -->
                 <Link
-                  :href="route('dashboard.blueprints.index')"
+                  :href="route('blueprints.index')"
                   class="inline-flex items-center px-3 py-1.5 bg-white/20 backdrop-blur-sm text-white font-medium rounded-md hover:bg-white/30 transition-colors duration-200 text-xs border border-white/30"
                 >
                   <svg
