@@ -498,10 +498,10 @@
       @portfolio-created="handlePortfolioCreated"
     />
 
-    <ConfirmationModal
+    <DeletePortfolioModal
       :show="showConfirmDeleteModal"
-      title="Delete Portfolio"
-      :message="`Are you sure you want to delete '${portfolioToDelete?.name}'? This action cannot be undone.`"
+      :portfolio-name="portfolioToDelete?.name || ''"
+      :is-deleting="isDeletingPortfolio"
       @close="showConfirmDeleteModal = false"
       @confirm="confirmDeletePortfolio"
     />
@@ -513,8 +513,9 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import CreatePortfolioModal from '@/Components/CreatePortfolioModal.vue';
-import ConfirmationModal from '@/Components/ConfirmationModal.vue';
+import DeletePortfolioModal from '@/Components/DeletePortfolioModal.vue';
 import { usePortfolioStore } from '@/stores/portfolioStore';
+import { useToast } from '@/composables/useToast';
 
 interface PortfolioData {
   id: number;
@@ -530,6 +531,7 @@ const props = defineProps<{
 }>();
 
 const portfolioStore = usePortfolioStore();
+const { success, error } = useToast();
 
 // Reactive variables
 const showCreatePortfolioModal = ref(false);
@@ -538,6 +540,7 @@ const searchQuery = ref('');
 const sortBy = ref('name');
 const showConfirmDeleteModal = ref(false);
 const portfolioToDelete = ref<PortfolioData | null>(null);
+const isDeletingPortfolio = ref(false);
 
 // Computed properties
 const totalCards = computed(() => {
@@ -629,14 +632,29 @@ const deletePortfolio = (portfolio: PortfolioData) => {
 };
 
 const confirmDeletePortfolio = async () => {
-  if (!portfolioToDelete.value) return;
+  if (!portfolioToDelete.value || isDeletingPortfolio.value) return;
+  
+  const portfolioName = portfolioToDelete.value.name;
+  isDeletingPortfolio.value = true;
+  
   try {
     await portfolioStore.deletePortfolio(portfolioToDelete.value.id);
+    
+    success(
+      'Portfolio deleted successfully!',
+      `"${portfolioName}" has been permanently deleted.`
+    );
+    
     router.reload({ only: ['portfolios'] });
-  } catch (error) {
-    console.error('Error deleting portfolio:', error);
-    alert('Failed to delete portfolio. Please try again.');
+  } catch (err) {
+    console.error('Error deleting portfolio:', err);
+    
+    error(
+      'Failed to delete portfolio',
+      'An error occurred while deleting the portfolio. Please try again.'
+    );
   } finally {
+    isDeletingPortfolio.value = false;
     showConfirmDeleteModal.value = false;
     portfolioToDelete.value = null;
   }
