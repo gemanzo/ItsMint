@@ -276,7 +276,7 @@
 
     <!-- Card Scan Modal -->
     <CardScanModal
-      :is-open="showScanModal"
+      :show="showScanModal"
       @close="closeScanModal"
       @scan-complete="handleScanComplete"
     />

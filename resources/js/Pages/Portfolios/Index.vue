@@ -158,6 +158,7 @@
       </div>
     </div>
 
+    <!-- Main Content Wrapper -->
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-4 sm:py-8">
       <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <!-- Search and Filters -->
@@ -427,10 +428,9 @@
                           stroke-linejoin="round"
                           stroke-width="2"
                           d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
-                  </div>
+                      />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -439,7 +439,7 @@
 
         <!-- Empty State -->
         <div
-          v-else-if="portfolios.length === 0"
+          v-if="portfolios.length === 0"
           class="text-center py-8 sm:py-12"
         >
           <div
@@ -535,6 +535,8 @@
         </div>
       </div>
     </div>
+    </div>  
+    <!-- End main content wrapper -->
 
     <!-- Modals -->
     <CreatePortfolioModal
@@ -545,7 +547,7 @@
 
     <EditPortfolioModal
       v-if="portfolioToEdit"
-      :is-open="showEditPortfolioModal"
+      :show="showEditPortfolioModal"
       :portfolio="portfolioToEdit"
       @close="closeEditPortfolioModal"
       @portfolio-updated="handlePortfolioUpdated"
@@ -553,15 +555,16 @@
 
     <DeletePortfolioModal
       v-if="portfolioToDelete"
-      :is-open="showDeletePortfolioModal"
-      :portfolio="portfolioToDelete"
+      :show="showDeletePortfolioModal"
+      :portfolio-name="portfolioToDelete.name"
+      :portfolio-id="portfolioToDelete.id"
       @close="closeDeletePortfolioModal"
-      @portfolio-deleted="handlePortfolioDeleted"
+      @deleted="handlePortfolioDeleted"
     />
 
     <AddCardModal
       v-if="targetPortfolio"
-      :is-open="showAddCardModal"
+      :show="showAddCardModal"
       :portfolio-id="targetPortfolio.id"
       @close="closeAddCardModal"
       @card-added="handleCardAdded"
@@ -606,7 +609,7 @@ const portfolioToEdit = ref<PortfolioData | null>(null);
 const viewMode = ref<'grid' | 'list'>('grid');
 const searchQuery = ref('');
 const sortBy = ref('name');
-const showConfirmDeleteModal = ref(false);
+const showDeletePortfolioModal = ref(false);
 const portfolioToDelete = ref<PortfolioData | null>(null);
 const showAddCardModal = ref(false);
 const targetPortfolio = ref<PortfolioData | null>(null);
@@ -696,12 +699,12 @@ const editPortfolio = (portfolio: PortfolioData) => {
 
 const deletePortfolio = (portfolio: PortfolioData) => {
   portfolioToDelete.value = portfolio;
-  showConfirmDeleteModal.value = true;
+  showDeletePortfolioModal.value = true;
 };
 
 const handlePortfolioDeleted = () => {
   router.reload({ only: ['portfolios'] });
-  showConfirmDeleteModal.value = false;
+  showDeletePortfolioModal.value = false;
   portfolioToDelete.value = null;
 };
 
@@ -723,9 +726,18 @@ const handlePortfolioUpdated = () => {
   router.reload({ only: ['portfolios'] });
 };
 
+const closeCreatePortfolioModal = () => {
+  showCreatePortfolioModal.value = false;
+};
+
 const closeEditPortfolioModal = () => {
   showEditPortfolioModal.value = false;
   portfolioToEdit.value = null;
+};
+
+const closeDeletePortfolioModal = () => {
+  showDeletePortfolioModal.value = false;
+  portfolioToDelete.value = null;
 };
 
 const openAddCardModal = (portfolio: PortfolioData) => {

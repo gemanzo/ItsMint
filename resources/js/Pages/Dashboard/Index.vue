@@ -523,11 +523,11 @@ const averageCardValue = computed(() => {
 });
 
 // Helper function to calculate portfolio value
-const calculatePortfolioValue = (portfolio) => {
+const calculatePortfolioValue = (portfolio: any) => {
   if (!portfolio.user_cards || !Array.isArray(portfolio.user_cards)) {
     return 0;
   }
-  return portfolio.user_cards.reduce((total, card) => {
+  return portfolio.user_cards.reduce((total: number, card: any) => {
     const value = card.estimated_value_cents
       ? card.estimated_value_cents / 100
       : 0;
