@@ -143,146 +143,157 @@ const selectedLanguageData = computed(() => {
 
 // When component mounts, set the active language to the first available one
 onMounted(() => {
-    if (props.blueprint.available_languages && props.blueprint.available_languages.length > 0) {
-        activeLanguage.value = props.blueprint.available_languages[0];
-        fetchPriceHistoryForLanguage(activeLanguage.value, activePeriod.value);
-        fetchMarketStatistics(activeLanguage.value);
-    }
+  if (
+    props.blueprint.available_languages &&
+    props.blueprint.available_languages.length > 0
+  ) {
+    activeLanguage.value = props.blueprint.available_languages[0];
+    fetchPriceHistoryForLanguage(activeLanguage.value, activePeriod.value);
+    fetchMarketStatistics(activeLanguage.value);
+  }
 });
 
 const fetchPriceHistoryForLanguage = async (language, period = '1D') => {
-    // Create a unique key for language + period combination to allow caching different periods per language
-    const cacheKey = `${language}_${period}`;
-    
-    // Only prevent re-fetching if we have data for this specific language+period combination
-    if (chartDataByLanguage[cacheKey]?.data && activeLanguage.value === language && activePeriod.value === period) {
-        return;
+  // Create a unique key for language + period combination to allow caching different periods per language
+  const cacheKey = `${language}_${period}`;
+
+  // Only prevent re-fetching if we have data for this specific language+period combination
+  if (
+    chartDataByLanguage[cacheKey]?.data &&
+    activeLanguage.value === language &&
+    activePeriod.value === period
+  ) {
+    return;
+  }
+
+  // Set loading state for this language+period combination
+  chartDataByLanguage[cacheKey] = { isLoading: true, data: null, error: null };
+  activeLanguage.value = language;
+  activePeriod.value = period;
+
+  // Fetch market statistics when language changes
+  fetchMarketStatistics(language);
+
+  try {
+    const response = await axios.get(
+      route('api.blueprints.price-history', {
+        blueprint: props.blueprint.id,
+        language: language,
+        period: period,
+        condition: 'Near Mint', // Specify the condition
+      })
+    );
+    const history = response.data;
+
+    if (history.length === 0) {
+      chartDataByLanguage[cacheKey].data = null;
+    } else {
+      const labels = history.map((p) => formatDateShort(p.fetched_at));
+      const data = history.map((p) => p.price_cents / 100);
+
+      chartDataByLanguage[cacheKey].data = {
+        labels,
+        datasets: [
+          {
+            label: `Price (EUR)`,
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            data,
+            tension: 0.1,
+            fill: true,
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 6,
+            pointHoverBorderWidth: 2,
+            pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
+            pointHoverBackgroundColor: 'white',
+          },
+        ],
+      };
     }
-
-    // Set loading state for this language+period combination
-    chartDataByLanguage[cacheKey] = { isLoading: true, data: null, error: null };
-    activeLanguage.value = language;
-    activePeriod.value = period;
-
-    // Fetch market statistics when language changes
-    fetchMarketStatistics(language);
-
-    try {
-        const response = await axios.get(
-            route('api.blueprints.price-history', {
-                blueprint: props.blueprint.id,
-                language: language,
-                period: period,
-                condition: 'Near Mint', // Specify the condition
-            })
-        );
-        const history = response.data;
-
-        if (history.length === 0) {
-            chartDataByLanguage[cacheKey].data = null;
-        } else {
-            const labels = history.map((p) => formatDateShort(p.fetched_at));
-            const data = history.map((p) => p.price_cents / 100);
-
-            chartDataByLanguage[cacheKey].data = {
-                labels,
-                datasets: [
-                    {
-                        label: `Price (EUR)`,
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderColor: 'rgba(59, 130, 246, 1)',
-                        data,
-                        tension: 0.1,
-                        fill: true,
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        pointHoverRadius: 6,
-                        pointHoverBorderWidth: 2,
-                        pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
-                        pointHoverBackgroundColor: 'white',
-                    },
-                ],
-            };
-        }
-    } catch (err) {
-        console.error(`Failed to fetch price history for ${language} (${period}):`, err);
-        chartDataByLanguage[cacheKey].error = 'Failed to load chart data.';
-    } finally {
-        chartDataByLanguage[cacheKey].isLoading = false;
-    }
+  } catch (err) {
+    console.error(
+      `Failed to fetch price history for ${language} (${period}):`,
+      err
+    );
+    chartDataByLanguage[cacheKey].error = 'Failed to load chart data.';
+  } finally {
+    chartDataByLanguage[cacheKey].isLoading = false;
+  }
 };
 
 const fetchMarketStatistics = async (language) => {
-    if (!language) return;
-    
-    isLoadingMarketStats.value = true;
-    
-    try {
-        const response = await axios.get(
-            route('api.blueprints.market-statistics', {
-                blueprint: props.blueprint.id,
-                language: language,
-                condition: 'Near Mint',
-            })
-        );
-        
-        marketStatistics.value = response.data.data;
-        console.log('Market statistics loaded:', marketStatistics.value);
-    } catch (err) {
-        console.error(`Failed to fetch market statistics for ${language}:`, err);
-        marketStatistics.value = null;
-    } finally {
-        isLoadingMarketStats.value = false;
-    }
+  if (!language) return;
+
+  isLoadingMarketStats.value = true;
+
+  try {
+    const response = await axios.get(
+      route('api.blueprints.market-statistics', {
+        blueprint: props.blueprint.id,
+        language: language,
+        condition: 'Near Mint',
+      })
+    );
+
+    marketStatistics.value = response.data.data;
+    console.log('Market statistics loaded:', marketStatistics.value);
+  } catch (err) {
+    console.error(`Failed to fetch market statistics for ${language}:`, err);
+    marketStatistics.value = null;
+  } finally {
+    isLoadingMarketStats.value = false;
+  }
 };
 
 const priceStatistics = computed(() => {
-    const cacheKey = `${activeLanguage.value}_${activePeriod.value}`;
-    const historyData = chartDataByLanguage[cacheKey]?.data?.datasets[0]?.data;
+  const cacheKey = `${activeLanguage.value}_${activePeriod.value}`;
+  const historyData = chartDataByLanguage[cacheKey]?.data?.datasets[0]?.data;
 
-    if (!historyData || historyData.length < 1) {
-        // Try to get at least the latest price from props as a fallback
-        const latestPrice = props.pricesByLanguage[activeLanguage.value]?.['Near Mint']?.price_cents;
-        return {
-            latestPrice: latestPrice ? formatPrice(latestPrice) : 'N/A',
-            change: 'N/A',
-            percentage: 'N/A',
-            positive: true,
-        };
-    }
-
-    const latestPrice = historyData[historyData.length - 1];
-    // Use first point in the current view for comparison
-    const previousPrice = historyData[0]; 
-    
-    const change = latestPrice - previousPrice;
-    const percentage = previousPrice !== 0 ? (change / previousPrice) * 100 : 0;
-
+  if (!historyData || historyData.length < 1) {
+    // Try to get at least the latest price from props as a fallback
+    const latestPrice =
+      props.pricesByLanguage[activeLanguage.value]?.['Near Mint']?.price_cents;
     return {
-        latestPrice: formatPrice(latestPrice * 100),
-        change: formatPrice(change * 100, undefined, true),
-        percentage: `${percentage.toFixed(1)}%`,
-        positive: change >= 0,
+      latestPrice: latestPrice ? formatPrice(latestPrice) : 'N/A',
+      change: 'N/A',
+      percentage: 'N/A',
+      positive: true,
     };
+  }
+
+  const latestPrice = historyData[historyData.length - 1];
+  // Use first point in the current view for comparison
+  const previousPrice = historyData[0];
+
+  const change = latestPrice - previousPrice;
+  const percentage = previousPrice !== 0 ? (change / previousPrice) * 100 : 0;
+
+  return {
+    latestPrice: formatPrice(latestPrice * 100),
+    change: formatPrice(change * 100, undefined, true),
+    percentage: `${percentage.toFixed(1)}%`,
+    positive: change >= 0,
+  };
 });
 
 // Helper for formatting price with explicit sign
 const formatPriceWithSign = (cents, currency = 'EUR', showSign = false) => {
-    const value = cents / 100;
-    const options = { style: 'currency', currency: currency };
-    if (showSign) {
-        options.signDisplay = 'exceptZero';
-    }
-    return value.toLocaleString('it-IT', options);
+  const value = cents / 100;
+  const options = { style: 'currency', currency: currency };
+  if (showSign) {
+    options.signDisplay = 'exceptZero';
+  }
+  return value.toLocaleString('it-IT', options);
 };
 
 // Keep old formatPrice for other uses
 const formatPrice = (cents, currency = 'EUR') => {
-    if (cents === null || cents === undefined) return 'N/A';
-    return (cents / 100).toLocaleString('it-IT', {
-        style: 'currency',
-        currency: currency,
-    });
+  if (cents === null || cents === undefined) return 'N/A';
+  return (cents / 100).toLocaleString('it-IT', {
+    style: 'currency',
+    currency: currency,
+  });
 };
 
 const formatDateShort = (dateString) => {
@@ -346,12 +357,14 @@ const fetchPortfolios = async () => {
 const addToPortfolio = () => {
   // Reset errors
   form.errors = {};
-  
+
   // Ensure we have a valid language - use activeLanguage if available, otherwise first available language
-  const validLanguage = activeLanguage.value && props.blueprint.available_languages.includes(activeLanguage.value) 
-    ? activeLanguage.value 
-    : props.blueprint.available_languages[0];
-  
+  const validLanguage =
+    activeLanguage.value &&
+    props.blueprint.available_languages.includes(activeLanguage.value)
+      ? activeLanguage.value
+      : props.blueprint.available_languages[0];
+
   // Set default values based on selected language and available prices
   if (validLanguage && props.pricesByLanguage[validLanguage]) {
     const langPrices = props.pricesByLanguage[validLanguage];
@@ -362,11 +375,11 @@ const addToPortfolio = () => {
       if (indexB === -1) return -1;
       return indexA - indexB;
     });
-    
+
     if (conditions.length > 0) {
       const bestCondition = conditions[0];
       const bestConditionPrice = langPrices[bestCondition];
-      
+
       form.language = validLanguage;
       form.condition = bestCondition;
       form.purchase_price_cents = bestConditionPrice.price_cents;
@@ -393,11 +406,13 @@ const addToPortfolio = () => {
 
 const submitAddToPortfolio = () => {
   form.errors = {};
-  
+
   // Find the selected portfolio name for better user feedback
-  const selectedPortfolio = portfolios.value.find(p => p.id === form.portfolio_id);
+  const selectedPortfolio = portfolios.value.find(
+    (p) => p.id === form.portfolio_id
+  );
   const portfolioName = selectedPortfolio?.name || 'portfolio';
-  
+
   axios
     .post(
       route('api.portfolios.addBlueprint', { portfolio: form.portfolio_id }),
@@ -408,20 +423,20 @@ const submitAddToPortfolio = () => {
     )
     .then((response) => {
       showAddToPortfolioModal.value = false;
-      
+
       // Show success toast
       success(
         'Card added to portfolio!',
         `"${props.blueprint.name}" has been successfully added to "${portfolioName}".`
       );
-      
+
       console.log('Card added successfully', response.data);
       // Optionally, redirect or update UI
     })
     .catch((error) => {
       if (error.response && error.response.status === 422) {
         form.errors = error.response.data.errors;
-        
+
         // Show validation error toast
         error(
           'Validation errors',
@@ -429,7 +444,7 @@ const submitAddToPortfolio = () => {
         );
       } else {
         console.error('An unexpected error occurred:', error);
-        
+
         // Show generic error toast
         error(
           'Error adding card',
@@ -440,9 +455,8 @@ const submitAddToPortfolio = () => {
 };
 
 onMounted(() => {
-    // The existing onMounted for price history is replaced by the new one at the top.
+  // The existing onMounted for price history is replaced by the new one at the top.
 });
-
 </script>
 
 <template>
@@ -469,8 +483,16 @@ onMounted(() => {
 
       <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
         <!-- Language Selector in Hero -->
-        <div v-if="blueprint.available_languages && blueprint.available_languages.length > 1" class="absolute top-3 right-4 z-10">
-          <div class="flex items-center space-x-1 bg-white/20 backdrop-blur-sm p-1 rounded-lg">
+        <div
+          v-if="
+            blueprint.available_languages &&
+            blueprint.available_languages.length > 1
+          "
+          class="absolute top-3 right-4 z-10"
+        >
+          <div
+            class="flex items-center space-x-1 bg-white/20 backdrop-blur-sm p-1 rounded-lg"
+          >
             <button
               v-for="lang in blueprint.available_languages"
               :key="lang"
@@ -478,12 +500,14 @@ onMounted(() => {
                 'px-2 py-1 text-sm font-medium rounded-md flex items-center space-x-2 transition-all duration-200',
                 activeLanguage === lang
                   ? 'bg-white/90 text-red-700 shadow'
-                  : 'text-white/80 hover:bg-white/40'
+                  : 'text-white/80 hover:bg-white/40',
               ]"
               @click="fetchPriceHistoryForLanguage(lang, activePeriod)"
             >
               <span>{{ languageDetails[lang]?.flag || '🏳️' }}</span>
-              <span class="hidden sm:inline">{{ languageDetails[lang]?.name || lang.toUpperCase() }}</span>
+              <span class="hidden sm:inline">{{
+                languageDetails[lang]?.name || lang.toUpperCase()
+              }}</span>
             </button>
           </div>
         </div>
@@ -747,60 +771,133 @@ onMounted(() => {
               class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
             >
               <!-- Chart Header with Price and Stats -->
-              <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+              <div
+                class="px-6 py-4 border-b border-gray-100 dark:border-gray-700"
+              >
                 <div v-if="activeLanguage" class="space-y-2">
                   <!-- Main Price -->
                   <div class="text-3xl font-bold text-gray-900 dark:text-white">
                     {{ priceStatistics.latestPrice }}
-                    <span class="text-xs font-normal text-gray-400 ml-1">€</span>
+                    <span class="text-xs font-normal text-gray-400 ml-1"
+                      >€</span
+                    >
                   </div>
-                  
+
                   <!-- Stats Row -->
                   <div class="flex items-center space-x-6 text-sm">
                     <div>
-                      <span class="text-gray-500 dark:text-gray-400 uppercase tracking-wide text-xs font-medium">
-                        {{ activePeriod === '1D' ? 'TODAY' : activePeriod === '1W' ? 'THIS WEEK' : activePeriod === '1M' ? 'THIS MONTH' : activePeriod === '3M' ? 'LAST 3 MONTHS' : activePeriod === '1Y' ? 'THIS YEAR' : 'ALL TIME' }}
+                      <span
+                        class="text-gray-500 dark:text-gray-400 uppercase tracking-wide text-xs font-medium"
+                      >
+                        {{
+                          activePeriod === '1D'
+                            ? 'TODAY'
+                            : activePeriod === '1W'
+                              ? 'THIS WEEK'
+                              : activePeriod === '1M'
+                                ? 'THIS MONTH'
+                                : activePeriod === '3M'
+                                  ? 'LAST 3 MONTHS'
+                                  : activePeriod === '1Y'
+                                    ? 'THIS YEAR'
+                                    : 'ALL TIME'
+                        }}
                       </span>
-                      <div :class="['font-semibold', priceStatistics.positive ? 'text-green-600' : 'text-red-600']">
+                      <div
+                        :class="[
+                          'font-semibold',
+                          priceStatistics.positive
+                            ? 'text-green-600'
+                            : 'text-red-600',
+                        ]"
+                      >
                         {{ priceStatistics.change }}
                       </div>
                     </div>
-                    
+
                     <div>
-                      <span class="text-gray-500 dark:text-gray-400 uppercase tracking-wide text-xs font-medium">
+                      <span
+                        class="text-gray-500 dark:text-gray-400 uppercase tracking-wide text-xs font-medium"
+                      >
                         RATE OF RETURN
                       </span>
-                      <div :class="['font-semibold', priceStatistics.positive ? 'text-green-600' : 'text-red-600']">
+                      <div
+                        :class="[
+                          'font-semibold',
+                          priceStatistics.positive
+                            ? 'text-green-600'
+                            : 'text-red-600',
+                        ]"
+                      >
                         {{ priceStatistics.percentage }}
                       </div>
                     </div>
                   </div>
                 </div>
-                
+
                 <div v-else class="py-4">
-                  <p class="text-gray-500">Select a language to view its price history.</p>
+                  <p class="text-gray-500">
+                    Select a language to view its price history.
+                  </p>
                 </div>
               </div>
 
               <!-- Chart Container -->
               <div class="relative">
-                <div v-if="!activeLanguage" class="h-64 flex items-center justify-center">
-                  <p class="text-gray-500">Select a language to view its price history.</p>
+                <div
+                  v-if="!activeLanguage"
+                  class="h-64 flex items-center justify-center"
+                >
+                  <p class="text-gray-500">
+                    Select a language to view its price history.
+                  </p>
                 </div>
-                
-                <div v-else-if="chartDataByLanguage[`${activeLanguage}_${activePeriod}`]?.isLoading" class="h-64 flex items-center justify-center">
+
+                <div
+                  v-else-if="
+                    chartDataByLanguage[`${activeLanguage}_${activePeriod}`]
+                      ?.isLoading
+                  "
+                  class="h-64 flex items-center justify-center"
+                >
                   <div class="text-center">
-                    <svg class="animate-spin h-8 w-8 text-gray-400 dark:text-gray-600 mx-auto mb-2" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      class="animate-spin h-8 w-8 text-gray-400 dark:text-gray-600 mx-auto mb-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      />
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
                     </svg>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Loading price history...</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                      Loading price history...
+                    </p>
                   </div>
                 </div>
-                
-                <div v-else-if="chartDataByLanguage[`${activeLanguage}_${activePeriod}`]?.data" class="h-64 px-2">
+
+                <div
+                  v-else-if="
+                    chartDataByLanguage[`${activeLanguage}_${activePeriod}`]
+                      ?.data
+                  "
+                  class="h-64 px-2"
+                >
                   <PriceHistoryChart
-                    :chart-data="chartDataByLanguage[`${activeLanguage}_${activePeriod}`].data"
+                    :chart-data="
+                      chartDataByLanguage[`${activeLanguage}_${activePeriod}`]
+                        .data
+                    "
                     :chart-options="{
                       responsive: true,
                       maintainAspectRatio: false,
@@ -809,12 +906,12 @@ onMounted(() => {
                           top: 20,
                           right: 20,
                           bottom: 10,
-                          left: 10
-                        }
+                          left: 10,
+                        },
                       },
                       plugins: {
                         legend: {
-                          display: false
+                          display: false,
                         },
                         tooltip: {
                           mode: 'index',
@@ -827,56 +924,56 @@ onMounted(() => {
                           cornerRadius: 8,
                           displayColors: false,
                           callbacks: {
-                            title: function(context) {
+                            title: function (context) {
                               return context[0].label;
                             },
-                            label: function(context) {
+                            label: function (context) {
                               return '€' + context.parsed.y.toFixed(2);
-                            }
-                          }
-                        }
+                            },
+                          },
+                        },
                       },
                       scales: {
                         x: {
                           display: true,
                           grid: {
-                            display: false
+                            display: false,
                           },
                           ticks: {
                             color: 'rgba(156, 163, 175, 0.8)',
                             font: {
-                              size: 11
+                              size: 11,
                             },
-                            maxTicksLimit: 6
+                            maxTicksLimit: 6,
                           },
                           border: {
-                            display: false
-                          }
+                            display: false,
+                          },
                         },
                         y: {
                           display: true,
                           position: 'right',
                           grid: {
                             color: 'rgba(229, 231, 235, 0.5)',
-                            drawBorder: false
+                            drawBorder: false,
                           },
-                                                     ticks: {
-                             color: 'rgba(156, 163, 175, 0.8)',
-                             font: {
-                               size: 11
-                             },
-                             callback: function(value) {
-                               if (value >= 1000) {
-                                 return (value / 1000).toFixed(1) + 'K';
-                               }
-                               return '€' + value.toFixed(0);
-                             },
-                             maxTicksLimit: 6
-                           },
+                          ticks: {
+                            color: 'rgba(156, 163, 175, 0.8)',
+                            font: {
+                              size: 11,
+                            },
+                            callback: function (value) {
+                              if (value >= 1000) {
+                                return (value / 1000).toFixed(1) + 'K';
+                              }
+                              return '€' + value.toFixed(0);
+                            },
+                            maxTicksLimit: 6,
+                          },
                           border: {
-                            display: false
-                          }
-                        }
+                            display: false,
+                          },
+                        },
                       },
                       elements: {
                         line: {
@@ -884,26 +981,37 @@ onMounted(() => {
                           borderWidth: 2,
                           borderColor: 'rgba(59, 130, 246, 1)',
                           backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                          fill: true
+                          fill: true,
                         },
                         point: {
                           radius: 0,
                           hoverRadius: 6,
                           hoverBorderWidth: 2,
                           hoverBorderColor: 'rgba(59, 130, 246, 1)',
-                          hoverBackgroundColor: 'white'
-                        }
+                          hoverBackgroundColor: 'white',
+                        },
                       },
                       interaction: {
                         intersect: false,
-                        mode: 'index'
-                      }
+                        mode: 'index',
+                      },
                     }"
                   />
                 </div>
-                
-                <div v-else-if="chartDataByLanguage[`${activeLanguage}_${activePeriod}`]?.error" class="h-64 flex items-center justify-center">
-                  <p class="text-red-500">{{ chartDataByLanguage[`${activeLanguage}_${activePeriod}`].error }}</p>
+
+                <div
+                  v-else-if="
+                    chartDataByLanguage[`${activeLanguage}_${activePeriod}`]
+                      ?.error
+                  "
+                  class="h-64 flex items-center justify-center"
+                >
+                  <p class="text-red-500">
+                    {{
+                      chartDataByLanguage[`${activeLanguage}_${activePeriod}`]
+                        .error
+                    }}
+                  </p>
                 </div>
 
                 <div v-else class="h-64 flex items-center justify-center">
@@ -921,7 +1029,9 @@ onMounted(() => {
                         d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                       />
                     </svg>
-                    <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    <h4
+                      class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+                    >
                       No Price History
                     </h4>
                     <p class="text-gray-600 dark:text-gray-400 text-sm">
@@ -932,7 +1042,9 @@ onMounted(() => {
               </div>
 
               <!-- Time Period Filters -->
-              <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+              <div
+                class="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between"
+              >
                 <div class="flex space-x-1">
                   <button
                     v-for="period in timePeriods"
@@ -943,9 +1055,19 @@ onMounted(() => {
                         ? 'bg-gray-800 text-white shadow-sm'
                         : 'text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-600',
                     ]"
-                    @click="fetchPriceHistoryForLanguage(activeLanguage, period)"
+                    @click="
+                      fetchPriceHistoryForLanguage(activeLanguage, period)
+                    "
                   >
-                    {{ period === '1D' ? '1G' : period === '1W' ? '1S' : period === '1Y' ? '1A' : period }}
+                    {{
+                      period === '1D'
+                        ? '1G'
+                        : period === '1W'
+                          ? '1S'
+                          : period === '1Y'
+                            ? '1A'
+                            : period
+                    }}
                   </button>
                 </div>
               </div>
@@ -982,48 +1104,69 @@ onMounted(() => {
 
               <!-- Price Data for Selected Language -->
               <div v-if="selectedLanguagePrices.length > 0" class="space-y-3">
-                  <div
-                      v-for="price in selectedLanguagePrices"
-                      :key="`${price.condition}-${price.language}`"
-                      class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200"
-                  >
-                      <div class="flex items-center justify-between">
-                          <div class="flex-1">
-                              <div class="flex items-center space-x-2 mb-2">
-                                  <span :class="`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-${getConditionColor(price.condition)}-100 text-${getConditionColor(price.condition)}-800 dark:bg-${getConditionColor(price.condition)}-900 dark:text-${getConditionColor(price.condition)}-200`">
-                                      {{ price.condition }}
-                                  </span>
-                                  <span v-if="price.is_foil" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">
-                                      ✨ Foil
-                                  </span>
-                              </div>
-                              <div class="text-xs text-gray-500 dark:text-gray-400">
-                                  Updated {{ formatDateShort(price.fetched_at) }}
-                              </div>
-                          </div>
-                          <div class="text-right">
-                              <div class="text-2xl font-bold text-green-600 dark:text-green-400">
-                                  {{ formatPrice(price.price_cents, price.currency) }}
-                              </div>
-                          </div>
+                <div
+                  v-for="price in selectedLanguagePrices"
+                  :key="`${price.condition}-${price.language}`"
+                  class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200"
+                >
+                  <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                      <div class="flex items-center space-x-2 mb-2">
+                        <span
+                          :class="`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-${getConditionColor(price.condition)}-100 text-${getConditionColor(price.condition)}-800 dark:bg-${getConditionColor(price.condition)}-900 dark:text-${getConditionColor(price.condition)}-200`"
+                        >
+                          {{ price.condition }}
+                        </span>
+                        <span
+                          v-if="price.is_foil"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
+                        >
+                          ✨ Foil
+                        </span>
                       </div>
+                      <div class="text-xs text-gray-500 dark:text-gray-400">
+                        Updated {{ formatDateShort(price.fetched_at) }}
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <div
+                        class="text-2xl font-bold text-green-600 dark:text-green-400"
+                      >
+                        {{ formatPrice(price.price_cents, price.currency) }}
+                      </div>
+                    </div>
                   </div>
+                </div>
               </div>
-               <div v-else class="text-center py-8">
-                <p class="text-gray-500 dark:text-gray-400">No price data for this language.</p>
+              <div v-else class="text-center py-8">
+                <p class="text-gray-500 dark:text-gray-400">
+                  No price data for this language.
+                </p>
               </div>
 
               <!-- Add to Portfolio button -->
-              <div class="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
-                  <button
-                      class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center"
-                      @click="addToPortfolio"
+              <div
+                class="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4"
+              >
+                <button
+                  class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center"
+                  @click="addToPortfolio"
+                >
+                  <svg
+                    class="h-4 w-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                      <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      Add to Portfolio
-                  </button>
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  Add to Portfolio
+                </button>
               </div>
             </div>
 
@@ -1065,66 +1208,101 @@ onMounted(() => {
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                   Market Statistics
                 </h3>
-                <div v-if="isLoadingMarketStats" class="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                <div
+                  v-if="isLoadingMarketStats"
+                  class="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"
+                />
               </div>
-              
+
               <div v-if="marketStatistics" class="space-y-4">
                 <div class="flex items-center justify-between">
-                  <span class="text-sm text-gray-500 dark:text-gray-400">Market Cap</span>
-                  <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Market Cap</span
+                  >
+                  <span
+                    class="text-sm font-semibold text-gray-900 dark:text-white"
+                  >
                     {{ marketStatistics.market_cap_formatted }}
                   </span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span class="text-sm text-gray-500 dark:text-gray-400">Avg. Price (30d)</span>
-                  <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Avg. Price (30d)</span
+                  >
+                  <span
+                    class="text-sm font-semibold text-gray-900 dark:text-white"
+                  >
                     {{ marketStatistics.avg_price_30d_formatted }}
                   </span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span class="text-sm text-gray-500 dark:text-gray-400">Price Change (7d)</span>
-                  <span 
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Price Change (7d)</span
+                  >
+                  <span
                     :class="[
                       'text-sm font-semibold',
-                      marketStatistics.price_change_7d_percentage > 0 ? 'text-green-600' :
-                      marketStatistics.price_change_7d_percentage < 0 ? 'text-red-600' :
-                      'text-gray-900 dark:text-white'
+                      marketStatistics.price_change_7d_percentage > 0
+                        ? 'text-green-600'
+                        : marketStatistics.price_change_7d_percentage < 0
+                          ? 'text-red-600'
+                          : 'text-gray-900 dark:text-white',
                     ]"
                   >
                     {{ marketStatistics.price_change_7d_formatted }}
                   </span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span class="text-sm text-gray-500 dark:text-gray-400">Popularity Rank</span>
-                  <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Popularity Rank</span
+                  >
+                  <span
+                    class="text-sm font-semibold text-gray-900 dark:text-white"
+                  >
                     #{{ marketStatistics.popularity_rank }}
                   </span>
                 </div>
               </div>
-              
+
               <div v-else-if="!isLoadingMarketStats" class="space-y-4">
                 <div class="flex items-center justify-between">
-                  <span class="text-sm text-gray-500 dark:text-gray-400">Market Cap</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Market Cap</span
+                  >
                   <span class="text-sm font-semibold text-gray-500">N/A</span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span class="text-sm text-gray-500 dark:text-gray-400">Avg. Price (30d)</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Avg. Price (30d)</span
+                  >
                   <span class="text-sm font-semibold text-gray-500">N/A</span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span class="text-sm text-gray-500 dark:text-gray-400">Price Change (7d)</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Price Change (7d)</span
+                  >
                   <span class="text-sm font-semibold text-gray-500">N/A</span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span class="text-sm text-gray-500 dark:text-gray-400">Popularity Rank</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Popularity Rank</span
+                  >
                   <span class="text-sm font-semibold text-gray-500">N/A</span>
                 </div>
               </div>
-              
+
               <div v-else class="space-y-4">
-                <div class="flex items-center justify-between" v-for="i in 4" :key="i">
-                  <span class="text-sm text-gray-500 dark:text-gray-400">Loading...</span>
-                  <div class="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                <div
+                  v-for="i in 4"
+                  :key="i"
+                  class="flex items-center justify-between"
+                >
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Loading...</span
+                  >
+                  <div
+                    class="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                  />
                 </div>
               </div>
             </div>
@@ -1207,9 +1385,7 @@ onMounted(() => {
               <option v-else-if="portfolios.length === 0" value="" disabled>
                 No portfolios found
               </option>
-              <option v-else value="" disabled>
-                Select a portfolio
-              </option>
+              <option v-else value="" disabled>Select a portfolio</option>
               <option
                 v-for="portfolio in portfolios"
                 :key="portfolio.id"
@@ -1243,7 +1419,8 @@ onMounted(() => {
                 :key="lang"
                 :value="lang"
               >
-                {{ languageDetails[lang]?.flag || '🏳️' }} {{ languageDetails[lang]?.name || lang.toUpperCase() }}
+                {{ languageDetails[lang]?.flag || '🏳️' }}
+                {{ languageDetails[lang]?.name || lang.toUpperCase() }}
               </option>
             </select>
             <InputError class="mt-2" :message="form.errors.language" />
@@ -1299,8 +1476,6 @@ onMounted(() => {
         </form>
       </div>
     </Modal>
-
-
   </AuthenticatedLayout>
 </template>
 

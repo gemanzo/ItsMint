@@ -449,17 +449,17 @@ class ElasticsearchService
                     'should' => [
                         [
                             'exists' => [
-                                'field' => "prices_by_language.{strtolower($language)}"
-                            ]
+                                'field' => "prices_by_language.{strtolower($language)}",
+                            ],
                         ],
                         [
                             'term' => [
-                                'latest_price.language' => strtolower($language)
-                            ]
-                        ]
+                                'latest_price.language' => strtolower($language),
+                            ],
+                        ],
                     ],
-                    'minimum_should_match' => 1
-                ]
+                    'minimum_should_match' => 1,
+                ],
             ];
         }
 

@@ -86,7 +86,7 @@ const { formatCurrency } = useCurrency();
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const value = target.value;
-  
+
   // Convert empty string to null, otherwise parse as number
   if (value === '' || value === null || value === undefined) {
     emit('update:modelValue', null);

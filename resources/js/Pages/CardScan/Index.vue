@@ -142,11 +142,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import CardScanModal from '@/Components/CardScanModal.vue';
 import ScanResultsModal from '@/Components/ScanResultsModal.vue';
 import QuickAddCardModal from '@/Components/QuickAddCardModal.vue';
-import {
-  CameraIcon,
-  EyeIcon,
-  PlusIcon,
-} from '@heroicons/vue/24/outline';
+import { CameraIcon, EyeIcon, PlusIcon } from '@heroicons/vue/24/outline';
 import { useToast } from '@/composables/useToast';
 import type { CardScan } from '@/types';
 
@@ -187,7 +183,7 @@ const closeQuickAddModal = () => {
 const handleCardCreated = (scan: CardScan) => {
   // Close scan results modal
   showScanResults.value = false;
-  
+
   // If scan has an assigned blueprint, open QuickAddCardModal
   if (scan.blueprint) {
     currentScan.value = scan;

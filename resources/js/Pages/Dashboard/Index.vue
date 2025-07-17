@@ -536,9 +536,10 @@ const totalCardsFromStore = computed(() => {
     return 0;
   }
   return portfolioStore.portfolios.reduce((total, portfolio) => {
-    const portfolioCardCount = portfolio.user_cards?.reduce((sum, card) => {
-      return sum + (card.pivot?.quantity || 1);
-    }, 0) || 0;
+    const portfolioCardCount =
+      portfolio.user_cards?.reduce((sum, card) => {
+        return sum + (card.pivot?.quantity || 1);
+      }, 0) || 0;
     return total + portfolioCardCount;
   }, 0);
 });

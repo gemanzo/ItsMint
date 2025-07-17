@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Portfolio;
 use App\Models\UserCard;
-use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -228,7 +227,7 @@ class PortfolioController extends Controller
         ]);
 
         if ($portfolio->userCards()->where('user_card_id', $userCard->id)->exists()) {
-            // Find all cards in the portfolio that match the same "group" 
+            // Find all cards in the portfolio that match the same "group"
             // (same blueprint, condition, language, purchase_price)
             $groupCards = $portfolio->userCards()
                 ->where('blueprint_id', $userCard->blueprint_id)
@@ -267,7 +266,7 @@ class PortfolioController extends Controller
         }
 
         // Check if the UserCard is in this portfolio
-        if (!$portfolio->userCards()->where('user_card_id', $userCard->id)->exists()) {
+        if (! $portfolio->userCards()->where('user_card_id', $userCard->id)->exists()) {
             return response()->json(['message' => 'Card not found in portfolio'], 404);
         }
 
@@ -449,7 +448,7 @@ class PortfolioController extends Controller
         }
 
         // Always include the end date
-        if (!$points || $points[count($points) - 1]->lt($endDate)) {
+        if (! $points || $points[count($points) - 1]->lt($endDate)) {
             $points[] = $endDate->copy();
         }
 

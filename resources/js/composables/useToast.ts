@@ -57,7 +57,11 @@ export function useToast() {
   };
 
   // Convenience methods for different toast types
-  const success = (title: string, message?: string, options?: Partial<Toast>): string => {
+  const success = (
+    title: string,
+    message?: string,
+    options?: Partial<Toast>
+  ): string => {
     return addToast({
       type: 'success',
       title,
@@ -66,7 +70,11 @@ export function useToast() {
     });
   };
 
-  const error = (title: string, message?: string, options?: Partial<Toast>): string => {
+  const error = (
+    title: string,
+    message?: string,
+    options?: Partial<Toast>
+  ): string => {
     return addToast({
       type: 'error',
       title,
@@ -76,7 +84,11 @@ export function useToast() {
     });
   };
 
-  const warning = (title: string, message?: string, options?: Partial<Toast>): string => {
+  const warning = (
+    title: string,
+    message?: string,
+    options?: Partial<Toast>
+  ): string => {
     return addToast({
       type: 'warning',
       title,
@@ -86,7 +98,11 @@ export function useToast() {
     });
   };
 
-  const info = (title: string, message?: string, options?: Partial<Toast>): string => {
+  const info = (
+    title: string,
+    message?: string,
+    options?: Partial<Toast>
+  ): string => {
     return addToast({
       type: 'info',
       title,
@@ -105,4 +121,4 @@ export function useToast() {
     warning,
     info,
   };
-} 
+}

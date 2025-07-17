@@ -1,8 +1,5 @@
 <template>
-  <Link
-    :href="route('blueprints.show', blueprint.id)"
-    :class="cardClasses"
-  >
+  <Link :href="route('blueprints.show', blueprint.id)" :class="cardClasses">
     <!-- Grid View -->
     <template v-if="viewMode === 'grid'">
       <!-- Card Image -->
@@ -45,7 +42,9 @@
         </div>
 
         <!-- Price Section -->
-        <div class="mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-700">
+        <div
+          class="mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-700"
+        >
           <div
             v-if="blueprint.latest_price"
             class="flex items-center justify-between"
@@ -101,7 +100,9 @@
 
     <!-- List View -->
     <template v-else>
-      <div class="flex items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 group">
+      <div
+        class="flex items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 group"
+      >
         <div class="flex-shrink-0 w-16 h-22 rounded-card overflow-hidden">
           <img
             :src="blueprint.image_url || placeholderImage"
@@ -113,7 +114,9 @@
         <div class="ml-4 flex-1">
           <div class="flex items-center justify-between">
             <div class="flex-1 min-w-0">
-              <h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">
+              <h3
+                class="text-sm font-medium text-gray-900 dark:text-white truncate"
+              >
                 {{ blueprint.name }}
               </h3>
               <div class="mt-1 space-y-1">
@@ -164,7 +167,7 @@
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                </button>
+              </button>
               <svg
                 class="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors duration-150"
                 fill="none"
@@ -237,7 +240,7 @@ const placeholderImage =
 // Computed classes for the card container
 const cardClasses = computed(() => {
   const baseClasses = 'group transition-all duration-150';
-  
+
   if (props.viewMode === 'grid') {
     return `${baseClasses} bg-white dark:bg-gray-800 rounded-card border border-gray-200 dark:border-gray-700 hover:shadow-card-hover overflow-hidden`;
   } else {
@@ -268,4 +271,4 @@ const handleAddToPortfolio = () => {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-</style> 
+</style>

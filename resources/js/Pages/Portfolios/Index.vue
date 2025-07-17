@@ -551,7 +551,6 @@ const sortBy = ref('name');
 const showConfirmDeleteModal = ref(false);
 const portfolioToDelete = ref<PortfolioData | null>(null);
 
-
 // Computed properties
 const totalCards = computed(() => {
   return props.portfolios.reduce(
@@ -655,12 +654,12 @@ const handlePortfolioCreated = () => {
 const handlePortfolioUpdated = () => {
   showEditPortfolioModal.value = false;
   portfolioToEdit.value = null;
-  
+
   success(
     'Portfolio updated successfully!',
     'Portfolio details have been updated.'
   );
-  
+
   router.reload({ only: ['portfolios'] });
 };
 

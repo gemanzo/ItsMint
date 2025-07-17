@@ -6,11 +6,7 @@
       aria-label="Notifications"
       aria-live="polite"
     >
-      <TransitionGroup
-        name="toast"
-        tag="div"
-        class="space-y-2"
-      >
+      <TransitionGroup name="toast" tag="div" class="space-y-2">
         <div
           v-for="toast in toasts"
           :key="toast.id"
@@ -44,7 +40,10 @@
 
           <!-- Content -->
           <div class="ml-3 flex-1">
-            <h4 class="text-sm font-medium" :class="getTitleClasses(toast.type)">
+            <h4
+              class="text-sm font-medium"
+              :class="getTitleClasses(toast.type)"
+            >
               {{ toast.title }}
             </h4>
             <p
@@ -88,7 +87,7 @@ const { toasts, removeToast } = useToast();
 
 const getToastClasses = (type: Toast['type']): string => {
   const baseClasses = 'bg-white dark:bg-gray-800 border';
-  
+
   switch (type) {
     case 'success':
       return `${baseClasses} border-green-200 dark:border-green-700`;
@@ -150,7 +149,7 @@ const getMessageClasses = (type: Toast['type']): string => {
 
 const getCloseButtonClasses = (type: Toast['type']): string => {
   const baseClasses = 'focus:ring-offset-2';
-  
+
   switch (type) {
     case 'success':
       return `${baseClasses} text-green-400 hover:text-green-600 focus:ring-green-500`;
@@ -185,4 +184,4 @@ const getCloseButtonClasses = (type: Toast['type']): string => {
 .toast-move {
   transition: transform 0.3s ease;
 }
-</style> 
+</style>

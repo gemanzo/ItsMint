@@ -84,7 +84,7 @@ class Blueprint extends Model
                 'Slightly Played',
                 'Moderately Played',
                 'Played',
-                'Poor'
+                'Poor',
             ])
             ->orderByRaw('condition_priority ASC, price_cents DESC, fetched_at DESC');
     }

@@ -139,7 +139,7 @@ class BlueprintController extends Controller
         $query = Blueprint::query()->with(['expansion', 'latestPrice']);
 
         if (! empty($searchQuery)) {
-            $query->where('name', 'ILIKE', '%' . $searchQuery . '%');
+            $query->where('name', 'ILIKE', '%'.$searchQuery.'%');
         }
 
         // Use the normalized expansion code for querying the relationship
