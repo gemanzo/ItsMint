@@ -265,10 +265,24 @@ class PortfolioController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        if ($portfolio->userCards()->detach($userCard->id)) {
-            return response()->json(null, 204);
+        // Check if the UserCard is in this portfolio
+        if (!$portfolio->userCards()->where('user_card_id', $userCard->id)->exists()) {
+            return response()->json(['message' => 'Card not found in portfolio'], 404);
         }
 
-        return response()->json(['message' => 'Card not found in portfolio'], 404);
+        // Remove the card from this portfolio (pivot table)
+        $portfolio->userCards()->detach($userCard->id);
+
+        // Check if the UserCard is still in other portfolios
+        $otherPortfoliosCount = $userCard->portfolios()
+            ->where('portfolios.id', '!=', $portfolio->id)
+            ->count();
+
+        // If the UserCard is not in any other portfolio, delete it completely
+        if ($otherPortfoliosCount === 0) {
+            $userCard->delete();
+        }
+
+        return response()->json(null, 204);
     }
 }

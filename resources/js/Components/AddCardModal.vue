@@ -149,7 +149,7 @@
             </ListboxButton>
 
             <ListboxOptions
-              class="absolute z-10 right-0 mt-1 max-h-56 w-40 overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+              class="absolute z-50 right-0 mt-1 max-h-56 w-40 overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
             >
               <ListboxOption
                 v-for="lang in CARD_LANGUAGES"
@@ -429,7 +429,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted, watchEffect } from 'vue';
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue';
 import { debounce } from 'lodash';
 import axios from 'axios';
@@ -469,7 +469,8 @@ const blueprintSearchQuery = ref('');
 const blueprintSearchResults = ref<Blueprint[]>([]);
 const selectedBlueprint = ref<Blueprint | null>(null);
 
-const selectedLanguageObject = ref(CARD_LANGUAGES[0]);
+// Initialize with EN language (index 1) instead of Any (index 0)
+const selectedLanguageObject = ref(CARD_LANGUAGES.find(lang => lang.code === 'en') || CARD_LANGUAGES[1]);
 const searchLanguage = computed(() => selectedLanguageObject.value.code);
 
 const searchPage = ref(1);
@@ -548,7 +549,7 @@ const searchBlueprints = async (loadMore = false) => {
         q: blueprintSearchQuery.value,
         from: (searchPage.value - 1) * 15,
         size: 15,
-        language: searchLanguage.value || undefined,
+        language: searchLanguage.value && searchLanguage.value !== '' ? searchLanguage.value : undefined,
       },
     });
 
@@ -690,6 +691,25 @@ const handleBlueprintSelected = (blueprint: Blueprint) => {
   selectBlueprint(blueprint);
   closeScanResults();
 };
+
+// Watch for search query changes - reset selected blueprint when query is cleared
+watch(blueprintSearchQuery, (newQuery) => {
+  if (!newQuery || newQuery.trim() === '') {
+    selectedBlueprint.value = null;
+  }
+});
+
+// Watch for language changes - restart search if there's an active query
+watch(selectedLanguageObject, () => {
+  if (blueprintSearchQuery.value && blueprintSearchQuery.value.length >= 2) {
+    debouncedSearchBlueprints();
+  }
+});
+
+// Sync language selection with card details
+watchEffect(() => {
+  cardDetails.language = selectedLanguageObject.value.code.toUpperCase() || 'EN';
+});
 
 onMounted(async () => {
   if (portfolioStore.portfolios.length === 0) {

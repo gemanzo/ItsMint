@@ -4,47 +4,47 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Blueprint;
+use App\Models\CardPrice; // Added this import
 use App\Services\BlueprintPriceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 final class BlueprintController extends Controller
 {
+    /**
+     * Get the price history for a specific blueprint, aggregating all language variants.
+     */
     public function priceHistory(Blueprint $blueprint, Request $request): JsonResponse
     {
         $request->validate([
-            'language' => 'nullable|string|size:2',
-            'condition' => 'nullable|string|in:Near Mint,Slightly Played,Moderately Played,Played,Poor',
-            'limit' => 'nullable|integer|min:1|max:1000',
+            'language' => 'required|string',
+            'period' => 'nullable|string|in:1D,1W,1M,3M,1Y,MAX',
+            'condition' => 'nullable|string',
         ]);
 
-        $query = $blueprint->cardPrices()->orderBy('fetched_at', 'asc');
+        $language = $request->input('language');
+        $period = $request->input('period', '1D'); // Default to 1 day
+        $condition = $request->input('condition', 'Near Mint'); // Default to Near Mint but allow other conditions
 
-        // Filter by language if provided
-        if ($request->filled('language')) {
-            $query->where('language', strtolower($request->language));
+        $query = CardPrice::where('blueprint_id', $blueprint->id)
+            ->where('language', $language)
+            ->where('condition', $condition)
+            ->orderBy('fetched_at', 'asc');
+
+        if ($period !== 'MAX') {
+            $date = match ($period) {
+                '1D' => now()->subDay(),
+                '1W' => now()->subWeek(),
+                '1M' => now()->subMonth(),
+                '3M' => now()->subMonths(3),
+                '1Y' => now()->subYear(),
+            };
+            $query->where('fetched_at', '>=', $date);
         }
 
-        // Filter by condition if provided
-        if ($request->filled('condition')) {
-            $query->where('condition', $request->condition);
-        }
+        $priceHistory = $query->get(['price_cents', 'fetched_at']);
 
-        // Apply limit if provided
-        if ($request->filled('limit')) {
-            $query->limit($request->limit);
-        }
-
-        $priceHistory = $query->get();
-
-        return response()->json([
-            'data' => $priceHistory,
-            'meta' => [
-                'total_records' => $priceHistory->count(),
-                'language_filter' => $request->language,
-                'condition_filter' => $request->condition,
-            ],
-        ]);
+        return response()->json($priceHistory);
     }
 
     /**
@@ -254,6 +254,104 @@ final class BlueprintController extends Controller
                 'total_variants' => $blueprint->allLanguageVersions()->count(),
             ],
         ]);
+    }
+
+    /**
+     * Get market statistics for a blueprint.
+     */
+    public function marketStatistics(Blueprint $blueprint, Request $request): JsonResponse
+    {
+        $request->validate([
+            'language' => 'nullable|string',
+            'condition' => 'nullable|string',
+        ]);
+
+        $language = $request->input('language', 'en');
+        $condition = $request->input('condition', 'Near Mint');
+
+        // 1. Market Cap = Average Price × Unique Owners
+        $avgPrice = $blueprint->cardPrices()
+            ->where('language', $language)
+            ->where('condition', $condition)
+            ->avg('price_cents') ?? 0;
+
+        $uniqueOwners = $blueprint->userCards()
+            ->distinct('user_id')
+            ->count();
+
+        $marketCapCents = $avgPrice * $uniqueOwners;
+
+        // 2. Average Price (30d)
+        $avgPrice30d = $blueprint->cardPrices()
+            ->where('language', $language)
+            ->where('condition', $condition)
+            ->where('fetched_at', '>=', now()->subDays(30))
+            ->avg('price_cents') ?? 0;
+
+        // 3. Popularity Rank
+        $totalUserCards = $blueprint->userCards()->count();
+        $popularityRank = Blueprint::query()
+            ->join('user_cards', 'blueprints.id', '=', 'user_cards.blueprint_id')
+            ->select('blueprints.id')
+            ->groupBy('blueprints.id')
+            ->havingRaw('COUNT(user_cards.id) > ?', [$totalUserCards])
+            ->count() + 1;
+
+        // 4. Price Change (7d)
+        $currentPrice = $blueprint->cardPrices()
+            ->where('language', $language)
+            ->where('condition', $condition)
+            ->latest('fetched_at')
+            ->first();
+
+        $weekAgoPrice = $blueprint->cardPrices()
+            ->where('language', $language)
+            ->where('condition', $condition)
+            ->where('fetched_at', '<=', now()->subWeek())
+            ->latest('fetched_at')
+            ->first();
+
+        $priceChangePercentage = null;
+        if ($currentPrice && $weekAgoPrice && $weekAgoPrice->price_cents > 0) {
+            $priceChangePercentage = (($currentPrice->price_cents - $weekAgoPrice->price_cents) / $weekAgoPrice->price_cents) * 100;
+        }
+
+        return response()->json([
+            'data' => [
+                'market_cap_cents' => $marketCapCents,
+                'market_cap_formatted' => $this->formatMarketCap($marketCapCents),
+                'avg_price_30d_cents' => $avgPrice30d,
+                'avg_price_30d_formatted' => '€' . number_format($avgPrice30d / 100, 2),
+                'popularity_rank' => $popularityRank,
+                'price_change_7d_percentage' => $priceChangePercentage,
+                'price_change_7d_formatted' => $priceChangePercentage !== null ?
+                    ($priceChangePercentage >= 0 ? '+' : '') . number_format($priceChangePercentage, 1) . '%' : 'N/A',
+            ],
+            'meta' => [
+                'blueprint_id' => $blueprint->id,
+                'language' => $language,
+                'condition' => $condition,
+                'unique_owners' => $uniqueOwners,
+                'total_user_cards' => $totalUserCards,
+                'calculated_at' => now()->toISOString(),
+            ],
+        ]);
+    }
+
+    /**
+     * Format market cap for display
+     */
+    private function formatMarketCap(float $cents): string
+    {
+        $value = $cents / 100; // Convert to euros
+
+        if ($value >= 1000000) {
+            return '€' . number_format($value / 1000000, 1) . 'M';
+        } elseif ($value >= 1000) {
+            return '€' . number_format($value / 1000, 1) . 'K';
+        } else {
+            return '€' . number_format($value, 2);
+        }
     }
 
     /**
