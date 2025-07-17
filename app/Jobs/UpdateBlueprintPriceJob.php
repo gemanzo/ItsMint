@@ -108,27 +108,48 @@ class UpdateBlueprintPriceJob implements ShouldQueue
                     continue;
                 }
 
-                CardPrice::updateOrCreate([
-                    'blueprint_id' => $blueprint->id,
-                    'condition' => $priceData['condition'],
-                    'language' => $priceData['language'], // Now includes language in search criteria
-                ], [
-                    'price_cents' => $priceData['price_cents'],
-                    'currency' => $priceData['currency'] ?? 'EUR',
-                    'is_foil' => $priceData['is_foil'] ?? false,
-                    'source' => $priceData['source'] ?? 'Default Source',
-                    'fetched_at' => $priceData['fetched_at'],
-                ]);
+                // Custom logic to update or create based on the current date
+                $priceEntry = CardPrice::where('blueprint_id', $blueprint->id)
+                    ->where('condition', $priceData['condition'])
+                    ->where('language', $priceData['language'])
+                    ->whereDate('fetched_at', today())
+                    ->first();
 
-                Log::info('Saved/Updated price for blueprint by condition and language (from service).', [
+                $logData = [
                     'blueprint_id' => $blueprint->id,
                     'condition' => $priceData['condition'],
                     'language' => $priceData['language'],
                     'price_cents' => $priceData['price_cents'],
                     'source' => $priceData['source'],
+                    'is_foil' => $priceData['is_foil'] ?? false,
                     'was_adjusted' => isset($priceData['original_price_cents']),
                     'original_price_cents' => $priceData['original_price_cents'] ?? null,
-                ]);
+                ];
+
+                if ($priceEntry) {
+                    // Update the existing entry for today
+                    $priceEntry->update([
+                        'price_cents' => $priceData['price_cents'],
+                        'currency' => $priceData['currency'] ?? 'EUR',
+                        'is_foil' => $priceData['is_foil'] ?? false,
+                        'source' => $priceData['source'] ?? 'Default Source',
+                        'fetched_at' => $priceData['fetched_at'], // Keep updating timestamp
+                    ]);
+                    Log::info('Updated daily price for blueprint.', array_merge($logData, ['action' => 'updated']));
+                } else {
+                    // Create a new entry for today
+                    CardPrice::create([
+                        'blueprint_id' => $blueprint->id,
+                        'condition' => $priceData['condition'],
+                        'language' => $priceData['language'],
+                        'price_cents' => $priceData['price_cents'],
+                        'currency' => $priceData['currency'] ?? 'EUR',
+                        'is_foil' => $priceData['is_foil'] ?? false,
+                        'source' => $priceData['source'] ?? 'Default Source',
+                        'fetched_at' => $priceData['fetched_at'],
+                    ]);
+                    Log::info('Created new daily price for blueprint.', array_merge($logData, ['action' => 'created']));
+                }
 
                 $pricesProcessed++;
             }

@@ -52,7 +52,7 @@
         <div class="space-y-8">
 
           <!-- Portfolio Stats -->
-          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <!-- <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
               <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Portfolio Overview</h2>
             </div>
@@ -111,7 +111,352 @@
                 </div>
               </div>
             </div>
+          </div> -->
+
+          <!-- Portfolio Performance Dashboard -->
+          <div v-if="props.portfolio.user_cards && props.portfolio.user_cards.length > 0" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <!-- Header Section -->
+            <div class="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-700 px-8 py-6 border-b border-gray-200 dark:border-gray-600">
+              <div class="flex items-center justify-between mb-6">
+                <div>
+                  <h2 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Portfolio Performance</h2>
+                  <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">Track your investment performance over time</p>
+                </div>
+                <div class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Last updated: {{ new Date().toLocaleDateString() }}</span>
+                </div>
+              </div>
+              
+              <!-- Key Metrics Grid -->
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <!-- Market Value -->
+                <TooltipHelper content="The current market value of your portfolio based on the latest card prices. This represents what your collection would be worth if you sold it at current market rates." position="bottom">
+                  <div class="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Market Value</span>
+                      <div class="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                        <svg class="h-4 w-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ overallStatistics.marketValue }}</div>
+                  </div>
+                </TooltipHelper>
+                
+                <!-- Cost Basis -->
+                <TooltipHelper content="The total amount of money you invested to purchase all the cards in your portfolio. This is your initial investment before any gains or losses." position="bottom">
+                  <div class="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cost Basis</span>
+                      <div class="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                        <svg class="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ overallStatistics.costBasis }}</div>
+                  </div>
+                </TooltipHelper>
+                
+                <!-- Unrealized P&L -->
+                <TooltipHelper content="Unrealized Profit & Loss - the difference between your portfolio's current market value and what you paid for it. This represents potential gains or losses you would realize if you sold today." position="bottom">
+                  <div :class="[
+                    'bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden'
+                  ]">
+                    <div :class="[
+                      'absolute top-0 left-0 w-1 h-full',
+                      overallStatistics.unrealizedGainPositive ? 'bg-emerald-500' : 'bg-red-500'
+                    ]"></div>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unrealized P&L</span>
+                      <div :class="[
+                        'p-1.5 rounded-lg',
+                        overallStatistics.unrealizedGainPositive ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-red-100 dark:bg-red-900/30'
+                      ]">
+                        <svg :class="[
+                          'h-4 w-4',
+                          overallStatistics.unrealizedGainPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+                        ]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path v-if="overallStatistics.unrealizedGainPositive" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                          <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div :class="[
+                      'text-2xl font-bold',
+                      overallStatistics.unrealizedGainPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+                    ]">{{ overallStatistics.unrealizedGainPositive ? '+' : '-' }}{{ overallStatistics.unrealizedGain }}</div>
+                  </div>
+                </TooltipHelper>
+                
+                <!-- ROI -->
+                <TooltipHelper content="Return on Investment - the percentage gain or loss of your portfolio relative to your initial investment. It shows how well your investment is performing as a percentage of what you originally spent." position="bottom">
+                  <div :class="[
+                    'bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden'
+                  ]">
+                    <div :class="[
+                      'absolute top-0 left-0 w-1 h-full',
+                      overallStatistics.performancePositive ? 'bg-purple-500' : 'bg-orange-500'
+                    ]"></div>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">ROI</span>
+                      <div :class="[
+                        'p-1.5 rounded-lg',
+                        overallStatistics.performancePositive ? 'bg-purple-100 dark:bg-purple-900/30' : 'bg-orange-100 dark:bg-orange-900/30'
+                      ]">
+                        <svg :class="[
+                          'h-4 w-4',
+                          overallStatistics.performancePositive ? 'text-purple-600 dark:text-purple-400' : 'text-orange-600 dark:text-orange-400'
+                        ]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div :class="[
+                      'text-2xl font-bold',
+                      overallStatistics.performancePositive ? 'text-purple-600 dark:text-purple-400' : 'text-orange-600 dark:text-orange-400'
+                    ]">{{ overallStatistics.performancePositive ? '+' : '' }}{{ overallStatistics.performance }}</div>
+                  </div>
+                </TooltipHelper>
+              </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="px-8 py-6">
+              <!-- Chart Controls -->
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <!-- Metric Selector -->
+                <div class="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded-xl p-1">
+                  <button
+                    v-for="metric in metrics"
+                    :key="metric.key"
+                    :class="[
+                      'relative px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 flex items-center space-x-2',
+                      activeMetric === metric.key
+                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm border border-gray-200 dark:border-gray-500'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-600/50',
+                    ]"
+                    @click="fetchPortfolioValueHistory(activePeriod, metric.key)"
+                  >
+                    <div :class="[
+                      'w-3 h-3 rounded-full',
+                      `bg-gradient-to-r ${metric.key === 'market_value' ? 'from-green-400 to-green-600' : metric.key === 'cost_basis' ? 'from-blue-400 to-blue-600' : 'from-purple-400 to-purple-600'}`
+                    ]"></div>
+                    <span>{{ metric.label }}</span>
+                  </button>
+                </div>
+
+                <!-- Period Selector -->
+                <div class="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded-xl p-1">
+                  <button
+                    v-for="period in timePeriods"
+                    :key="period"
+                    :class="[
+                      'px-3 py-2 text-sm font-semibold rounded-lg transition-all duration-200',
+                      activePeriod === period
+                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-gray-600/50',
+                    ]"
+                    @click="fetchPortfolioValueHistory(period, activeMetric)"
+                  >
+                    {{ period === '1D' ? '1G' : period === '1W' ? '1S' : period === '1Y' ? '1A' : period }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Current Value Display -->
+              <div class="mb-6 p-6 bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-600 rounded-xl border border-gray-200 dark:border-gray-600">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Current {{ metrics.find(m => m.key === activeMetric)?.label }}
+                    </h3>
+                    <div class="text-4xl font-bold text-gray-900 dark:text-white">
+                      {{ portfolioStatistics.currentValue }}
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium mb-1">
+                      {{ activePeriod === '1D' ? 'Today' : activePeriod === '1W' ? 'This Week' : activePeriod === '1M' ? 'This Month' : activePeriod === '3M' ? 'Last 3M' : activePeriod === '1Y' ? 'This Year' : 'All Time' }}
+                    </div>
+                    <div class="flex items-center space-x-3">
+                      <div :class="['text-lg font-bold flex items-center space-x-1', portfolioStatistics.positive ? 'text-emerald-600' : 'text-red-600']">
+                        <svg :class="['h-5 w-5', portfolioStatistics.positive ? 'text-emerald-500' : 'text-red-500']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path v-if="portfolioStatistics.positive" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                          <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+                        </svg>
+                        <span>{{ portfolioStatistics.positive ? '+' : '-' }}{{ portfolioStatistics.change }}</span>
+                      </div>
+                      <div :class="['text-sm font-semibold px-2 py-1 rounded-lg', portfolioStatistics.positive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400']">
+                        {{ portfolioStatistics.positive ? '+' : '' }}{{ portfolioStatistics.percentage }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+              <!-- Chart Container -->
+              <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden">
+                <div v-if="isLoadingChart" class="h-80 flex items-center justify-center">
+                  <div class="text-center">
+                    <div class="relative">
+                      <div class="w-16 h-16 border-4 border-gray-200 dark:border-gray-700 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                      <div class="absolute inset-0 flex items-center justify-center">
+                        <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Loading Performance Data</h3>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm">Calculating portfolio metrics...</p>
+                  </div>
+                </div>
+                
+                <div v-else-if="portfolioChartData[`${activePeriod}_${activeMetric}`]?.data" class="h-80 p-4">
+                  <PriceHistoryChart
+                    :chart-data="portfolioChartData[`${activePeriod}_${activeMetric}`].data"
+                    :chart-options="{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      layout: {
+                        padding: {
+                          top: 20,
+                          right: 20,
+                          bottom: 20,
+                          left: 20
+                        }
+                      },
+                      plugins: {
+                        legend: {
+                          display: false
+                        },
+                        tooltip: {
+                          mode: 'index',
+                          intersect: false,
+                          backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                          titleColor: 'white',
+                          bodyColor: 'white',
+                          borderColor: portfolioChartData[`${activePeriod}_${activeMetric}`]?.data?.datasets[0]?.borderColor || 'rgba(34, 197, 94, 1)',
+                          borderWidth: 2,
+                          cornerRadius: 12,
+                          displayColors: false,
+                          titleFont: {
+                            size: 14,
+                            weight: 'bold'
+                          },
+                          bodyFont: {
+                            size: 13
+                          },
+                          padding: 12,
+                          callbacks: {
+                            title: function(context: any) {
+                              return context[0].label;
+                            },
+                            label: function(context: any) {
+                              if (activeMetric === 'performance') {
+                                return context.parsed.y.toFixed(1) + '%';
+                              }
+                              return '€' + context.parsed.y.toLocaleString('it-IT', { minimumFractionDigits: 2 });
+                            }
+                          }
+                        }
+                      },
+                      scales: {
+                        x: {
+                          display: true,
+                          grid: {
+                            display: false
+                          },
+                          ticks: {
+                            color: 'rgba(156, 163, 175, 0.8)',
+                            font: {
+                              size: 12,
+                              weight: '500'
+                            },
+                            maxTicksLimit: 8
+                          },
+                          border: {
+                            display: false
+                          }
+                        },
+                        y: {
+                          display: true,
+                          position: 'right',
+                          grid: {
+                            color: 'rgba(229, 231, 235, 0.3)',
+                            drawBorder: false
+                          },
+                          ticks: {
+                           color: 'rgba(156, 163, 175, 0.8)',
+                           font: {
+                             size: 12,
+                             weight: '500'
+                           },
+                           callback: portfolioChartData[`${activePeriod}_${activeMetric}`]?.data?.yAxisCallback || function(value: any) {
+                             if (value >= 1000) {
+                               return '€' + (value / 1000).toFixed(1) + 'K';
+                             }
+                             return '€' + value.toFixed(0);
+                           },
+                           maxTicksLimit: 8
+                         },
+                          border: {
+                            display: false
+                          }
+                        }
+                      },
+                      elements: {
+                        line: {
+                          tension: 0.3,
+                          borderWidth: 3
+                        },
+                        point: {
+                          radius: 0,
+                          hoverRadius: 8,
+                          hoverBorderWidth: 3,
+                          hoverBackgroundColor: 'white'
+                        }
+                      },
+                      interaction: {
+                        intersect: false,
+                        mode: 'index'
+                      }
+                    }"
+                  />
+                </div>
+                
+                <div v-else-if="portfolioChartData[`${activePeriod}_${activeMetric}`]?.error" class="h-80 flex items-center justify-center">
+                  <div class="text-center">
+                    <svg class="h-16 w-16 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 class="text-lg font-semibold text-red-600 mb-2">Error Loading Data</h3>
+                    <p class="text-red-500 text-sm">{{ portfolioChartData[`${activePeriod}_${activeMetric}`].error }}</p>
+                  </div>
+                </div>
+
+                <div v-else class="h-80 flex items-center justify-center">
+                  <div class="text-center">
+                    <svg class="h-16 w-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">No Data Available</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm max-w-md mx-auto">
+                      Portfolio performance history will appear here once you have cards with price data for the selected time period.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+          <!-- End Portfolio Performance Dashboard -->
 
           <!-- Cards Section -->
           <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -390,7 +735,6 @@
           </div>
         </div>
       </div>
-    </div>
 
     <AddCardModal
       v-if="showAddCardModal"
@@ -422,8 +766,10 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import AddCardModal from '@/Components/AddCardModal.vue';
 import EditCardModal from '@/Components/EditCardModal.vue';
 import RemoveCardModal from '@/Components/RemoveCardModal.vue';
+import PriceHistoryChart from '@/Components/PriceHistoryChart.vue';
+import TooltipHelper from '@/Components/TooltipHelper.vue';
 import { Head, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, reactive } from 'vue';
 import {
   usePortfolioStore,
   Portfolio as PortfolioInterface,
@@ -432,6 +778,7 @@ import {
 } from '@/stores/portfolioStore';
 import { useCurrency } from '@/composables/useCurrency';
 import { useToast } from '@/composables/useToast';
+import axios from 'axios';
 
 type UserCardData = UserCardInterface;
 
@@ -466,6 +813,18 @@ const showRemoveCardModal = ref(false);
 const cardToEdit = ref<UserCardData | null>(null);
 const cardGroupToRemove = ref<CardGroup | null>(null);
 const isLoading = ref(false);
+
+// Portfolio value chart state
+const portfolioChartData = reactive<Record<string, any>>({});
+const activePeriod = ref('1M'); // Default period
+const activeMetric = ref('market_value'); // Default metric
+const timePeriods = ['1D', '1W', '1M', '3M', '1Y', 'MAX'];
+const metrics = [
+  { key: 'market_value', label: 'Market Value', color: 'rgba(34, 197, 94, 1)', bgColor: 'rgba(34, 197, 94, 0.1)' },
+  { key: 'cost_basis', label: 'Cost Basis', color: 'rgba(59, 130, 246, 1)', bgColor: 'rgba(59, 130, 246, 0.1)' },
+  { key: 'performance', label: 'Performance %', color: 'rgba(168, 85, 247, 1)', bgColor: 'rgba(168, 85, 247, 0.1)' }
+];
+const isLoadingChart = ref(false);
 
 const openAddCardModal = () => {
   showAddCardModal.value = true;
@@ -627,6 +986,98 @@ const getFirstCardFromGroup = (group: CardGroup): UserCardData => {
   return representativeCard;
 };
 
+// Portfolio value history functions
+const fetchPortfolioValueHistory = async (period: string = '1M', metric: string = 'market_value') => {
+  const cacheKey = `${period}_${metric}`;
+  
+  // Only prevent re-fetching if we have data for this specific period+metric combination
+  if (portfolioChartData[cacheKey]?.data && activePeriod.value === period && activeMetric.value === metric) {
+    return;
+  }
+
+  // Set loading state for this period+metric combination
+  portfolioChartData[cacheKey] = { isLoading: true, data: null, error: null };
+  activePeriod.value = period;
+  activeMetric.value = metric;
+  isLoadingChart.value = true;
+
+  try {
+    const response = await axios.get(
+      route('api.portfolios.value-history', {
+        portfolio: props.portfolio.id,
+        period: period,
+        metric: metric,
+      })
+    );
+    const history = response.data;
+
+    if (history.length === 0) {
+      portfolioChartData[cacheKey].data = null;
+    } else {
+      const currentMetric = metrics.find(m => m.key === metric);
+      const labels = history.map((p: any) => formatDateShort(p.fetched_at));
+      
+      // Handle different data formats based on metric
+      let data, label, yAxisCallback;
+      
+      if (metric === 'performance') {
+        data = history.map((p: any) => p.performance_percentage);
+        label = 'Performance (%)';
+        yAxisCallback = (value: any) => value.toFixed(1) + '%';
+      } else if (metric === 'cost_basis') {
+        data = history.map((p: any) => p.cost_basis_cents / 100);
+        label = 'Cost Basis (EUR)';
+        yAxisCallback = (value: any) => '€' + value.toFixed(0);
+      } else {
+        data = history.map((p: any) => p.market_value_cents / 100);
+        label = 'Market Value (EUR)';
+        yAxisCallback = (value: any) => {
+          if (value >= 1000) {
+            return '€' + (value / 1000).toFixed(1) + 'K';
+          }
+          return '€' + value.toFixed(0);
+        };
+      }
+
+      portfolioChartData[cacheKey].data = {
+        labels,
+        datasets: [
+          {
+            label: label,
+            backgroundColor: currentMetric?.bgColor || 'rgba(34, 197, 94, 0.1)',
+            borderColor: currentMetric?.color || 'rgba(34, 197, 94, 1)',
+            data,
+            tension: 0.1,
+            fill: true,
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 6,
+            pointHoverBorderWidth: 2,
+            pointHoverBorderColor: currentMetric?.color || 'rgba(34, 197, 94, 1)',
+            pointHoverBackgroundColor: 'white',
+          },
+        ],
+        yAxisCallback, // Store the callback for use in chart options
+      };
+    }
+  } catch (err) {
+    console.error(`Failed to fetch portfolio value history for ${period} (${metric}):`, err);
+    portfolioChartData[cacheKey].error = 'Failed to load chart data.';
+  } finally {
+    portfolioChartData[cacheKey].isLoading = false;
+    isLoadingChart.value = false;
+  }
+};
+
+const formatDateShort = (dateString: string) => {
+  if (!dateString) return 'N/A';
+  return new Date(dateString).toLocaleDateString('it-IT', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+};
+
 // formatCurrency now imported from useCurrency() composable
 
 const totalEstimatedValue = computed(() => {
@@ -691,6 +1142,87 @@ const groupedCards = computed(() => {
   });
 
   return Object.values(grouped);
+});
+
+// Portfolio value statistics
+const portfolioStatistics = computed(() => {
+  const cacheKey = `${activePeriod.value}_${activeMetric.value}`;
+  const historyData = portfolioChartData[cacheKey]?.data?.datasets[0]?.data;
+
+  if (!historyData || historyData.length < 1) {
+    // Fallback to current values based on active metric
+    if (activeMetric.value === 'performance') {
+      const gain = totalEstimatedValue.value - totalPurchaseCost.value;
+      const percentage = totalPurchaseCost.value > 0 ? (gain / totalPurchaseCost.value) * 100 : 0;
+      return {
+        currentValue: `${percentage.toFixed(1)}%`,
+        change: 'N/A',
+        percentage: 'N/A',
+        positive: percentage >= 0,
+      };
+    } else if (activeMetric.value === 'cost_basis') {
+      return {
+        currentValue: formatCurrency(totalPurchaseCost.value),
+        change: 'N/A',
+        percentage: 'N/A',
+        positive: true,
+      };
+    } else {
+      return {
+        currentValue: formatCurrency(totalEstimatedValue.value),
+        change: 'N/A',
+        percentage: 'N/A',
+        positive: true,
+      };
+    }
+  }
+
+  const currentValue = historyData[historyData.length - 1];
+  const previousValue = historyData[0];
+  
+  const change = currentValue - previousValue;
+  const percentage = previousValue !== 0 ? (change / previousValue) * 100 : 0;
+
+  // Format values based on metric type
+  if (activeMetric.value === 'performance') {
+    return {
+      currentValue: `${currentValue.toFixed(1)}%`,
+      change: `${Math.abs(change).toFixed(1)}%`,
+      percentage: `${percentage.toFixed(1)}%`,
+      positive: change >= 0,
+    };
+  } else {
+    return {
+      currentValue: formatCurrency(currentValue),
+      change: formatCurrency(Math.abs(change)),
+      percentage: `${percentage.toFixed(1)}%`,
+      positive: change >= 0,
+    };
+  }
+});
+
+// Overall portfolio statistics for header
+const overallStatistics = computed(() => {
+  const marketValue = totalEstimatedValue.value;
+  const costBasis = totalPurchaseCost.value;
+  const unrealizedGain = marketValue - costBasis;
+  const performance = costBasis > 0 ? (unrealizedGain / costBasis) * 100 : 0;
+
+  return {
+    marketValue: formatCurrency(marketValue),
+    costBasis: formatCurrency(costBasis),
+    unrealizedGain: formatCurrency(Math.abs(unrealizedGain)),
+    unrealizedGainPositive: unrealizedGain >= 0,
+    performance: `${performance.toFixed(1)}%`,
+    performancePositive: performance >= 0,
+  };
+});
+
+// Initialize chart on mount
+onMounted(() => {
+  if (props.portfolio.user_cards && props.portfolio.user_cards.length > 0) {
+    fetchPortfolioValueHistory(activePeriod.value, activeMetric.value);
+  }
 });
 </script>
 

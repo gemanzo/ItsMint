@@ -219,6 +219,36 @@ class Blueprint extends Model
     }
 
     /**
+     * Get the full price history from all language variants.
+     */
+    public function getPriceHistoryAttribute()
+    {
+        $allVersions = $this->allLanguageVersions()->with('cardPrices')->get();
+        $allPrices = collect();
+
+        foreach ($allVersions as $blueprint) {
+            $allPrices = $allPrices->merge($blueprint->cardPrices);
+        }
+
+        return $allPrices->sortBy('fetched_at')->values();
+    }
+
+    /**
+     * Get the list of available languages for this card's prices.
+     * This returns languages that have actual price data in the CardPrice table.
+     */
+    public function getAvailableLanguagesAttribute()
+    {
+        return $this->cardPrices()
+            ->select('language')
+            ->distinct()
+            ->pluck('language')
+            ->filter() // Remove any null/empty languages
+            ->sort()
+            ->values();
+    }
+
+    /**
      * Get aggregated prices from all language variants.
      */
     public function getAllLanguagesPrices(): array
