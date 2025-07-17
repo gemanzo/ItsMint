@@ -6,22 +6,26 @@
     <div
       class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"
     >
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
         <div
-          class="flex flex-col sm:flex-row sm:items-center sm:justify-between"
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0"
         >
           <div>
-            <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">
+            <h1
+              class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white"
+            >
               Portfolios
             </h1>
-            <p class="text-gray-500 dark:text-gray-400 mt-1 text-sm">
+            <p class="text-gray-500 dark:text-gray-400 mt-1 text-xs sm:text-sm">
               {{ portfolios.length }}
               {{ portfolios.length === 1 ? 'portfolio' : 'portfolios' }} •
               {{ totalCards }} total cards •
               {{ formatCurrency(totalValue) }} total value
             </p>
           </div>
-          <div class="mt-3 sm:mt-0 flex items-center space-x-2">
+          <div
+            class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2"
+          >
             <div
               class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-button p-0.5"
             >
@@ -31,11 +35,12 @@
                     ? 'bg-white dark:bg-gray-600 shadow-sm'
                     : ''
                 "
-                class="p-1.5 rounded-button transition-all duration-150"
+                class="p-2 rounded-button transition-all duration-150 flex-1 sm:flex-none"
+                aria-label="Grid view"
                 @click="viewMode = 'grid'"
               >
                 <svg
-                  class="h-4 w-4 text-gray-600 dark:text-gray-300"
+                  class="h-4 w-4 text-gray-600 dark:text-gray-300 mx-auto"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -54,11 +59,12 @@
                     ? 'bg-white dark:bg-gray-600 shadow-sm'
                     : ''
                 "
-                class="p-1.5 rounded-button transition-all duration-150"
+                class="p-2 rounded-button transition-all duration-150 flex-1 sm:flex-none"
+                aria-label="List view"
                 @click="viewMode = 'list'"
               >
                 <svg
-                  class="h-4 w-4 text-gray-600 dark:text-gray-300"
+                  class="h-4 w-4 text-gray-600 dark:text-gray-300 mx-auto"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -73,7 +79,7 @@
               </button>
             </div>
             <button
-              class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-button transition-colors flex items-center space-x-2"
+              class="px-3 sm:px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-button transition-colors flex items-center justify-center space-x-2 text-sm"
               @click="showCreatePortfolioModal = true"
             >
               <svg
@@ -89,7 +95,8 @@
                   d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                 />
               </svg>
-              <span class="text-sm">Create Portfolio</span>
+              <span class="hidden sm:inline">Create Portfolio</span>
+              <span class="sm:hidden">Create</span>
             </button>
           </div>
         </div>
@@ -97,45 +104,53 @@
         <!-- Quick Stats Bar -->
         <div
           v-if="portfolios.length > 0"
-          class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3"
+          class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3"
         >
           <div
-            class="bg-white dark:bg-gray-800 rounded-card p-4 border border-gray-200 dark:border-gray-700 shadow-card"
+            class="bg-white dark:bg-gray-800 rounded-card p-3 sm:p-4 border border-gray-200 dark:border-gray-700 shadow-card"
           >
-            <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">
+            <p class="text-gray-600 dark:text-gray-400 text-xs font-medium">
               Total Portfolios
             </p>
-            <p class="text-xl font-bold text-gray-900 dark:text-white">
+            <p
+              class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
+            >
               {{ portfolios.length }}
             </p>
           </div>
           <div
-            class="bg-white dark:bg-gray-800 rounded-card p-4 border border-gray-200 dark:border-gray-700 shadow-card"
+            class="bg-white dark:bg-gray-800 rounded-card p-3 sm:p-4 border border-gray-200 dark:border-gray-700 shadow-card"
           >
-            <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">
+            <p class="text-gray-600 dark:text-gray-400 text-xs font-medium">
               Total Cards
             </p>
-            <p class="text-xl font-bold text-gray-900 dark:text-white">
+            <p
+              class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
+            >
               {{ totalCards }}
             </p>
           </div>
           <div
-            class="bg-white dark:bg-gray-800 rounded-card p-4 border border-gray-200 dark:border-gray-700 shadow-card"
+            class="bg-white dark:bg-gray-800 rounded-card p-3 sm:p-4 border border-gray-200 dark:border-gray-700 shadow-card"
           >
-            <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">
+            <p class="text-gray-600 dark:text-gray-400 text-xs font-medium">
               Avg per Portfolio
             </p>
-            <p class="text-xl font-bold text-gray-900 dark:text-white">
+            <p
+              class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
+            >
               {{ Math.round(totalCards / portfolios.length) }}
             </p>
           </div>
           <div
-            class="bg-white dark:bg-gray-800 rounded-card p-4 border border-gray-200 dark:border-gray-700 shadow-card"
+            class="bg-white dark:bg-gray-800 rounded-card p-3 sm:p-4 border border-gray-200 dark:border-gray-700 shadow-card"
           >
-            <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">
+            <p class="text-gray-600 dark:text-gray-400 text-xs font-medium">
               Total Value
             </p>
-            <p class="text-xl font-bold text-gray-900 dark:text-white">
+            <p
+              class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
+            >
               {{ formatCurrency(totalValue) }}
             </p>
           </div>
@@ -143,12 +158,12 @@
       </div>
     </div>
 
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-4 sm:py-8">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <!-- Search and Filters -->
-        <div v-if="portfolios.length > 0" class="mb-6">
+        <div v-if="portfolios.length > 0" class="mb-4 sm:mb-6">
           <div
-            class="bg-white dark:bg-gray-800 rounded-card p-4 shadow-card border border-gray-200 dark:border-gray-700"
+            class="bg-white dark:bg-gray-800 rounded-card p-3 sm:p-4 shadow-card border border-gray-200 dark:border-gray-700"
           >
             <div
               class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0 sm:space-x-4"
@@ -171,13 +186,13 @@
                   v-model="searchQuery"
                   type="text"
                   placeholder="Search portfolios..."
-                  class="w-full px-4 py-2 pl-10 pr-4 text-sm border border-gray-300 dark:border-gray-600 rounded-card bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-gray-500 focus:border-gray-500 transition-colors"
+                  class="w-full px-4 py-3 pl-10 pr-4 text-sm border border-gray-300 dark:border-gray-600 rounded-card bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-gray-500 focus:border-gray-500 transition-colors"
                 />
               </div>
               <div class="flex items-center space-x-3">
                 <select
                   v-model="sortBy"
-                  class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-gray-500 transition-colors"
+                  class="w-full sm:w-auto px-3 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-button bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-gray-500 transition-colors"
                 >
                   <option value="name">Sort by Name</option>
                   <option value="cards">Sort by Card Count</option>
@@ -194,86 +209,45 @@
           <!-- Grid View -->
           <div
             v-if="viewMode === 'grid'"
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
           >
             <div
               v-for="portfolio in filteredPortfolios"
               :key="portfolio.id"
-              class="group bg-white dark:bg-gray-800 rounded-card p-4 shadow-card border border-gray-200 dark:border-gray-700 hover:shadow-card-hover transition-shadow duration-200 cursor-pointer"
-              @click="$inertia.visit(route('portfolios.show', portfolio.id))"
+              class="bg-white dark:bg-gray-800 rounded-card p-4 sm:p-6 shadow-card border border-gray-200 dark:border-gray-700 hover:shadow-card-hover transition-all duration-200 group"
             >
               <!-- Portfolio Header -->
-              <div class="flex items-start justify-between mb-3">
-                <div class="flex-1">
-                  <h3
-                    class="text-lg font-semibold text-gray-900 dark:text-white transition-colors"
+              <div class="flex items-start justify-between mb-3 sm:mb-4">
+                <div class="flex items-center space-x-3 flex-1 min-w-0">
+                  <div
+                    class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0"
                   >
-                    {{ portfolio.name }}
-                  </h3>
-                  <p
-                    v-if="portfolio.description"
-                    class="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2"
-                  >
-                    {{ portfolio.description }}
-                  </p>
+                    <span class="text-white font-bold text-sm sm:text-base">
+                      {{ portfolio.name.charAt(0).toUpperCase() }}
+                    </span>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <Link
+                      :href="route('portfolios.show', portfolio.id)"
+                      class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors block truncate"
+                    >
+                      {{ portfolio.name }}
+                    </Link>
+                    <p
+                      class="text-xs sm:text-sm text-gray-500 dark:text-gray-400"
+                    >
+                      Created {{ formatDate(portfolio.created_at) }}
+                    </p>
+                  </div>
                 </div>
-                <div
-                  class="h-8 w-8 bg-gray-100 dark:bg-gray-700 rounded-card flex items-center justify-center ml-3"
-                >
-                  <svg
-                    class="h-4 w-4 text-gray-600 dark:text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                    />
-                  </svg>
-                </div>
-              </div>
-
-              <!-- Portfolio Stats -->
-              <div class="grid grid-cols-2 gap-3 mb-3">
-                <div class="bg-gray-50 dark:bg-gray-700/50 rounded-card p-3">
-                  <p
-                    class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide"
-                  >
-                    Cards
-                  </p>
-                  <p class="text-lg font-bold text-gray-900 dark:text-white">
-                    {{ portfolio.user_cards_count || 0 }}
-                  </p>
-                </div>
-                <div class="bg-gray-50 dark:bg-gray-700/50 rounded-card p-3">
-                  <p
-                    class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide"
-                  >
-                    Est. Value
-                  </p>
-                  <p class="text-lg font-bold text-gray-900 dark:text-white">
-                    {{ formatCurrency(calculatePortfolioValue(portfolio)) }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Portfolio Actions -->
-              <div
-                class="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700"
-              >
-                <span class="text-xs text-gray-500 dark:text-gray-400">
-                  Created {{ formatDate(portfolio.created_at) }}
-                </span>
-                <div class="flex items-center space-x-1">
+                <div class="flex items-center space-x-1 sm:space-x-2">
                   <button
-                    class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                    @click.stop="editPortfolio(portfolio)"
+                    class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    aria-label="Edit portfolio"
+                    @click="editPortfolio(portfolio)"
                   >
                     <svg
-                      class="h-4 w-4"
+                      class="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -287,11 +261,12 @@
                     </svg>
                   </button>
                   <button
-                    class="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                    @click.stop="deletePortfolio(portfolio)"
+                    class="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    aria-label="Delete portfolio"
+                    @click="deletePortfolio(portfolio)"
                   >
                     <svg
-                      class="h-4 w-4"
+                      class="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -306,78 +281,124 @@
                   </button>
                 </div>
               </div>
+
+              <!-- Portfolio Stats -->
+              <div class="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
+                <div
+                  class="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                >
+                  <p
+                    class="text-xs text-gray-600 dark:text-gray-400 font-medium"
+                  >
+                    Cards
+                  </p>
+                  <p
+                    class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
+                  >
+                    {{ portfolio.cards_count || 0 }}
+                  </p>
+                </div>
+                <div
+                  class="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                >
+                  <p
+                    class="text-xs text-gray-600 dark:text-gray-400 font-medium"
+                  >
+                    Value
+                  </p>
+                  <p
+                    class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
+                  >
+                    {{ formatCurrency(portfolio.total_value || 0) }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Portfolio Actions -->
+              <div
+                class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2"
+              >
+                <Link
+                  :href="route('portfolios.show', portfolio.id)"
+                  class="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-button transition-colors text-center"
+                >
+                  View Details
+                </Link>
+                <button
+                  class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-button transition-colors"
+                  @click="openAddCardModal(portfolio)"
+                >
+                  Add Cards
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- List View -->
-          <div v-else class="space-y-3">
-            <div
-              v-for="portfolio in filteredPortfolios"
-              :key="portfolio.id"
-              class="bg-white dark:bg-gray-800 rounded-card p-4 shadow-card border border-gray-200 dark:border-gray-700 hover:shadow-card-hover transition-shadow duration-200 cursor-pointer"
-              @click="$inertia.visit(route('portfolios.show', portfolio.id))"
-            >
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4 flex-1">
-                  <div
-                    class="h-10 w-10 bg-gray-100 dark:bg-gray-700 rounded-card flex items-center justify-center"
-                  >
-                    <svg
-                      class="h-5 w-5 text-gray-600 dark:text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                      />
-                    </svg>
-                  </div>
-                  <div class="flex-1">
-                    <h3
-                      class="text-base font-semibold text-gray-900 dark:text-white"
-                    >
-                      {{ portfolio.name }}
-                    </h3>
-                    <p
-                      v-if="portfolio.description"
-                      class="text-sm text-gray-600 dark:text-gray-400"
-                    >
-                      {{ portfolio.description }}
-                    </p>
-                  </div>
-                </div>
+          <div
+            v-else
+            class="bg-white dark:bg-gray-800 rounded-card border border-gray-200 dark:border-gray-700 overflow-hidden"
+          >
+            <div class="divide-y divide-gray-200 dark:divide-gray-700">
+              <div
+                v-for="portfolio in filteredPortfolios"
+                :key="portfolio.id"
+                class="p-3 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+              >
                 <div
-                  class="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-400"
+                  class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0"
                 >
-                  <div class="text-center">
-                    <p class="font-semibold text-gray-900 dark:text-white">
-                      {{ portfolio.user_cards_count || 0 }}
-                    </p>
-                    <p class="text-xs">Cards</p>
+                  <div
+                    class="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0"
+                  >
+                    <div
+                      class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0"
+                    >
+                      <span class="text-white font-bold text-sm sm:text-base">
+                        {{ portfolio.name.charAt(0).toUpperCase() }}
+                      </span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <Link
+                        :href="route('portfolios.show', portfolio.id)"
+                        class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors block truncate"
+                      >
+                        {{ portfolio.name }}
+                      </Link>
+                      <div
+                        class="flex flex-wrap items-center space-x-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1"
+                      >
+                        <span>{{ portfolio.cards_count || 0 }} cards</span>
+                        <span>{{
+                          formatCurrency(portfolio.total_value || 0)
+                        }}</span>
+                        <span
+                          >Created {{ formatDate(portfolio.created_at) }}</span
+                        >
+                      </div>
+                    </div>
                   </div>
-                  <div class="text-center">
-                    <p class="font-semibold text-gray-900 dark:text-white">
-                      {{ formatCurrency(calculatePortfolioValue(portfolio)) }}
-                    </p>
-                    <p class="text-xs">Value</p>
-                  </div>
-                  <div class="text-center">
-                    <p class="font-semibold text-gray-900 dark:text-white">
-                      {{ formatDate(portfolio.created_at) }}
-                    </p>
-                    <p class="text-xs">Created</p>
-                  </div>
-                  <div class="flex items-center space-x-1">
+
+                  <div class="flex items-center space-x-2 sm:space-x-3">
+                    <Link
+                      :href="route('portfolios.show', portfolio.id)"
+                      class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-button transition-colors"
+                    >
+                      View
+                    </Link>
                     <button
-                      class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                      @click.stop="editPortfolio(portfolio)"
+                      class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-button transition-colors"
+                      @click="openAddCardModal(portfolio)"
+                    >
+                      Add Cards
+                    </button>
+                    <button
+                      class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      aria-label="Edit portfolio"
+                      @click="editPortfolio(portfolio)"
                     >
                       <svg
-                        class="h-4 w-4"
+                        class="w-4 h-4"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -391,11 +412,12 @@
                       </svg>
                     </button>
                     <button
-                      class="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                      @click.stop="deletePortfolio(portfolio)"
+                      class="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      aria-label="Delete portfolio"
+                      @click="deletePortfolio(portfolio)"
                     >
                       <svg
-                        class="h-4 w-4"
+                        class="w-4 h-4"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -416,15 +438,18 @@
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="portfolios.length === 0" class="text-center py-12">
+        <div
+          v-else-if="portfolios.length === 0"
+          class="text-center py-8 sm:py-12"
+        >
           <div
-            class="bg-white dark:bg-gray-800 rounded-card p-8 shadow-card border border-gray-200 dark:border-gray-700"
+            class="bg-white dark:bg-gray-800 rounded-card p-6 sm:p-8 border border-gray-200 dark:border-gray-700"
           >
             <svg
-              class="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4"
+              class="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400"
               fill="none"
-              stroke="currentColor"
               viewBox="0 0 24 24"
+              stroke="currentColor"
             >
               <path
                 stroke-linecap="round"
@@ -434,37 +459,52 @@
               />
             </svg>
             <h3
-              class="text-xl font-semibold text-gray-900 dark:text-white mb-2"
+              class="mt-2 text-lg sm:text-xl font-medium text-gray-900 dark:text-white"
             >
-              No Portfolios Yet
+              No portfolios yet
             </h3>
-            <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-              Start building your One Piece TCG collection by creating your
-              first portfolio. Organize your cards, track values, and monitor
-              your collection's performance.
-            </p>
-            <button
-              class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-button transition-colors"
-              @click="showCreatePortfolioModal = true"
+            <p
+              class="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-400"
             >
-              Create Your First Portfolio
-            </button>
+              Get started by creating your first portfolio to organize your card
+              collection.
+            </p>
+            <div class="mt-6">
+              <button
+                type="button"
+                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                @click="showCreatePortfolioModal = true"
+              >
+                <svg
+                  class="-ml-1 mr-2 h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+                Create Portfolio
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- No Search Results -->
-        <div
-          v-else-if="searchQuery && filteredPortfolios.length === 0"
-          class="text-center py-12"
-        >
+        <div v-else class="text-center py-8 sm:py-12">
           <div
-            class="bg-white dark:bg-gray-800 rounded-card p-8 shadow-card border border-gray-200 dark:border-gray-700"
+            class="bg-white dark:bg-gray-800 rounded-card p-6 sm:p-8 border border-gray-200 dark:border-gray-700"
           >
             <svg
-              class="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4"
+              class="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400"
               fill="none"
-              stroke="currentColor"
               viewBox="0 0 24 24"
+              stroke="currentColor"
             >
               <path
                 stroke-linecap="round"
@@ -474,43 +514,57 @@
               />
             </svg>
             <h3
-              class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+              class="mt-2 text-base sm:text-lg font-medium text-gray-900 dark:text-white"
             >
               No portfolios found
             </h3>
-            <p class="text-gray-600 dark:text-gray-400 mb-4">
-              Try adjusting your search terms or create a new portfolio.
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Try adjusting your search or filters to find what you're looking
+              for.
             </p>
-            <button
-              class="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-button transition-colors"
-              @click="searchQuery = ''"
-            >
-              Clear Search
-            </button>
+            <div class="mt-4">
+              <button
+                type="button"
+                class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium"
+                @click="searchQuery = ''"
+              >
+                Clear search
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Modals -->
     <CreatePortfolioModal
       :is-open="showCreatePortfolioModal"
-      @close="showCreatePortfolioModal = false"
-      @created="handlePortfolioCreated"
+      @close="closeCreatePortfolioModal"
+      @portfolio-created="handlePortfolioCreated"
     />
 
     <EditPortfolioModal
-      :show="showEditPortfolioModal"
+      v-if="portfolioToEdit"
+      :is-open="showEditPortfolioModal"
       :portfolio="portfolioToEdit"
       @close="closeEditPortfolioModal"
       @portfolio-updated="handlePortfolioUpdated"
     />
 
     <DeletePortfolioModal
-      :show="showConfirmDeleteModal"
-      :portfolio-name="portfolioToDelete?.name || ''"
-      :portfolio-id="portfolioToDelete?.id || 0"
-      @close="showConfirmDeleteModal = false"
-      @deleted="handlePortfolioDeleted"
+      v-if="portfolioToDelete"
+      :is-open="showDeletePortfolioModal"
+      :portfolio="portfolioToDelete"
+      @close="closeDeletePortfolioModal"
+      @portfolio-deleted="handlePortfolioDeleted"
+    />
+
+    <AddCardModal
+      v-if="targetPortfolio"
+      :is-open="showAddCardModal"
+      :portfolio-id="targetPortfolio.id"
+      @close="closeAddCardModal"
+      @card-added="handleCardAdded"
     />
   </AuthenticatedLayout>
 </template>
@@ -522,6 +576,8 @@ import { ref, computed } from 'vue';
 import CreatePortfolioModal from '@/Components/CreatePortfolioModal.vue';
 import EditPortfolioModal from '@/Components/EditPortfolioModal.vue';
 import DeletePortfolioModal from '@/Components/DeletePortfolioModal.vue';
+import AddCardModal from '@/Components/AddCardModal.vue';
+import { Link } from '@inertiajs/vue3';
 import { usePortfolioStore } from '@/stores/portfolioStore';
 import { useToast } from '@/composables/useToast';
 
@@ -532,6 +588,8 @@ interface PortfolioData {
   user_cards_count: number;
   created_at: string;
   total_value_cents: number;
+  cards_count?: number;
+  total_value?: number;
 }
 
 const props = defineProps<{
@@ -550,6 +608,8 @@ const searchQuery = ref('');
 const sortBy = ref('name');
 const showConfirmDeleteModal = ref(false);
 const portfolioToDelete = ref<PortfolioData | null>(null);
+const showAddCardModal = ref(false);
+const targetPortfolio = ref<PortfolioData | null>(null);
 
 // Computed properties
 const totalCards = computed(() => {
@@ -666,6 +726,22 @@ const handlePortfolioUpdated = () => {
 const closeEditPortfolioModal = () => {
   showEditPortfolioModal.value = false;
   portfolioToEdit.value = null;
+};
+
+const openAddCardModal = (portfolio: PortfolioData) => {
+  targetPortfolio.value = portfolio;
+  showAddCardModal.value = true;
+};
+
+const closeAddCardModal = () => {
+  showAddCardModal.value = false;
+  targetPortfolio.value = null;
+};
+
+const handleCardAdded = () => {
+  showAddCardModal.value = false;
+  targetPortfolio.value = null;
+  router.reload({ only: ['portfolios'] });
 };
 </script>
 
