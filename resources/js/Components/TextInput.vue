@@ -71,7 +71,7 @@ defineExpose({ focus: () => input.value?.focus() });
     :class="inputClasses"
     :type="type"
     :value="modelValue"
-    @input="$emit('update:modelValue', $event.target.value)"
     v-bind="$attrs"
+    @input="$emit('update:modelValue', $event.target.value)"
   />
 </template>

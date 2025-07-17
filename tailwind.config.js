@@ -16,7 +16,7 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       screens: {
-        'xs': '475px',
+        xs: '475px',
         '3xl': '1920px',
       },
       colors: {
@@ -41,30 +41,32 @@ export default {
         card: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
         'card-hover':
           '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        'touch': '0 2px 8px 0 rgba(0, 0, 0, 0.12)',
+        touch: '0 2px 8px 0 rgba(0, 0, 0, 0.12)',
       },
       spacing: {
         'safe-bottom': 'env(safe-area-inset-bottom)',
         'safe-top': 'env(safe-area-inset-top)',
         'safe-left': 'env(safe-area-inset-left)',
         'safe-right': 'env(safe-area-inset-right)',
-        '18': '4.5rem',
-        '88': '22rem',
-        '128': '32rem',
+        18: '4.5rem',
+        88: '22rem',
+        128: '32rem',
       },
       minHeight: {
-        'touch': '44px',
-        'screen-safe': 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
+        touch: '44px',
+        'screen-safe':
+          'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
       },
       maxHeight: {
-        'screen-safe': 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
+        'screen-safe':
+          'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
       },
       fontSize: {
-        'xs': ['0.75rem', { lineHeight: '1rem' }],
-        'sm': ['0.875rem', { lineHeight: '1.25rem' }],
-        'base': ['1rem', { lineHeight: '1.5rem' }],
-        'lg': ['1.125rem', { lineHeight: '1.75rem' }],
-        'xl': ['1.25rem', { lineHeight: '1.75rem' }],
+        xs: ['0.75rem', { lineHeight: '1rem' }],
+        sm: ['0.875rem', { lineHeight: '1.25rem' }],
+        base: ['1rem', { lineHeight: '1.5rem' }],
+        lg: ['1.125rem', { lineHeight: '1.75rem' }],
+        xl: ['1.25rem', { lineHeight: '1.75rem' }],
         '2xl': ['1.5rem', { lineHeight: '2rem' }],
       },
       animation: {
@@ -91,7 +93,7 @@ export default {
 
   plugins: [
     forms,
-    function({ addUtilities }) {
+    function ({ addUtilities }) {
       const newUtilities = {
         '.touch-target': {
           minHeight: '44px',
@@ -119,8 +121,8 @@ export default {
           transform: 'translate3d(0, 0, 0)',
           backfaceVisibility: 'hidden',
         },
-      }
-      addUtilities(newUtilities)
-    }
+      };
+      addUtilities(newUtilities);
+    },
   ],
 };

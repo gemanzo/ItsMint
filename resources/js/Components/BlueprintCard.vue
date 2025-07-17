@@ -13,11 +13,21 @@
         <!-- Add to Portfolio FAB for mobile -->
         <button
           class="absolute bottom-2 right-2 w-8 h-8 sm:w-10 sm:h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center opacity-0 group-hover:opacity-100 sm:opacity-100 transition-all duration-200 touch-target"
-          @click.prevent="handleAddToPortfolio"
           aria-label="Add to portfolio"
+          @click.prevent="handleAddToPortfolio"
         >
-          <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          <svg
+            class="w-4 h-4 sm:w-5 sm:h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
           </svg>
         </button>
       </div>
@@ -52,20 +62,31 @@
         </div>
 
         <!-- Price Section -->
-        <div
-          class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700"
-        >
-          <div v-if="blueprint.latest_price" class="flex items-center justify-between">
+        <div class="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+          <div
+            v-if="blueprint.latest_price"
+            class="flex items-center justify-between"
+          >
             <div class="flex-1 min-w-0">
-              <p class="text-sm sm:text-base font-bold text-green-600 dark:text-green-400 truncate">
+              <p
+                class="text-sm sm:text-base font-bold text-green-600 dark:text-green-400 truncate"
+              >
                 €{{ formatPrice(blueprint.latest_price.price_cents) }}
               </p>
-              <div class="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              <div
+                class="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-0.5"
+              >
                 <span>{{ blueprint.latest_price.condition || 'NM' }}</span>
-                <span v-if="blueprint.latest_price.language" class="hidden sm:inline">
+                <span
+                  v-if="blueprint.latest_price.language"
+                  class="hidden sm:inline"
+                >
                   • {{ blueprint.latest_price.language.toUpperCase() }}
                 </span>
-                <span v-if="blueprint.latest_price.is_foil" class="text-yellow-600 dark:text-yellow-400 ml-1">
+                <span
+                  v-if="blueprint.latest_price.is_foil"
+                  class="text-yellow-600 dark:text-yellow-400 ml-1"
+                >
                   ✨
                 </span>
               </div>
@@ -82,7 +103,9 @@
 
     <!-- List View -->
     <template v-else>
-      <div class="flex items-center p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+      <div
+        class="flex items-center p-3 sm:p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+      >
         <!-- Card Image -->
         <div class="flex-shrink-0 w-12 h-16 sm:w-16 sm:h-20 mr-3 sm:mr-4">
           <img
@@ -95,27 +118,45 @@
 
         <!-- Card Info -->
         <div class="flex-1 min-w-0">
-          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between">
+          <div
+            class="flex flex-col sm:flex-row sm:items-start sm:justify-between"
+          >
             <div class="flex-1 min-w-0 mb-2 sm:mb-0">
-              <h3 class="text-sm sm:text-base font-medium text-gray-900 dark:text-white truncate">
+              <h3
+                class="text-sm sm:text-base font-medium text-gray-900 dark:text-white truncate"
+              >
                 {{ blueprint.name }}
               </h3>
-              <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-1">
-                <span v-if="blueprint.expansion">{{ blueprint.expansion.code }}</span>
-                <span v-if="blueprint.collector_number">#{{ blueprint.collector_number }}</span>
+              <div
+                class="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-1"
+              >
+                <span v-if="blueprint.expansion">{{
+                  blueprint.expansion.code
+                }}</span>
+                <span v-if="blueprint.collector_number"
+                  >#{{ blueprint.collector_number }}</span
+                >
               </div>
             </div>
 
             <!-- Price and Actions -->
-            <div class="flex items-center justify-between sm:flex-col sm:items-end space-x-2 sm:space-x-0">
+            <div
+              class="flex items-center justify-between sm:flex-col sm:items-end space-x-2 sm:space-x-0"
+            >
               <div class="text-right">
                 <div v-if="blueprint.latest_price">
-                  <p class="text-sm sm:text-base font-bold text-green-600 dark:text-green-400">
+                  <p
+                    class="text-sm sm:text-base font-bold text-green-600 dark:text-green-400"
+                  >
                     €{{ formatPrice(blueprint.latest_price.price_cents) }}
                   </p>
                   <div class="text-xs text-gray-500 dark:text-gray-400">
                     {{ blueprint.latest_price.condition || 'NM' }}
-                    <span v-if="blueprint.latest_price.is_foil" class="text-yellow-600 dark:text-yellow-400 ml-1">✨</span>
+                    <span
+                      v-if="blueprint.latest_price.is_foil"
+                      class="text-yellow-600 dark:text-yellow-400 ml-1"
+                      >✨</span
+                    >
                   </div>
                 </div>
                 <div v-else>
@@ -128,11 +169,21 @@
               <!-- Add button -->
               <button
                 class="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors touch-target"
-                @click.prevent="handleAddToPortfolio"
                 aria-label="Add to portfolio"
+                @click.prevent="handleAddToPortfolio"
               >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
                 </svg>
               </button>
             </div>

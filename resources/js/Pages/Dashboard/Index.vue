@@ -6,12 +6,18 @@
       class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700"
     >
       <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0"
+        >
           <div>
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+            <h1
+              class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white"
+            >
               Dashboard
             </h1>
-            <p class="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">
+            <p
+              class="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base"
+            >
               Welcome back! Here's your portfolio overview.
             </p>
           </div>
@@ -23,7 +29,9 @@
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-4 sm:py-8">
       <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <!-- Enhanced Metrics Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8"
+        >
           <!-- Total Portfolios Card -->
           <div
             class="bg-white dark:bg-gray-800 rounded-card p-4 sm:p-6 shadow-card border border-gray-200 dark:border-gray-700 hover:shadow-card-hover transition-shadow"
@@ -45,10 +53,14 @@
                 </svg>
               </div>
               <div class="ml-3 sm:ml-4">
-                <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">
+                <p
+                  class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400"
+                >
                   Portfolios
                 </p>
-                <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                <p
+                  class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white"
+                >
                   {{ portfolioStore.portfolios.length }}
                 </p>
               </div>
@@ -60,7 +72,9 @@
             class="bg-white dark:bg-gray-800 rounded-card p-4 sm:p-6 shadow-card border border-gray-200 dark:border-gray-700 hover:shadow-card-hover transition-shadow"
           >
             <div class="flex items-center">
-              <div class="p-2 sm:p-3 bg-green-100 dark:bg-green-900 rounded-full">
+              <div
+                class="p-2 sm:p-3 bg-green-100 dark:bg-green-900 rounded-full"
+              >
                 <svg
                   class="w-5 h-5 sm:w-6 sm:h-6 text-green-600 dark:text-green-400"
                   fill="none"
@@ -76,10 +90,14 @@
                 </svg>
               </div>
               <div class="ml-3 sm:ml-4">
-                <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">
+                <p
+                  class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400"
+                >
                   Total Cards
                 </p>
-                <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                <p
+                  class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white"
+                >
                   {{ totalCards }}
                 </p>
               </div>
@@ -91,7 +109,9 @@
             class="bg-white dark:bg-gray-800 rounded-card p-4 sm:p-6 shadow-card border border-gray-200 dark:border-gray-700 hover:shadow-card-hover transition-shadow"
           >
             <div class="flex items-center">
-              <div class="p-2 sm:p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full">
+              <div
+                class="p-2 sm:p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full"
+              >
                 <svg
                   class="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400"
                   fill="none"
@@ -107,10 +127,14 @@
                 </svg>
               </div>
               <div class="ml-3 sm:ml-4">
-                <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">
+                <p
+                  class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400"
+                >
                   Total Value
                 </p>
-                <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                <p
+                  class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white"
+                >
                   {{ formatCurrency(totalValue) }}
                 </p>
               </div>
@@ -122,7 +146,9 @@
             class="bg-white dark:bg-gray-800 rounded-card p-4 sm:p-6 shadow-card border border-gray-200 dark:border-gray-700 hover:shadow-card-hover transition-shadow"
           >
             <div class="flex items-center">
-              <div class="p-2 sm:p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
+              <div
+                class="p-2 sm:p-3 bg-purple-100 dark:bg-purple-900 rounded-full"
+              >
                 <svg
                   class="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400"
                   fill="none"
@@ -138,10 +164,14 @@
                 </svg>
               </div>
               <div class="ml-3 sm:ml-4">
-                <p class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400">
+                <p
+                  class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400"
+                >
                   Avg. Card Value
                 </p>
-                <p class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                <p
+                  class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white"
+                >
                   {{ formatCurrency(averageCardValue) }}
                 </p>
               </div>
@@ -154,7 +184,9 @@
           <div
             class="bg-white dark:bg-gray-800 rounded-card p-4 sm:p-6 shadow-card border border-gray-200 dark:border-gray-700"
           >
-            <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
+            <h3
+              class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4"
+            >
               Quick Actions
             </h3>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -229,8 +261,12 @@
         <div
           class="bg-white dark:bg-gray-800 rounded-card p-4 sm:p-6 shadow-card border border-gray-200 dark:border-gray-700"
         >
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0">
-            <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0"
+          >
+            <h3
+              class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white"
+            >
               Recent Portfolios
             </h3>
             <Link
@@ -241,14 +277,19 @@
             </Link>
           </div>
 
-          <div v-if="recentPortfolios.length > 0" class="space-y-3 sm:space-y-4">
+          <div
+            v-if="recentPortfolios.length > 0"
+            class="space-y-3 sm:space-y-4"
+          >
             <div
               v-for="portfolio in recentPortfolios"
               :key="portfolio.id"
               class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
             >
               <div class="flex items-center space-x-3 mb-2 sm:mb-0">
-                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <div
+                  class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center"
+                >
                   <span class="text-white font-bold text-xs sm:text-sm">
                     {{ portfolio.name.charAt(0).toUpperCase() }}
                   </span>
@@ -260,13 +301,17 @@
                   >
                     {{ portfolio.name }}
                   </Link>
-                  <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                  <p
+                    class="text-xs sm:text-sm text-gray-500 dark:text-gray-400"
+                  >
                     {{ portfolio.user_cards_count || 0 }} cards
                   </p>
                 </div>
               </div>
               <div class="text-right">
-                <div class="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
+                <div
+                  class="text-sm sm:text-base font-semibold text-gray-900 dark:text-white"
+                >
                   {{ formatCurrency(calculatePortfolioValue(portfolio)) }}
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">
@@ -290,7 +335,9 @@
                 d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
               />
             </svg>
-            <h3 class="mt-2 text-sm sm:text-base font-medium text-gray-900 dark:text-white">
+            <h3
+              class="mt-2 text-sm sm:text-base font-medium text-gray-900 dark:text-white"
+            >
               No portfolios yet
             </h3>
             <p class="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
@@ -481,7 +528,9 @@ const calculatePortfolioValue = (portfolio) => {
     return 0;
   }
   return portfolio.user_cards.reduce((total, card) => {
-    const value = card.estimated_value_cents ? card.estimated_value_cents / 100 : 0;
+    const value = card.estimated_value_cents
+      ? card.estimated_value_cents / 100
+      : 0;
     return total + value * (card.pivot?.quantity || 1);
   }, 0);
 };

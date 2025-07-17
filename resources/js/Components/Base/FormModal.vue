@@ -18,7 +18,9 @@
     </form>
 
     <template #footer>
-      <div class="flex flex-col-reverse sm:flex-row sm:justify-end space-y-3 space-y-reverse sm:space-y-0 sm:space-x-3">
+      <div
+        class="flex flex-col-reverse sm:flex-row sm:justify-end space-y-3 space-y-reverse sm:space-y-0 sm:space-x-3"
+      >
         <SecondaryButton
           :disabled="isLoading"
           type="button"

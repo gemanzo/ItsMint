@@ -11,7 +11,9 @@
           class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0"
         >
           <div>
-            <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
+            <h1
+              class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white"
+            >
               Portfolios
             </h1>
             <p class="text-gray-500 dark:text-gray-400 mt-1 text-xs sm:text-sm">
@@ -21,7 +23,9 @@
               {{ formatCurrency(totalValue) }} total value
             </p>
           </div>
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+          <div
+            class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2"
+          >
             <div
               class="flex items-center bg-gray-100 dark:bg-gray-700 rounded-button p-0.5"
             >
@@ -32,8 +36,8 @@
                     : ''
                 "
                 class="p-2 rounded-button transition-all duration-150 flex-1 sm:flex-none"
-                @click="viewMode = 'grid'"
                 aria-label="Grid view"
+                @click="viewMode = 'grid'"
               >
                 <svg
                   class="h-4 w-4 text-gray-600 dark:text-gray-300 mx-auto"
@@ -56,8 +60,8 @@
                     : ''
                 "
                 class="p-2 rounded-button transition-all duration-150 flex-1 sm:flex-none"
-                @click="viewMode = 'list'"
                 aria-label="List view"
+                @click="viewMode = 'list'"
               >
                 <svg
                   class="h-4 w-4 text-gray-600 dark:text-gray-300 mx-auto"
@@ -108,7 +112,9 @@
             <p class="text-gray-600 dark:text-gray-400 text-xs font-medium">
               Total Portfolios
             </p>
-            <p class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+            <p
+              class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
+            >
               {{ portfolios.length }}
             </p>
           </div>
@@ -118,7 +124,9 @@
             <p class="text-gray-600 dark:text-gray-400 text-xs font-medium">
               Total Cards
             </p>
-            <p class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+            <p
+              class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
+            >
               {{ totalCards }}
             </p>
           </div>
@@ -128,7 +136,9 @@
             <p class="text-gray-600 dark:text-gray-400 text-xs font-medium">
               Avg per Portfolio
             </p>
-            <p class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+            <p
+              class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
+            >
               {{ Math.round(totalCards / portfolios.length) }}
             </p>
           </div>
@@ -138,7 +148,9 @@
             <p class="text-gray-600 dark:text-gray-400 text-xs font-medium">
               Total Value
             </p>
-            <p class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+            <p
+              class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
+            >
               {{ formatCurrency(totalValue) }}
             </p>
           </div>
@@ -207,7 +219,9 @@
               <!-- Portfolio Header -->
               <div class="flex items-start justify-between mb-3 sm:mb-4">
                 <div class="flex items-center space-x-3 flex-1 min-w-0">
-                  <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div
+                    class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0"
+                  >
                     <span class="text-white font-bold text-sm sm:text-base">
                       {{ portfolio.name.charAt(0).toUpperCase() }}
                     </span>
@@ -219,7 +233,9 @@
                     >
                       {{ portfolio.name }}
                     </Link>
-                    <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                    <p
+                      class="text-xs sm:text-sm text-gray-500 dark:text-gray-400"
+                    >
                       Created {{ formatDate(portfolio.created_at) }}
                     </p>
                   </div>
@@ -227,20 +243,40 @@
                 <div class="flex items-center space-x-1 sm:space-x-2">
                   <button
                     class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    @click="editPortfolio(portfolio)"
                     aria-label="Edit portfolio"
+                    @click="editPortfolio(portfolio)"
                   >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
                     </svg>
                   </button>
                   <button
                     class="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                    @click="deletePortfolio(portfolio)"
                     aria-label="Delete portfolio"
+                    @click="deletePortfolio(portfolio)"
                   >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <svg
+                      class="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -248,22 +284,40 @@
 
               <!-- Portfolio Stats -->
               <div class="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
-                <div class="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Cards</p>
-                  <p class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                <div
+                  class="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                >
+                  <p
+                    class="text-xs text-gray-600 dark:text-gray-400 font-medium"
+                  >
+                    Cards
+                  </p>
+                  <p
+                    class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
+                  >
                     {{ portfolio.cards_count || 0 }}
                   </p>
                 </div>
-                <div class="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Value</p>
-                  <p class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                <div
+                  class="text-center p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                >
+                  <p
+                    class="text-xs text-gray-600 dark:text-gray-400 font-medium"
+                  >
+                    Value
+                  </p>
+                  <p
+                    class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
+                  >
                     {{ formatCurrency(portfolio.total_value || 0) }}
                   </p>
                 </div>
               </div>
 
               <!-- Portfolio Actions -->
-              <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+              <div
+                class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2"
+              >
                 <Link
                   :href="route('portfolios.show', portfolio.id)"
                   class="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-button transition-colors text-center"
@@ -291,9 +345,15 @@
                 :key="portfolio.id"
                 class="p-3 sm:p-6 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
               >
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-                  <div class="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div
+                  class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0"
+                >
+                  <div
+                    class="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0"
+                  >
+                    <div
+                      class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0"
+                    >
                       <span class="text-white font-bold text-sm sm:text-base">
                         {{ portfolio.name.charAt(0).toUpperCase() }}
                       </span>
@@ -305,10 +365,16 @@
                       >
                         {{ portfolio.name }}
                       </Link>
-                      <div class="flex flex-wrap items-center space-x-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      <div
+                        class="flex flex-wrap items-center space-x-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1"
+                      >
                         <span>{{ portfolio.cards_count || 0 }} cards</span>
-                        <span>{{ formatCurrency(portfolio.total_value || 0) }}</span>
-                        <span>Created {{ formatDate(portfolio.created_at) }}</span>
+                        <span>{{
+                          formatCurrency(portfolio.total_value || 0)
+                        }}</span>
+                        <span
+                          >Created {{ formatDate(portfolio.created_at) }}</span
+                        >
                       </div>
                     </div>
                   </div>
@@ -328,20 +394,40 @@
                     </button>
                     <button
                       class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      @click="editPortfolio(portfolio)"
                       aria-label="Edit portfolio"
+                      @click="editPortfolio(portfolio)"
                     >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
                       </svg>
                     </button>
                     <button
                       class="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                      @click="deletePortfolio(portfolio)"
                       aria-label="Delete portfolio"
+                      @click="deletePortfolio(portfolio)"
                     >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <svg
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
                       </svg>
                     </button>
                   </div>
@@ -352,7 +438,10 @@
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="portfolios.length === 0" class="text-center py-8 sm:py-12">
+        <div
+          v-else-if="portfolios.length === 0"
+          class="text-center py-8 sm:py-12"
+        >
           <div
             class="bg-white dark:bg-gray-800 rounded-card p-6 sm:p-8 border border-gray-200 dark:border-gray-700"
           >
@@ -369,11 +458,16 @@
                 d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
               />
             </svg>
-            <h3 class="mt-2 text-lg sm:text-xl font-medium text-gray-900 dark:text-white">
+            <h3
+              class="mt-2 text-lg sm:text-xl font-medium text-gray-900 dark:text-white"
+            >
               No portfolios yet
             </h3>
-            <p class="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-400">
-              Get started by creating your first portfolio to organize your card collection.
+            <p
+              class="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-400"
+            >
+              Get started by creating your first portfolio to organize your card
+              collection.
             </p>
             <div class="mt-6">
               <button
@@ -419,11 +513,14 @@
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
-            <h3 class="mt-2 text-base sm:text-lg font-medium text-gray-900 dark:text-white">
+            <h3
+              class="mt-2 text-base sm:text-lg font-medium text-gray-900 dark:text-white"
+            >
               No portfolios found
             </h3>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Try adjusting your search or filters to find what you're looking for.
+              Try adjusting your search or filters to find what you're looking
+              for.
             </p>
             <div class="mt-4">
               <button

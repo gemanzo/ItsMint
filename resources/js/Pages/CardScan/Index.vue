@@ -26,7 +26,9 @@
               <h3 class="text-xl sm:text-2xl leading-6 font-bold">
                 Automatic Card Recognition
               </h3>
-              <p class="mt-2 text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+              <p
+                class="mt-2 text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-2xl mx-auto"
+              >
                 Use your camera or upload an image to automatically identify and
                 add cards to your collection
               </p>
@@ -44,7 +46,9 @@
             </div>
 
             <!-- Features Info -->
-            <div class="mt-8 sm:mt-12 border-t pt-6 sm:pt-8 dark:border-gray-600">
+            <div
+              class="mt-8 sm:mt-12 border-t pt-6 sm:pt-8 dark:border-gray-600"
+            >
               <h4
                 class="text-lg sm:text-xl font-medium text-gray-900 dark:text-gray-100 mb-4 sm:mb-6 text-center"
               >
@@ -64,7 +68,9 @@
                   >
                     1. Capture or Upload
                   </h5>
-                  <p class="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-2">
+                  <p
+                    class="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-2"
+                  >
                     Take a photo or upload an image of your card
                   </p>
                 </div>
@@ -82,7 +88,9 @@
                   >
                     2. OCR Recognition
                   </h5>
-                  <p class="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-2">
+                  <p
+                    class="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-2"
+                  >
                     Our AI reads and identifies the card details
                   </p>
                 </div>
@@ -100,7 +108,9 @@
                   >
                     3. Add to Collection
                   </h5>
-                  <p class="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-2">
+                  <p
+                    class="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-2"
+                  >
                     Review and add the card to your portfolio
                   </p>
                 </div>
@@ -108,15 +118,29 @@
             </div>
 
             <!-- Tips Section for Mobile -->
-            <div class="mt-8 sm:mt-12 bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 sm:p-6">
-              <h4 class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">
+            <div
+              class="mt-8 sm:mt-12 bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 sm:p-6"
+            >
+              <h4
+                class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100 mb-3 sm:mb-4"
+              >
                 📱 Tips for Best Results
               </h4>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div class="flex items-start space-x-3">
-                  <div class="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mt-0.5">
-                    <svg class="w-3 h-3 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  <div
+                    class="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mt-0.5"
+                  >
+                    <svg
+                      class="w-3 h-3 text-green-600 dark:text-green-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd"
+                      />
                     </svg>
                   </div>
                   <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -124,9 +148,19 @@
                   </p>
                 </div>
                 <div class="flex items-start space-x-3">
-                  <div class="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mt-0.5">
-                    <svg class="w-3 h-3 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  <div
+                    class="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mt-0.5"
+                  >
+                    <svg
+                      class="w-3 h-3 text-green-600 dark:text-green-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd"
+                      />
                     </svg>
                   </div>
                   <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -134,9 +168,19 @@
                   </p>
                 </div>
                 <div class="flex items-start space-x-3">
-                  <div class="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mt-0.5">
-                    <svg class="w-3 h-3 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  <div
+                    class="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mt-0.5"
+                  >
+                    <svg
+                      class="w-3 h-3 text-green-600 dark:text-green-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd"
+                      />
                     </svg>
                   </div>
                   <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -144,9 +188,19 @@
                   </p>
                 </div>
                 <div class="flex items-start space-x-3">
-                  <div class="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mt-0.5">
-                    <svg class="w-3 h-3 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  <div
+                    class="flex-shrink-0 w-6 h-6 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mt-0.5"
+                  >
+                    <svg
+                      class="w-3 h-3 text-green-600 dark:text-green-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd"
+                      />
                     </svg>
                   </div>
                   <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -159,7 +213,9 @@
             <!-- Recent Scans (if any) -->
             <div class="mt-8 sm:mt-12">
               <div class="flex items-center justify-between mb-4 sm:mb-6">
-                <h4 class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">
+                <h4
+                  class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100"
+                >
                   Recent Scans
                 </h4>
                 <Link
@@ -169,9 +225,11 @@
                   View all →
                 </Link>
               </div>
-              
+
               <!-- Placeholder for recent scans -->
-              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6 sm:p-8 text-center">
+              <div
+                class="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6 sm:p-8 text-center"
+              >
                 <svg
                   class="mx-auto h-12 w-12 text-gray-400"
                   fill="none"
@@ -191,7 +249,9 @@
                     d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
                   />
                 </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+                <h3
+                  class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100"
+                >
                   No scans yet
                 </h3>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -228,11 +288,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import CardScanModal from '@/Components/CardScanModal.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import {
-  CameraIcon,
-  EyeIcon,
-  PlusIcon,
-} from '@heroicons/vue/24/outline';
+import { CameraIcon, EyeIcon, PlusIcon } from '@heroicons/vue/24/outline';
 
 // State
 const showScanModal = ref(false);
@@ -250,7 +306,7 @@ const handleScanComplete = (result: any) => {
   // Handle scan completion
   console.log('Scan complete:', result);
   closeScanModal();
-  
+
   // You could navigate to the scan results or add to portfolio
   // router.visit(route('portfolios.show', { portfolio: result.portfolio_id }));
 };

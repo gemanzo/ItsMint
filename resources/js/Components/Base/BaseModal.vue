@@ -34,7 +34,10 @@
               ]"
             >
               <!-- Header -->
-              <div v-if="$slots.header || title" class="flex-shrink-0 p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+              <div
+                v-if="$slots.header || title"
+                class="flex-shrink-0 p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700"
+              >
                 <slot name="header">
                   <div class="flex items-start">
                     <!-- Icon slot -->
@@ -61,8 +64,8 @@
                     <button
                       v-if="showCloseButton"
                       class="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                      @click="handleClose"
                       aria-label="Close modal"
+                      @click="handleClose"
                     >
                       <svg
                         class="w-5 h-5"
@@ -88,7 +91,10 @@
               </div>
 
               <!-- Footer -->
-              <div v-if="$slots.footer" class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+              <div
+                v-if="$slots.footer"
+                class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4 sm:p-6"
+              >
                 <slot name="footer" />
               </div>
             </DialogPanel>

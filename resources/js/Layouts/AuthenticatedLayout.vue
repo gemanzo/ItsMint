@@ -35,7 +35,9 @@ const user = computed(() => page.props.auth.user);
               </div>
 
               <!-- Navigation Links -->
-              <div class="hidden space-x-6 lg:space-x-8 sm:-my-px sm:ms-6 lg:ms-10 sm:flex">
+              <div
+                class="hidden space-x-6 lg:space-x-8 sm:-my-px sm:ms-6 lg:ms-10 sm:flex"
+              >
                 <NavLink
                   :href="route('dashboard')"
                   :active="route().current('dashboard')"
@@ -169,7 +171,11 @@ const user = computed(() => page.props.auth.user);
                         class="inline-flex items-center rounded-lg border border-transparent bg-white dark:bg-gray-800 px-3 lg:px-4 py-2 text-sm font-medium leading-4 text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200"
                       >
                         <!-- User Avatar -->
-                        <UserAvatar :user="user" size="sm" class="mr-2 lg:mr-3" />
+                        <UserAvatar
+                          :user="user"
+                          size="sm"
+                          class="mr-2 lg:mr-3"
+                        />
 
                         <span class="hidden md:block">{{ user.name }}</span>
 
@@ -242,8 +248,8 @@ const user = computed(() => page.props.auth.user);
             <div class="-me-2 flex items-center sm:hidden">
               <button
                 class="relative inline-flex items-center justify-center rounded-lg p-3 text-gray-400 transition-all duration-200 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:text-gray-500 dark:hover:bg-gray-900 dark:hover:text-gray-400 dark:focus:bg-gray-900 dark:focus:text-gray-400 dark:focus:ring-offset-gray-800 active:scale-95"
-                @click="showingNavigationDropdown = !showingNavigationDropdown"
                 aria-label="Toggle navigation menu"
+                @click="showingNavigationDropdown = !showingNavigationDropdown"
               >
                 <svg
                   class="h-6 w-6 transition-transform duration-200"
@@ -281,8 +287,9 @@ const user = computed(() => page.props.auth.user);
         <!-- Enhanced Responsive Navigation Menu -->
         <div
           :class="{
-            'block animate-in slide-in-from-top-2 duration-200': showingNavigationDropdown,
-            'hidden': !showingNavigationDropdown,
+            'block animate-in slide-in-from-top-2 duration-200':
+              showingNavigationDropdown,
+            hidden: !showingNavigationDropdown,
           }"
           class="sm:hidden border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
         >
@@ -408,11 +415,15 @@ const user = computed(() => page.props.auth.user);
           </div>
 
           <!-- Enhanced Responsive Settings Options -->
-          <div class="border-t border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 pb-3 pt-4">
+          <div
+            class="border-t border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 pb-3 pt-4"
+          >
             <div class="px-4 flex items-center mb-3">
               <UserAvatar :user="user" size="md" class="mr-3" />
               <div class="flex-1 min-w-0">
-                <div class="text-base font-medium text-gray-800 dark:text-gray-200 truncate">
+                <div
+                  class="text-base font-medium text-gray-800 dark:text-gray-200 truncate"
+                >
                   {{ user.name }}
                 </div>
                 <div class="text-sm font-medium text-gray-500 truncate">
@@ -422,8 +433,8 @@ const user = computed(() => page.props.auth.user);
             </div>
 
             <div class="mt-3 space-y-1 px-2">
-              <ResponsiveNavLink 
-                :href="route('profile.edit')" 
+              <ResponsiveNavLink
+                :href="route('profile.edit')"
                 class="flex items-center px-3 py-3 rounded-lg text-base font-medium transition-all duration-150"
               >
                 <svg
