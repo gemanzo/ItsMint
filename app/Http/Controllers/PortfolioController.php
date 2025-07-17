@@ -227,7 +227,7 @@ class PortfolioController extends Controller
         ]);
 
         if ($portfolio->userCards()->where('user_card_id', $userCard->id)->exists()) {
-            // Find all cards in the portfolio that match the same "group" 
+            // Find all cards in the portfolio that match the same "group"
             // (same blueprint, condition, language, purchase_price)
             $groupCards = $portfolio->userCards()
                 ->where('blueprint_id', $userCard->blueprint_id)
@@ -265,10 +265,193 @@ class PortfolioController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        if ($portfolio->userCards()->detach($userCard->id)) {
-            return response()->json(null, 204);
+        // Check if the UserCard is in this portfolio
+        if (! $portfolio->userCards()->where('user_card_id', $userCard->id)->exists()) {
+            return response()->json(['message' => 'Card not found in portfolio'], 404);
         }
 
-        return response()->json(['message' => 'Card not found in portfolio'], 404);
+        // Remove the card from this portfolio (pivot table)
+        $portfolio->userCards()->detach($userCard->id);
+
+        // Check if the UserCard is still in other portfolios
+        $otherPortfoliosCount = $userCard->portfolios()
+            ->where('portfolios.id', '!=', $portfolio->id)
+            ->count();
+
+        // If the UserCard is not in any other portfolio, delete it completely
+        if ($otherPortfoliosCount === 0) {
+            $userCard->delete();
+        }
+
+        return response()->json(null, 204);
+    }
+
+    /**
+     * Get portfolio value history over time
+     */
+    public function valueHistory(Request $request, Portfolio $portfolio): JsonResponse
+    {
+        $request->validate([
+            'period' => 'nullable|string|in:1D,1W,1M,3M,1Y,MAX',
+            'metric' => 'nullable|string|in:market_value,cost_basis,performance',
+        ]);
+
+        // Check authorization
+        if ($request->user()->id !== $portfolio->user_id) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $period = $request->get('period', '1M');
+        $metric = $request->get('metric', 'market_value');
+
+        // Calculate date range based on period
+        $endDate = now();
+        $startDate = match ($period) {
+            '1D' => $endDate->copy()->subDay(),
+            '1W' => $endDate->copy()->subWeek(),
+            '1M' => $endDate->copy()->subMonth(),
+            '3M' => $endDate->copy()->subMonths(3),
+            '1Y' => $endDate->copy()->subYear(),
+            'MAX' => $portfolio->created_at ?: $endDate->copy()->subYears(2),
+            default => $endDate->copy()->subMonth(),
+        };
+
+        // Get all user cards in this portfolio with their relationships
+        $userCards = $portfolio->userCards()
+            ->with(['blueprint.cardPrices' => function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('fetched_at', [$startDate, $endDate])
+                    ->orderBy('fetched_at');
+            }])
+            ->get();
+
+        if ($userCards->isEmpty()) {
+            return response()->json([]);
+        }
+
+        // Calculate data points based on period
+        $dataPoints = $this->generateDataPoints($startDate, $endDate, $period);
+        $valueHistory = [];
+
+        foreach ($dataPoints as $date) {
+            $totalMarketValue = 0;
+            $totalCostBasis = 0;
+
+            foreach ($userCards as $userCard) {
+                // Only include cards that were acquired before this date
+                $acquiredAt = $userCard->acquired_at ? \Carbon\Carbon::parse($userCard->acquired_at) : $portfolio->created_at;
+                if ($acquiredAt && $acquiredAt->gt($date)) {
+                    continue;
+                }
+
+                $quantity = $userCard->pivot->quantity ?? 1;
+
+                // Add to cost basis (purchase price * quantity)
+                $totalCostBasis += ($userCard->purchase_price_cents ?? 0) * $quantity;
+
+                // Find the closest market price to this date
+                $closestPrice = $userCard->blueprint->cardPrices
+                    ->filter(function ($price) use ($userCard, $date) {
+                        // Match language and condition
+                        return $price->language === $userCard->language &&
+                            $price->condition === $userCard->condition &&
+                            \Carbon\Carbon::parse($price->fetched_at)->lte($date);
+                    })
+                    ->sortByDesc('fetched_at')
+                    ->first();
+
+                if ($closestPrice) {
+                    $totalMarketValue += ($closestPrice->price_cents * $quantity);
+                } else {
+                    // Fallback: Use the most recent price available for this card (regardless of date)
+                    $fallbackPrice = $userCard->blueprint->cardPrices
+                        ->filter(function ($price) use ($userCard) {
+                            return $price->language === $userCard->language &&
+                                $price->condition === $userCard->condition;
+                        })
+                        ->sortByDesc('fetched_at')
+                        ->first();
+
+                    if ($fallbackPrice) {
+                        $totalMarketValue += ($fallbackPrice->price_cents * $quantity);
+                    } else {
+                        // Ultimate fallback: Use the estimated value from the UserCard
+                        $totalMarketValue += ($userCard->estimated_value_cents ?? 0) * $quantity;
+                    }
+                }
+            }
+
+            // Calculate the value based on requested metric
+            $value = match ($metric) {
+                'market_value' => $totalMarketValue,
+                'cost_basis' => $totalCostBasis,
+                'performance' => $totalCostBasis > 0 ? (($totalMarketValue - $totalCostBasis) / $totalCostBasis) * 100 : 0,
+                default => $totalMarketValue,
+            };
+
+            $valueHistory[] = [
+                'date' => $date->toDateString(),
+                'fetched_at' => $date->toISOString(),
+                'value_cents' => $metric === 'performance' ? $value : $value, // Performance is already in percentage, others in cents
+                'market_value_cents' => $totalMarketValue,
+                'cost_basis_cents' => $totalCostBasis,
+                'performance_percentage' => $totalCostBasis > 0 ? (($totalMarketValue - $totalCostBasis) / $totalCostBasis) * 100 : 0,
+            ];
+        }
+
+        return response()->json($valueHistory);
+    }
+
+    /**
+     * Generate appropriate data points for the given period
+     */
+    private function generateDataPoints(\Carbon\Carbon $startDate, \Carbon\Carbon $endDate, string $period): array
+    {
+        $points = [];
+        $current = $startDate->copy();
+
+        // Determine interval based on period
+        $interval = match ($period) {
+            '1D' => 'hour',
+            '1W' => 'day',
+            '1M' => 'day',
+            '3M' => 'day',
+            '1Y' => 'week',
+            'MAX' => 'week',
+            default => 'day',
+        };
+
+        $step = match ($period) {
+            '1D' => 2, // Every 2 hours
+            '1W' => 1, // Daily
+            '1M' => 2, // Every 2 days
+            '3M' => 3, // Every 3 days
+            '1Y' => 1, // Weekly
+            'MAX' => 2, // Every 2 weeks
+            default => 1,
+        };
+
+        while ($current->lte($endDate)) {
+            $points[] = $current->copy();
+
+            if ($interval === 'hour') {
+                $current->addHours($step);
+            } elseif ($interval === 'day') {
+                $current->addDays($step);
+            } elseif ($interval === 'week') {
+                $current->addWeeks($step);
+            }
+
+            // Prevent infinite loops
+            if (count($points) > 1000) {
+                break;
+            }
+        }
+
+        // Always include the end date
+        if (! $points || $points[count($points) - 1]->lt($endDate)) {
+            $points[] = $endDate->copy();
+        }
+
+        return $points;
     }
 }

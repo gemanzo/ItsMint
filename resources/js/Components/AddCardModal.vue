@@ -5,7 +5,7 @@
     subtitle="Search for a card and add it to your portfolio"
     size="2xl"
     :is-loading="isSubmitting"
-    :canSubmit="isFormValid"
+    :can-submit="isFormValid"
     submit-text="Add Card"
     loading-text="Adding..."
     @close="closeModal"
@@ -34,7 +34,8 @@
         required
         class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
         :class="{
-          'border-red-500 focus:border-red-500 focus:ring-red-500': formErrors.portfolio
+          'border-red-500 focus:border-red-500 focus:ring-red-500':
+            formErrors.portfolio,
         }"
       >
         <option disabled value="">Please select one</option>
@@ -46,7 +47,10 @@
           {{ p.name }}
         </option>
       </select>
-      <p v-if="formErrors.portfolio" class="mt-1 text-sm text-red-600 dark:text-red-400">
+      <p
+        v-if="formErrors.portfolio"
+        class="mt-1 text-sm text-red-600 dark:text-red-400"
+      >
         {{ formErrors.portfolio }}
       </p>
     </div>
@@ -99,20 +103,13 @@
           @input="handleSearchInput"
         />
         <div class="absolute inset-y-0 right-0 flex items-center">
-          <Listbox
-            v-model="selectedLanguageObject"
-            as="div"
-            class="relative"
-          >
+          <Listbox v-model="selectedLanguageObject" as="div" class="relative">
             <ListboxButton
               class="relative flex h-full items-center justify-center rounded-md border-0 bg-transparent py-0 pl-2 pr-8 text-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:text-gray-400 sm:text-sm"
             >
               <span
                 v-if="selectedLanguageObject.countryCode"
-                :class="[
-                  'fi',
-                  `fi-${selectedLanguageObject.countryCode}`,
-                ]"
+                :class="['fi', `fi-${selectedLanguageObject.countryCode}`]"
                 class="mr-2 h-4 w-6"
               />
               <svg
@@ -130,8 +127,12 @@
                   d="M10.5 21l-5.25-11.25L.75 21m10.5 0H22.5M3.75 12h15M12 12V5.25M15 5.25H9"
                 />
               </svg>
-              <span class="block truncate">{{ selectedLanguageObject.name }}</span>
-              <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+              <span class="block truncate">{{
+                selectedLanguageObject.name
+              }}</span>
+              <span
+                class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"
+              >
                 <svg
                   class="h-5 w-5 text-gray-400"
                   xmlns="http://www.w3.org/2000/svg"
@@ -149,7 +150,7 @@
             </ListboxButton>
 
             <ListboxOptions
-              class="absolute z-10 right-0 mt-1 max-h-56 w-40 overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+              class="absolute z-50 right-0 mt-1 max-h-56 w-40 overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
             >
               <ListboxOption
                 v-for="lang in CARD_LANGUAGES"
@@ -200,7 +201,9 @@
                   <span
                     v-if="selected"
                     :class="[
-                      active ? 'text-white' : 'text-indigo-600 dark:text-indigo-400',
+                      active
+                        ? 'text-white'
+                        : 'text-indigo-600 dark:text-indigo-400',
                       'absolute inset-y-0 right-0 flex items-center pr-4',
                     ]"
                   >
@@ -252,12 +255,18 @@
                   No Img
                 </span>
                 <div class="flex-1 min-w-0">
-                  <p class="text-sm font-medium truncate group-hover:text-white">
+                  <p
+                    class="text-sm font-medium truncate group-hover:text-white"
+                  >
                     {{ bp.name }}
                   </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400 group-hover:text-indigo-200 truncate">
+                  <p
+                    class="text-xs text-gray-500 dark:text-gray-400 group-hover:text-indigo-200 truncate"
+                  >
                     {{ bp.expansion?.name }} ({{ bp.expansion?.code }})
-                    <span v-if="bp.collector_number"> - #{{ bp.collector_number }}</span>
+                    <span v-if="bp.collector_number">
+                      - #{{ bp.collector_number }}</span
+                    >
                   </p>
                 </div>
               </div>
@@ -266,17 +275,19 @@
                 v-if="bp.latest_price?.price_cents"
                 class="text-right flex-shrink-0 pl-2"
               >
-                <p class="font-semibold text-sm text-green-600 dark:text-green-400">
+                <p
+                  class="font-semibold text-sm text-green-600 dark:text-green-400"
+                >
                   {{ formatCurrency(bp.latest_price.price_cents / 100) }}
                 </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 group-hover:text-indigo-200">
+                <p
+                  class="text-xs text-gray-500 dark:text-gray-400 group-hover:text-indigo-200"
+                >
                   Market
                 </p>
               </div>
               <div v-else class="text-right flex-shrink-0 pl-2">
-                <p class="text-xs text-gray-400 dark:text-gray-500">
-                  No price
-                </p>
+                <p class="text-xs text-gray-400 dark:text-gray-500">No price</p>
               </div>
             </div>
           </li>
@@ -317,12 +328,17 @@
             Selected: {{ selectedBlueprint.name }}
           </p>
           <p class="text-xs dark:text-gray-300">
-            {{ selectedBlueprint.expansion?.name }} ({{ selectedBlueprint.expansion?.code }})
+            {{ selectedBlueprint.expansion?.name }} ({{
+              selectedBlueprint.expansion?.code
+            }})
           </p>
         </div>
       </div>
 
-      <p v-if="formErrors.blueprint" class="mt-1 text-sm text-red-600 dark:text-red-400">
+      <p
+        v-if="formErrors.blueprint"
+        class="mt-1 text-sm text-red-600 dark:text-red-400"
+      >
         {{ formErrors.blueprint }}
       </p>
     </div>
@@ -341,7 +357,8 @@
         required
         class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
         :class="{
-          'border-red-500 focus:border-red-500 focus:ring-red-500': formErrors.condition
+          'border-red-500 focus:border-red-500 focus:ring-red-500':
+            formErrors.condition,
         }"
       >
         <option value="NM">Near Mint (NM)</option>
@@ -350,7 +367,10 @@
         <option value="HP">Heavily Played (HP)</option>
         <option value="DMG">Damaged (DMG)</option>
       </select>
-      <p v-if="formErrors.condition" class="mt-1 text-sm text-red-600 dark:text-red-400">
+      <p
+        v-if="formErrors.condition"
+        class="mt-1 text-sm text-red-600 dark:text-red-400"
+      >
         {{ formErrors.condition }}
       </p>
     </div>
@@ -372,10 +392,14 @@
         required
         class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
         :class="{
-          'border-red-500 focus:border-red-500 focus:ring-red-500': formErrors.quantity
+          'border-red-500 focus:border-red-500 focus:ring-red-500':
+            formErrors.quantity,
         }"
       />
-      <p v-if="formErrors.quantity" class="mt-1 text-sm text-red-600 dark:text-red-400">
+      <p
+        v-if="formErrors.quantity"
+        class="mt-1 text-sm text-red-600 dark:text-red-400"
+      >
         {{ formErrors.quantity }}
       </p>
     </div>
@@ -404,7 +428,10 @@
     </div>
 
     <!-- Error Display -->
-    <div v-if="formErrors.general" class="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md">
+    <div
+      v-if="formErrors.general"
+      class="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md"
+    >
       <p class="text-sm text-red-600 dark:text-red-400">
         {{ formErrors.general }}
       </p>
@@ -429,8 +456,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue';
-import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/vue';
+import { ref, reactive, computed, watch, onMounted, watchEffect } from 'vue';
+import {
+  Listbox,
+  ListboxButton,
+  ListboxOption,
+  ListboxOptions,
+} from '@headlessui/vue';
 import { debounce } from 'lodash';
 import axios from 'axios';
 
@@ -469,7 +501,10 @@ const blueprintSearchQuery = ref('');
 const blueprintSearchResults = ref<Blueprint[]>([]);
 const selectedBlueprint = ref<Blueprint | null>(null);
 
-const selectedLanguageObject = ref(CARD_LANGUAGES[0]);
+// Initialize with EN language (index 1) instead of Any (index 0)
+const selectedLanguageObject = ref(
+  CARD_LANGUAGES.find((lang) => lang.code === 'en') || CARD_LANGUAGES[1]
+);
 const searchLanguage = computed(() => selectedLanguageObject.value.code);
 
 const searchPage = ref(1);
@@ -513,16 +548,21 @@ const selectedPortfolioName = computed(() => {
 
 // Form validation
 const isFormValid = computed(() => {
-  return selectedPortfolioId.value !== null &&
-         selectedBlueprint.value !== null &&
-         !!cardDetails.condition &&
-         cardDetails.quantity >= 1 &&
-         cardDetails.quantity <= 999;
+  return (
+    selectedPortfolioId.value !== null &&
+    selectedBlueprint.value !== null &&
+    !!cardDetails.condition &&
+    cardDetails.quantity >= 1 &&
+    cardDetails.quantity <= 999
+  );
 });
 
-watch(() => props.portfolioId, (newVal) => {
-  selectedPortfolioId.value = newVal || null;
-});
+watch(
+  () => props.portfolioId,
+  (newVal) => {
+    selectedPortfolioId.value = newVal || null;
+  }
+);
 
 const closeModal = () => {
   isOpen.value = false;
@@ -548,7 +588,10 @@ const searchBlueprints = async (loadMore = false) => {
         q: blueprintSearchQuery.value,
         from: (searchPage.value - 1) * 15,
         size: 15,
-        language: searchLanguage.value || undefined,
+        language:
+          searchLanguage.value && searchLanguage.value !== ''
+            ? searchLanguage.value
+            : undefined,
       },
     });
 
@@ -560,7 +603,7 @@ const searchBlueprints = async (loadMore = false) => {
       }
 
       hasMoreResults.value = response.data.data.length === 15;
-      
+
       if (loadMore) {
         searchPage.value++;
       }
@@ -654,11 +697,14 @@ const submitAddCard = async () => {
       });
       closeModal();
     } else {
-      throw new Error('Failed to create cards or associate them with portfolio.');
+      throw new Error(
+        'Failed to create cards or associate them with portfolio.'
+      );
     }
   } catch (error: unknown) {
     console.error('Error adding card:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+    const errorMessage =
+      error instanceof Error ? error.message : 'An unknown error occurred.';
     const axiosError = error as { response?: { data?: { message?: string } } };
     formErrors.general = axiosError.response?.data?.message || errorMessage;
   } finally {
@@ -690,6 +736,26 @@ const handleBlueprintSelected = (blueprint: Blueprint) => {
   selectBlueprint(blueprint);
   closeScanResults();
 };
+
+// Watch for search query changes - reset selected blueprint when query is cleared
+watch(blueprintSearchQuery, (newQuery) => {
+  if (!newQuery || newQuery.trim() === '') {
+    selectedBlueprint.value = null;
+  }
+});
+
+// Watch for language changes - restart search if there's an active query
+watch(selectedLanguageObject, () => {
+  if (blueprintSearchQuery.value && blueprintSearchQuery.value.length >= 2) {
+    debouncedSearchBlueprints();
+  }
+});
+
+// Sync language selection with card details
+watchEffect(() => {
+  cardDetails.language =
+    selectedLanguageObject.value.code.toUpperCase() || 'EN';
+});
 
 onMounted(async () => {
   if (portfolioStore.portfolios.length === 0) {

@@ -232,7 +232,10 @@
                         Card recognition failed
                       </p>
                       <p class="text-xs text-gray-600 dark:text-gray-400">
-                        {{ scan.message || 'Could not find the expansion code (e.g., OP01-100) in the image.' }}
+                        {{
+                          scan.message ||
+                          'Could not find the expansion code (e.g., OP01-100) in the image.'
+                        }}
                       </p>
                       <div
                         class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-600 rounded p-3 mt-3"
@@ -246,7 +249,8 @@
                           class="text-xs text-blue-700 dark:text-blue-300 space-y-1"
                         >
                           <li
-                            v-for="(suggestion, index) in (scan.suggestions || defaultSuggestions)"
+                            v-for="(suggestion, index) in scan.suggestions ||
+                            defaultSuggestions"
                             :key="index"
                           >
                             • {{ suggestion }}
@@ -278,7 +282,7 @@
                         autocomplete="off"
                         @input="handleSearchInput"
                       />
-                      
+
                       <!-- Search Results Dropdown -->
                       <div
                         v-if="searchQuery.length > 1"
@@ -515,7 +519,7 @@ const defaultSuggestions = [
   'Make sure the card code in the bottom-right corner is clearly visible',
   'Avoid shadows and reflections on the card',
   'Take the photo straight-on, not at an angle',
-  'Ensure good lighting on the entire card'
+  'Ensure good lighting on the entire card',
 ];
 
 // Methods
@@ -562,7 +566,7 @@ const assignBlueprint = async (blueprintId: number) => {
 
     // Update the scan object
     Object.assign(props.scan, response.data.scan);
-    
+
     // Clear search after successful assignment
     searchQuery.value = '';
     searchResults.value = [];

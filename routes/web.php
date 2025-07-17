@@ -44,4 +44,4 @@ Route::middleware('auth')->group(function () {
     Route::get('/portfolios/{portfolio}', [WebPortfolioController::class, 'show'])->name('portfolios.show');
 });
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

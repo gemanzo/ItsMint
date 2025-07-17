@@ -6,7 +6,6 @@ namespace App\Console\Commands;
 
 use App\Models\Blueprint;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 
 final class GenerateOcrMatchStringsCommand extends Command
 {
@@ -50,13 +49,15 @@ final class GenerateOcrMatchStringsCommand extends Command
 
         $blueprint = Blueprint::with(['oneLogCards'])->find($blueprintId);
 
-        if (!$blueprint) {
+        if (! $blueprint) {
             $this->error("Blueprint with ID {$blueprintId} not found.");
+
             return Command::FAILURE;
         }
 
-        if (!$force && $blueprint->ocr_match_string !== null) {
+        if (! $force && $blueprint->ocr_match_string !== null) {
             $this->info("Blueprint {$blueprintId} already has OCR match string. Use --force to regenerate.");
+
             return Command::SUCCESS;
         }
 
@@ -66,13 +67,16 @@ final class GenerateOcrMatchStringsCommand extends Command
             if ($matchString) {
                 $blueprint->update(['ocr_match_string' => $matchString]);
                 $this->info("OCR match string generated for blueprint {$blueprintId}");
+
                 return Command::SUCCESS;
             } else {
                 $this->warn("No OneLog card data found for blueprint {$blueprintId}");
+
                 return Command::SUCCESS;
             }
         } catch (\Exception $e) {
-            $this->error("Error processing blueprint {$blueprintId}: " . $e->getMessage());
+            $this->error("Error processing blueprint {$blueprintId}: ".$e->getMessage());
+
             return Command::FAILURE;
         }
     }
@@ -89,7 +93,7 @@ final class GenerateOcrMatchStringsCommand extends Command
 
         $query = Blueprint::with(['oneLogCards']);
 
-        if (!$force) {
+        if (! $force) {
             $query->whereNull('ocr_match_string');
         }
 
@@ -97,6 +101,7 @@ final class GenerateOcrMatchStringsCommand extends Command
 
         if ($totalBlueprints === 0) {
             $this->info('No blueprints to process.');
+
             return Command::SUCCESS;
         }
 
@@ -123,7 +128,7 @@ final class GenerateOcrMatchStringsCommand extends Command
                         $skipped++;
                     }
                 } catch (\Exception $e) {
-                    $this->error("Error processing blueprint {$blueprint->id}: " . $e->getMessage());
+                    $this->error("Error processing blueprint {$blueprint->id}: ".$e->getMessage());
                     $skipped++;
                 }
 
@@ -134,7 +139,7 @@ final class GenerateOcrMatchStringsCommand extends Command
         $progressBar->finish();
         $this->newLine();
 
-        $this->info("Processing completed!");
+        $this->info('Processing completed!');
         $this->info("Total processed: {$processed}");
         $this->info("Updated: {$updated}");
         $this->info("Skipped: {$skipped}");
@@ -149,7 +154,7 @@ final class GenerateOcrMatchStringsCommand extends Command
     {
         $primaryOneLogCard = $blueprint->getPrimaryOneLogCardAttribute();
 
-        if (!$primaryOneLogCard) {
+        if (! $primaryOneLogCard) {
             return null;
         }
 
@@ -158,7 +163,7 @@ final class GenerateOcrMatchStringsCommand extends Command
             $primaryOneLogCard->serial ?? '',
             $primaryOneLogCard->type ?? '',
             $primaryOneLogCard->attribute ?? '',
-            (string)($primaryOneLogCard->power ?? ''),
+            (string) ($primaryOneLogCard->power ?? ''),
             $this->formatColors($primaryOneLogCard->colors),
             $primaryOneLogCard->feature ?? '',
             $primaryOneLogCard->effect ?? '',
@@ -174,7 +179,7 @@ final class GenerateOcrMatchStringsCommand extends Command
      */
     private function formatColors(?array $colors): string
     {
-        if (!$colors || !is_array($colors)) {
+        if (! $colors || ! is_array($colors)) {
             return '';
         }
 

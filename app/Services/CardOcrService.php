@@ -14,7 +14,6 @@ use Intervention\Image\ImageManager;
 
 final class CardOcrService
 {
-
     const TRIGRAM_THRESHOLD = 0.75;
 
     private ImageManager $imageManager;
@@ -53,14 +52,14 @@ final class CardOcrService
 
         try {
             // Create user directory if it doesn't exist
-            $userDir = 'card-scans/' . $userId;
+            $userDir = 'card-scans/'.$userId;
             if (! Storage::disk('public')->exists($userDir)) {
-                Log::info('Creating user directory: ' . $userDir);
+                Log::info('Creating user directory: '.$userDir);
                 Storage::disk('public')->makeDirectory($userDir);
             }
 
             // Store the image using public disk
-            $filename = 'card-scans/' . $userId . '/' . time() . '_' . $scan->id . '.jpg';
+            $filename = 'card-scans/'.$userId.'/'.time().'_'.$scan->id.'.jpg';
             Log::info('Attempting to store file', ['filename' => $filename, 'user_id' => $userId]);
 
             $path = $file->storeAs('', $filename, 'public');
@@ -170,12 +169,12 @@ final class CardOcrService
             }
 
             // Save optimized image
-            $preprocessedPath = sys_get_temp_dir() . '/' . uniqid('gv_ocr_') . '.jpg';
+            $preprocessedPath = sys_get_temp_dir().'/'.uniqid('gv_ocr_').'.jpg';
             $image->save($preprocessedPath, 90, 'jpg');
 
             Log::info('Image preprocessed for Google Vision', [
                 'original_path' => $imagePath,
-                'processed_size' => $image->width() . 'x' . $image->height(),
+                'processed_size' => $image->width().'x'.$image->height(),
                 'processed_path' => $preprocessedPath,
             ]);
 
@@ -347,32 +346,30 @@ final class CardOcrService
 
         // Extract potential card names (capitalized words)
         preg_match_all('/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b/', $text, $nameMatches);
-        if (!empty($nameMatches[0])) {
+        if (! empty($nameMatches[0])) {
             $keywords = array_merge($keywords, $nameMatches[0]);
         }
 
         // Extract potential serial numbers (OP##-###, ST##-### etc.)
         preg_match_all('/\b[A-Z]{2,3}\d{2}-?\d{3}\b/', $text, $serialMatches);
-        if (!empty($serialMatches[0])) {
+        if (! empty($serialMatches[0])) {
             $keywords = array_merge($keywords, $serialMatches[0]);
         }
 
         // Extract other meaningful words (length >= 4)
         preg_match_all('/\b\w{4,}\b/', $text, $wordMatches);
-        if (!empty($wordMatches[0])) {
+        if (! empty($wordMatches[0])) {
             $keywords = array_merge($keywords, $wordMatches[0]);
         }
 
         // Remove duplicates and filter
         $keywords = array_unique($keywords);
         $keywords = array_filter($keywords, function ($keyword) {
-            return strlen($keyword) >= 3 && !in_array(strtolower($keyword), ['the', 'and', 'for', 'you', 'can', 'may', 'all']);
+            return strlen($keyword) >= 3 && ! in_array(strtolower($keyword), ['the', 'and', 'for', 'you', 'can', 'may', 'all']);
         });
 
         return array_values($keywords);
     }
-
-
 
     /**
      * Normalize OCR text for matching
@@ -405,7 +402,7 @@ final class CardOcrService
 
         // If it's a CardTrader image, use our proxy
         if (str_starts_with($originalUrl, 'https://cardtrader.com/uploads/')) {
-            return url('/api/image-proxy?url=' . urlencode($originalUrl));
+            return url('/api/image-proxy?url='.urlencode($originalUrl));
         }
 
         // For other images, return as-is

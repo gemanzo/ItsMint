@@ -442,19 +442,24 @@ export const usePortfolioStore = defineStore('portfolio', {
       }
     },
 
-    async updatePortfolio(id: number, data: { name?: string; description?: string }) {
+    async updatePortfolio(
+      id: number,
+      data: { name?: string; description?: string }
+    ) {
       try {
         const response = await axios.put(`portfolios/${id}`, data);
-        
+
         // Update the portfolio in the store if it exists
-        const portfolioIndex = this.portfolios.findIndex((p: Portfolio) => p.id === id);
+        const portfolioIndex = this.portfolios.findIndex(
+          (p: Portfolio) => p.id === id
+        );
         if (portfolioIndex !== -1) {
           this.portfolios[portfolioIndex] = {
             ...this.portfolios[portfolioIndex],
             ...response.data,
           };
         }
-        
+
         return response.data;
       } catch (error) {
         console.error('Error updating portfolio:', error);

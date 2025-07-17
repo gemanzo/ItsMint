@@ -91,29 +91,19 @@ class BlueprintController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Blueprint $blueprint): Response
+    public function show(Blueprint $blueprint)
     {
-        $blueprint->load([
-            'expansion',
-            'latestPrice',
-            'cardPrices' => function ($query) {
-                $query->orderBy('language')->orderBy('condition')->orderBy('fetched_at', 'desc');
-            },
-        ]);
+        $blueprint->append('available_languages');
 
-        // Group prices by language for easier frontend consumption
-        $pricesByLanguage = $blueprint->cardPrices
-            ->groupBy('language')
-            ->map(function ($prices) {
-                return $prices->groupBy('condition')->map(function ($conditionPrices) {
-                    return $conditionPrices->first(); // Get latest for each condition
-                });
-            });
+        // Eager load relationships for efficiency
+        $blueprint->load(['expansion', 'latestPrice']);
+
+        $pricesByLanguage = $this->getPricesByLanguage($blueprint);
 
         return Inertia::render('Dashboard/Blueprints/Show', [
             'blueprint' => $blueprint,
             'pricesByLanguage' => $pricesByLanguage,
-            'userIsAdmin' => auth()->user()?->hasRole('admin') ?? false,
+            'userIsAdmin' => auth()->user()->hasRole('Admin'),
         ]);
     }
 
@@ -149,7 +139,7 @@ class BlueprintController extends Controller
         $query = Blueprint::query()->with(['expansion', 'latestPrice']);
 
         if (! empty($searchQuery)) {
-            $query->where('name', 'ILIKE', '%' . $searchQuery . '%');
+            $query->where('name', 'ILIKE', '%'.$searchQuery.'%');
         }
 
         // Use the normalized expansion code for querying the relationship
@@ -166,5 +156,25 @@ class BlueprintController extends Controller
         $blueprints = $query->take(15)->get();
 
         return response()->json($blueprints);
+    }
+
+    /**
+     * Get prices grouped by language for a given blueprint.
+     */
+    private function getPricesByLanguage(Blueprint $blueprint)
+    {
+        // Eager load card prices with specific ordering
+        $blueprint->load(['cardPrices' => function ($query) {
+            $query->orderBy('language')->orderBy('condition')->orderBy('fetched_at', 'desc');
+        }]);
+
+        // Group prices by language for easier frontend consumption
+        return $blueprint->cardPrices
+            ->groupBy('language')
+            ->map(function ($prices) {
+                return $prices->groupBy('condition')->map(function ($conditionPrices) {
+                    return $conditionPrices->first(); // Get latest for each condition
+                });
+            });
     }
 }

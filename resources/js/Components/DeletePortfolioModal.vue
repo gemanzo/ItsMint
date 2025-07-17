@@ -12,8 +12,8 @@
     @confirm="handleDelete"
   >
     <div>
-      <label 
-        for="portfolio-name-confirmation" 
+      <label
+        for="portfolio-name-confirmation"
         class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
       >
         Type <strong>{{ portfolioName }}</strong> to confirm:
@@ -25,8 +25,10 @@
         type="text"
         class="block w-full"
         :class="{
-          'border-red-500 focus:border-red-500 focus:ring-red-500': confirmationText && !isNameValid,
-          'border-green-500 focus:border-green-500 focus:ring-green-500': confirmationText && isNameValid
+          'border-red-500 focus:border-red-500 focus:ring-red-500':
+            confirmationText && !isNameValid,
+          'border-green-500 focus:border-green-500 focus:ring-green-500':
+            confirmationText && isNameValid,
         }"
         :placeholder="portfolioName"
         :disabled="isDeleting"
@@ -64,13 +66,16 @@ const isNameValid = computed(() => {
 });
 
 // Focus input when modal opens
-watch(() => props.show, async (newValue) => {
-  if (newValue) {
-    confirmationText.value = '';
-    await nextTick();
-    nameInput.value?.focus();
+watch(
+  () => props.show,
+  async (newValue) => {
+    if (newValue) {
+      confirmationText.value = '';
+      await nextTick();
+      nameInput.value?.focus();
+    }
   }
-});
+);
 
 const close = () => {
   if (!isDeleting.value) {
@@ -85,25 +90,27 @@ const handleDelete = async () => {
 
   try {
     await portfolioStore.deletePortfolio(props.portfolioId);
-    
+
     addToast({
       type: 'success',
       title: 'Portfolio deleted successfully!',
-      message: `"${props.portfolioName}" has been permanently deleted.`
+      message: `"${props.portfolioName}" has been permanently deleted.`,
     });
 
     emit('deleted');
     emit('close');
   } catch (error: any) {
     console.error('Error deleting portfolio:', error);
-    
+
     addToast({
       type: 'error',
       title: 'Failed to delete portfolio',
-      message: error.response?.data?.message || 'An unexpected error occurred. Please try again.'
+      message:
+        error.response?.data?.message ||
+        'An unexpected error occurred. Please try again.',
     });
   } finally {
     isDeleting.value = false;
   }
 };
-</script> 
+</script>

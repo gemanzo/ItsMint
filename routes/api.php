@@ -19,6 +19,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/blueprints/{blueprint}/prices/by-language', [BlueprintController::class, 'currentPricesByLanguage'])->name('api.blueprints.prices.by-language');
     Route::get('/blueprints/{blueprint}/prices/cheapest', [BlueprintController::class, 'cheapestPrices'])->name('api.blueprints.prices.cheapest');
     Route::get('/blueprints/{blueprint}/prices/statistics', [BlueprintController::class, 'priceStatistics'])->name('api.blueprints.prices.statistics');
+    Route::get('/blueprints/{blueprint}/market-statistics', [BlueprintController::class, 'marketStatistics'])->name('api.blueprints.market-statistics');
+
+    // Portfolio value history endpoint
+    Route::get('/portfolios/{portfolio}/value-history', [PortfolioController::class, 'valueHistory'])->name('api.portfolios.value-history');
 
     // Other endpoints
     Route::post('/card-scan', [CardScanController::class, 'scan']);

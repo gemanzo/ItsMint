@@ -31,11 +31,26 @@ const props = defineProps({
 const showAddToPortfolioModal = ref(false);
 const imageLoaded = ref(false);
 const imageError = ref(false);
-const priceHistory = ref(null);
-const isLoadingChart = ref(true);
 const portfolios = ref([]);
 const isLoadingPortfolios = ref(false);
-const selectedLanguage = ref('en'); // Default to English
+const marketStatistics = ref(null);
+const isLoadingMarketStats = ref(false);
+
+// New state management for language-specific charts
+const chartDataByLanguage = reactive({});
+const activeLanguage = ref(null);
+const activePeriod = ref('1M'); // Default period
+const timePeriods = ['1D', '1W', '1M', '3M', '1Y', 'MAX'];
+
+// Language mapping and flags
+const languageDetails = {
+  en: { name: 'English', flag: '🇬🇧' },
+  jp: { name: 'Japanese', flag: '🇯🇵' },
+  fr: { name: 'French', flag: '🇫🇷' },
+  'zh-cn': { name: 'Chinese (Simplified)', flag: '🇨🇳' },
+  'zh-tw': { name: 'Chinese (Traditional)', flag: '🇹🇼' },
+  ko: { name: 'Korean', flag: '🇰🇷' },
+};
 
 // Toast system
 const { success, error } = useToast();
@@ -96,7 +111,7 @@ const availableLanguages = computed(() => {
 });
 
 const selectedLanguagePrices = computed(() => {
-  const langPrices = props.pricesByLanguage[selectedLanguage.value] || {};
+  const langPrices = props.pricesByLanguage[activeLanguage.value] || {};
 
   // Sort conditions by the defined order
   const sortedConditions = Object.keys(langPrices).sort((a, b) => {
@@ -122,39 +137,157 @@ const hasAnyPriceData = computed(() => {
 
 const selectedLanguageData = computed(() => {
   return availableLanguages.value.find(
-    (lang) => lang.code === selectedLanguage.value
+    (lang) => lang.code === activeLanguage.value
   );
 });
 
-// Set default language to the first available one
+// When component mounts, set the active language to the first available one
 onMounted(() => {
-  if (availableLanguages.value.length > 0) {
-    // Try to find English first, otherwise use the first available
-    const englishLang = availableLanguages.value.find(
-      (lang) => lang.code === 'en'
-    );
-    selectedLanguage.value = englishLang
-      ? englishLang.code
-      : availableLanguages.value[0].code;
+  if (
+    props.blueprint.available_languages &&
+    props.blueprint.available_languages.length > 0
+  ) {
+    activeLanguage.value = props.blueprint.available_languages[0];
+    fetchPriceHistoryForLanguage(activeLanguage.value, activePeriod.value);
+    fetchMarketStatistics(activeLanguage.value);
   }
 });
 
-// Placeholder image as data URL SVG
-const placeholderImage =
-  'data:image/svg+xml;base64,' +
-  btoa(`
-<svg width="300" height="420" xmlns="http://www.w3.org/2000/svg">
-  <rect width="300" height="420" fill="#f3f4f6"/>
-  <rect x="20" y="20" width="260" height="380" fill="#e5e7eb" rx="8"/>
-  <circle cx="150" cy="150" r="30" fill="#d1d5db"/>
-  <rect x="100" y="200" width="100" height="8" fill="#d1d5db" rx="4"/>
-  <rect x="80" y="220" width="140" height="6" fill="#d1d5db" rx="3"/>
-  <rect x="90" y="240" width="120" height="6" fill="#d1d5db" rx="3"/>
-  <text x="150" y="320" text-anchor="middle" fill="#9ca3af" font-family="Arial" font-size="12">No Image</text>
-  <text x="150" y="340" text-anchor="middle" fill="#9ca3af" font-family="Arial" font-size="12">Available</text>
-</svg>
-`);
+const fetchPriceHistoryForLanguage = async (language, period = '1D') => {
+  // Create a unique key for language + period combination to allow caching different periods per language
+  const cacheKey = `${language}_${period}`;
 
+  // Only prevent re-fetching if we have data for this specific language+period combination
+  if (
+    chartDataByLanguage[cacheKey]?.data &&
+    activeLanguage.value === language &&
+    activePeriod.value === period
+  ) {
+    return;
+  }
+
+  // Set loading state for this language+period combination
+  chartDataByLanguage[cacheKey] = { isLoading: true, data: null, error: null };
+  activeLanguage.value = language;
+  activePeriod.value = period;
+
+  // Fetch market statistics when language changes
+  fetchMarketStatistics(language);
+
+  try {
+    const response = await axios.get(
+      route('api.blueprints.price-history', {
+        blueprint: props.blueprint.id,
+        language: language,
+        period: period,
+        condition: 'Near Mint', // Specify the condition
+      })
+    );
+    const history = response.data;
+
+    if (history.length === 0) {
+      chartDataByLanguage[cacheKey].data = null;
+    } else {
+      const labels = history.map((p) => formatDateShort(p.fetched_at));
+      const data = history.map((p) => p.price_cents / 100);
+
+      chartDataByLanguage[cacheKey].data = {
+        labels,
+        datasets: [
+          {
+            label: `Price (EUR)`,
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            data,
+            tension: 0.1,
+            fill: true,
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 6,
+            pointHoverBorderWidth: 2,
+            pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
+            pointHoverBackgroundColor: 'white',
+          },
+        ],
+      };
+    }
+  } catch (err) {
+    console.error(
+      `Failed to fetch price history for ${language} (${period}):`,
+      err
+    );
+    chartDataByLanguage[cacheKey].error = 'Failed to load chart data.';
+  } finally {
+    chartDataByLanguage[cacheKey].isLoading = false;
+  }
+};
+
+const fetchMarketStatistics = async (language) => {
+  if (!language) return;
+
+  isLoadingMarketStats.value = true;
+
+  try {
+    const response = await axios.get(
+      route('api.blueprints.market-statistics', {
+        blueprint: props.blueprint.id,
+        language: language,
+        condition: 'Near Mint',
+      })
+    );
+
+    marketStatistics.value = response.data.data;
+    console.log('Market statistics loaded:', marketStatistics.value);
+  } catch (err) {
+    console.error(`Failed to fetch market statistics for ${language}:`, err);
+    marketStatistics.value = null;
+  } finally {
+    isLoadingMarketStats.value = false;
+  }
+};
+
+const priceStatistics = computed(() => {
+  const cacheKey = `${activeLanguage.value}_${activePeriod.value}`;
+  const historyData = chartDataByLanguage[cacheKey]?.data?.datasets[0]?.data;
+
+  if (!historyData || historyData.length < 1) {
+    // Try to get at least the latest price from props as a fallback
+    const latestPrice =
+      props.pricesByLanguage[activeLanguage.value]?.['Near Mint']?.price_cents;
+    return {
+      latestPrice: latestPrice ? formatPrice(latestPrice) : 'N/A',
+      change: 'N/A',
+      percentage: 'N/A',
+      positive: true,
+    };
+  }
+
+  const latestPrice = historyData[historyData.length - 1];
+  // Use first point in the current view for comparison
+  const previousPrice = historyData[0];
+
+  const change = latestPrice - previousPrice;
+  const percentage = previousPrice !== 0 ? (change / previousPrice) * 100 : 0;
+
+  return {
+    latestPrice: formatPrice(latestPrice * 100),
+    change: formatPrice(change * 100, undefined, true),
+    percentage: `${percentage.toFixed(1)}%`,
+    positive: change >= 0,
+  };
+});
+
+// Helper for formatting price with explicit sign
+const formatPriceWithSign = (cents, currency = 'EUR', showSign = false) => {
+  const value = cents / 100;
+  const options = { style: 'currency', currency: currency };
+  if (showSign) {
+    options.signDisplay = 'exceptZero';
+  }
+  return value.toLocaleString('it-IT', options);
+};
+
+// Keep old formatPrice for other uses
 const formatPrice = (cents, currency = 'EUR') => {
   if (cents === null || cents === undefined) return 'N/A';
   return (cents / 100).toLocaleString('it-IT', {
@@ -202,13 +335,19 @@ const fetchPortfolios = async () => {
   isLoadingPortfolios.value = true;
   try {
     const response = await axios.get(route('api.portfolios.index'));
-    portfolios.value = response.data.data;
+    // Handle both possible response structures
+    portfolios.value = response.data.data || response.data;
+    console.log('Portfolios response:', response.data); // Debug log
     if (portfolios.value.length > 0) {
       form.portfolio_id = portfolios.value[0].id;
     }
   } catch (error) {
     console.error('Failed to fetch portfolios:', error);
-    // Handle error, maybe show a toast
+    // Show error toast
+    error(
+      'Error loading portfolios',
+      'Failed to load your portfolios. Please try again.'
+    );
   } finally {
     isLoadingPortfolios.value = false;
   }
@@ -216,32 +355,64 @@ const fetchPortfolios = async () => {
 
 // Methods
 const addToPortfolio = () => {
+  // Reset errors
+  form.errors = {};
+
+  // Ensure we have a valid language - use activeLanguage if available, otherwise first available language
+  const validLanguage =
+    activeLanguage.value &&
+    props.blueprint.available_languages.includes(activeLanguage.value)
+      ? activeLanguage.value
+      : props.blueprint.available_languages[0];
+
   // Set default values based on selected language and available prices
-  if (selectedLanguagePrices.value.length > 0) {
-    const bestConditionPrice = selectedLanguagePrices.value[0]; // First in the sorted array
-    form.language = selectedLanguage.value;
-    form.condition = bestConditionPrice.condition;
-    form.purchase_price_cents = bestConditionPrice.price_cents;
-    form.is_foil = bestConditionPrice.is_foil || false;
+  if (validLanguage && props.pricesByLanguage[validLanguage]) {
+    const langPrices = props.pricesByLanguage[validLanguage];
+    const conditions = Object.keys(langPrices).sort((a, b) => {
+      const indexA = conditionOrder.indexOf(a);
+      const indexB = conditionOrder.indexOf(b);
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
+
+    if (conditions.length > 0) {
+      const bestCondition = conditions[0];
+      const bestConditionPrice = langPrices[bestCondition];
+
+      form.language = validLanguage;
+      form.condition = bestCondition;
+      form.purchase_price_cents = bestConditionPrice.price_cents;
+      form.is_foil = bestConditionPrice.is_foil || false;
+    }
   } else if (props.blueprint.latest_price) {
     // Fallback to latest price if no data for selected language
     form.language = props.blueprint.latest_price.language;
     form.condition = props.blueprint.latest_price.condition;
     form.purchase_price_cents = props.blueprint.latest_price.price_cents;
     form.is_foil = props.blueprint.latest_price.is_foil || false;
+  } else {
+    // Final fallback - set default language and basic values
+    form.language = validLanguage || 'en';
+    form.condition = 'Near Mint';
+    form.purchase_price_cents = 0;
+    form.is_foil = false;
   }
 
+  console.log('Opening modal with form:', form); // Debug log
   showAddToPortfolioModal.value = true;
   fetchPortfolios();
 };
 
 const submitAddToPortfolio = () => {
   form.errors = {};
-  
+
   // Find the selected portfolio name for better user feedback
-  const selectedPortfolio = portfolios.value.find(p => p.id === form.portfolio_id);
+  const selectedPortfolio = portfolios.value.find(
+    (p) => p.id === form.portfolio_id
+  );
   const portfolioName = selectedPortfolio?.name || 'portfolio';
-  
+
   axios
     .post(
       route('api.portfolios.addBlueprint', { portfolio: form.portfolio_id }),
@@ -252,20 +423,20 @@ const submitAddToPortfolio = () => {
     )
     .then((response) => {
       showAddToPortfolioModal.value = false;
-      
+
       // Show success toast
       success(
         'Card added to portfolio!',
         `"${props.blueprint.name}" has been successfully added to "${portfolioName}".`
       );
-      
+
       console.log('Card added successfully', response.data);
       // Optionally, redirect or update UI
     })
     .catch((error) => {
       if (error.response && error.response.status === 422) {
         form.errors = error.response.data.errors;
-        
+
         // Show validation error toast
         error(
           'Validation errors',
@@ -273,7 +444,7 @@ const submitAddToPortfolio = () => {
         );
       } else {
         console.error('An unexpected error occurred:', error);
-        
+
         // Show generic error toast
         error(
           'Error adding card',
@@ -283,43 +454,8 @@ const submitAddToPortfolio = () => {
     });
 };
 
-const fetchPriceHistory = async () => {
-  try {
-    const response = await axios.get(
-      route('api.blueprints.price-history', { blueprint: props.blueprint.id })
-    );
-    const history = response.data;
-
-    if (history.length === 0) {
-      priceHistory.value = null;
-      return;
-    }
-
-    const labels = history.map((p) => formatDateShort(p.fetched_at));
-    const data = history.map((p) => p.price_cents / 100);
-
-    priceHistory.value = {
-      labels,
-      datasets: [
-        {
-          label: `Price (${history[0]?.currency || 'EUR'})`,
-          backgroundColor: 'rgba(239, 68, 68, 0.2)',
-          borderColor: 'rgba(239, 68, 68, 1)',
-          data,
-          tension: 0.1,
-        },
-      ],
-    };
-  } catch (error) {
-    console.error('Failed to fetch price history:', error);
-    priceHistory.value = null;
-  } finally {
-    isLoadingChart.value = false;
-  }
-};
-
 onMounted(() => {
-  fetchPriceHistory();
+  // The existing onMounted for price history is replaced by the new one at the top.
 });
 </script>
 
@@ -346,6 +482,36 @@ onMounted(() => {
       />
 
       <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <!-- Language Selector in Hero -->
+        <div
+          v-if="
+            blueprint.available_languages &&
+            blueprint.available_languages.length > 1
+          "
+          class="absolute top-3 right-4 z-10"
+        >
+          <div
+            class="flex items-center space-x-1 bg-white/20 backdrop-blur-sm p-1 rounded-lg"
+          >
+            <button
+              v-for="lang in blueprint.available_languages"
+              :key="lang"
+              :class="[
+                'px-2 py-1 text-sm font-medium rounded-md flex items-center space-x-2 transition-all duration-200',
+                activeLanguage === lang
+                  ? 'bg-white/90 text-red-700 shadow'
+                  : 'text-white/80 hover:bg-white/40',
+              ]"
+              @click="fetchPriceHistoryForLanguage(lang, activePeriod)"
+            >
+              <span>{{ languageDetails[lang]?.flag || '🏳️' }}</span>
+              <span class="hidden sm:inline">{{
+                languageDetails[lang]?.name || lang.toUpperCase()
+              }}</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Breadcrumbs -->
         <nav class="flex items-center space-x-2 text-red-100 mb-3">
           <Link
@@ -600,48 +766,309 @@ onMounted(() => {
               </div>
             </div>
 
-            <!-- Price History (Placeholder) -->
+            <!-- Price History Chart -->
             <div
-              class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
+              class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
             >
-              <h3
-                class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center"
-              >
-                <svg
-                  class="h-5 w-5 mr-2 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-                Price History
-              </h3>
+              <!-- Chart Header with Price and Stats -->
               <div
-                class="h-40 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center"
+                class="px-6 py-4 border-b border-gray-100 dark:border-gray-700"
               >
-                <div class="text-center">
-                  <svg
-                    class="h-8 w-8 text-gray-400 dark:text-gray-600 mx-auto mb-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">
-                    Price history chart coming soon
+                <div v-if="activeLanguage" class="space-y-2">
+                  <!-- Main Price -->
+                  <div class="text-3xl font-bold text-gray-900 dark:text-white">
+                    {{ priceStatistics.latestPrice }}
+                    <span class="text-xs font-normal text-gray-400 ml-1"
+                      >€</span
+                    >
+                  </div>
+
+                  <!-- Stats Row -->
+                  <div class="flex items-center space-x-6 text-sm">
+                    <div>
+                      <span
+                        class="text-gray-500 dark:text-gray-400 uppercase tracking-wide text-xs font-medium"
+                      >
+                        {{
+                          activePeriod === '1D'
+                            ? 'TODAY'
+                            : activePeriod === '1W'
+                              ? 'THIS WEEK'
+                              : activePeriod === '1M'
+                                ? 'THIS MONTH'
+                                : activePeriod === '3M'
+                                  ? 'LAST 3 MONTHS'
+                                  : activePeriod === '1Y'
+                                    ? 'THIS YEAR'
+                                    : 'ALL TIME'
+                        }}
+                      </span>
+                      <div
+                        :class="[
+                          'font-semibold',
+                          priceStatistics.positive
+                            ? 'text-green-600'
+                            : 'text-red-600',
+                        ]"
+                      >
+                        {{ priceStatistics.change }}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span
+                        class="text-gray-500 dark:text-gray-400 uppercase tracking-wide text-xs font-medium"
+                      >
+                        RATE OF RETURN
+                      </span>
+                      <div
+                        :class="[
+                          'font-semibold',
+                          priceStatistics.positive
+                            ? 'text-green-600'
+                            : 'text-red-600',
+                        ]"
+                      >
+                        {{ priceStatistics.percentage }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-else class="py-4">
+                  <p class="text-gray-500">
+                    Select a language to view its price history.
                   </p>
+                </div>
+              </div>
+
+              <!-- Chart Container -->
+              <div class="relative">
+                <div
+                  v-if="!activeLanguage"
+                  class="h-64 flex items-center justify-center"
+                >
+                  <p class="text-gray-500">
+                    Select a language to view its price history.
+                  </p>
+                </div>
+
+                <div
+                  v-else-if="
+                    chartDataByLanguage[`${activeLanguage}_${activePeriod}`]
+                      ?.isLoading
+                  "
+                  class="h-64 flex items-center justify-center"
+                >
+                  <div class="text-center">
+                    <svg
+                      class="animate-spin h-8 w-8 text-gray-400 dark:text-gray-600 mx-auto mb-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      />
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                      Loading price history...
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  v-else-if="
+                    chartDataByLanguage[`${activeLanguage}_${activePeriod}`]
+                      ?.data
+                  "
+                  class="h-64 px-2"
+                >
+                  <PriceHistoryChart
+                    :chart-data="
+                      chartDataByLanguage[`${activeLanguage}_${activePeriod}`]
+                        .data
+                    "
+                    :chart-options="{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      layout: {
+                        padding: {
+                          top: 20,
+                          right: 20,
+                          bottom: 10,
+                          left: 10,
+                        },
+                      },
+                      plugins: {
+                        legend: {
+                          display: false,
+                        },
+                        tooltip: {
+                          mode: 'index',
+                          intersect: false,
+                          backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                          titleColor: 'white',
+                          bodyColor: 'white',
+                          borderColor: 'rgba(59, 130, 246, 1)',
+                          borderWidth: 1,
+                          cornerRadius: 8,
+                          displayColors: false,
+                          callbacks: {
+                            title: function (context) {
+                              return context[0].label;
+                            },
+                            label: function (context) {
+                              return '€' + context.parsed.y.toFixed(2);
+                            },
+                          },
+                        },
+                      },
+                      scales: {
+                        x: {
+                          display: true,
+                          grid: {
+                            display: false,
+                          },
+                          ticks: {
+                            color: 'rgba(156, 163, 175, 0.8)',
+                            font: {
+                              size: 11,
+                            },
+                            maxTicksLimit: 6,
+                          },
+                          border: {
+                            display: false,
+                          },
+                        },
+                        y: {
+                          display: true,
+                          position: 'right',
+                          grid: {
+                            color: 'rgba(229, 231, 235, 0.5)',
+                            drawBorder: false,
+                          },
+                          ticks: {
+                            color: 'rgba(156, 163, 175, 0.8)',
+                            font: {
+                              size: 11,
+                            },
+                            callback: function (value) {
+                              if (value >= 1000) {
+                                return (value / 1000).toFixed(1) + 'K';
+                              }
+                              return '€' + value.toFixed(0);
+                            },
+                            maxTicksLimit: 6,
+                          },
+                          border: {
+                            display: false,
+                          },
+                        },
+                      },
+                      elements: {
+                        line: {
+                          tension: 0.1,
+                          borderWidth: 2,
+                          borderColor: 'rgba(59, 130, 246, 1)',
+                          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                          fill: true,
+                        },
+                        point: {
+                          radius: 0,
+                          hoverRadius: 6,
+                          hoverBorderWidth: 2,
+                          hoverBorderColor: 'rgba(59, 130, 246, 1)',
+                          hoverBackgroundColor: 'white',
+                        },
+                      },
+                      interaction: {
+                        intersect: false,
+                        mode: 'index',
+                      },
+                    }"
+                  />
+                </div>
+
+                <div
+                  v-else-if="
+                    chartDataByLanguage[`${activeLanguage}_${activePeriod}`]
+                      ?.error
+                  "
+                  class="h-64 flex items-center justify-center"
+                >
+                  <p class="text-red-500">
+                    {{
+                      chartDataByLanguage[`${activeLanguage}_${activePeriod}`]
+                        .error
+                    }}
+                  </p>
+                </div>
+
+                <div v-else class="h-64 flex items-center justify-center">
+                  <div class="text-center">
+                    <svg
+                      class="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                    <h4
+                      class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+                    >
+                      No Price History
+                    </h4>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">
+                      Price history data is not available for this card yet.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Time Period Filters -->
+              <div
+                class="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between"
+              >
+                <div class="flex space-x-1">
+                  <button
+                    v-for="period in timePeriods"
+                    :key="period"
+                    :class="[
+                      'px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200',
+                      activePeriod === period
+                        ? 'bg-gray-800 text-white shadow-sm'
+                        : 'text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-600',
+                    ]"
+                    @click="
+                      fetchPriceHistoryForLanguage(activeLanguage, period)
+                    "
+                  >
+                    {{
+                      period === '1D'
+                        ? '1G'
+                        : period === '1W'
+                          ? '1S'
+                          : period === '1Y'
+                            ? '1A'
+                            : period
+                    }}
+                  </button>
                 </div>
               </div>
             </div>
@@ -649,12 +1076,12 @@ onMounted(() => {
 
           <!-- Right Column - Price & Market Info -->
           <div class="space-y-6">
-            <!-- Multi-Language Price Display -->
+            <!-- Prices by Condition -->
             <div
               v-if="hasAnyPriceData"
               class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
             >
-              <div class="flex items-center justify-between mb-6">
+              <div class="flex items-center justify-between mb-4">
                 <h3
                   class="text-lg font-semibold text-gray-900 dark:text-white flex items-center"
                 >
@@ -671,132 +1098,75 @@ onMounted(() => {
                       d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
                     />
                   </svg>
-                  Prices by Language
+                  Prices by Condition
                 </h3>
               </div>
 
-              <!-- Language Selector -->
-              <div class="mb-6">
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    v-for="language in availableLanguages"
-                    :key="language.code"
-                    :class="[
-                      'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
-                      selectedLanguage === language.code
-                        ? 'bg-indigo-600 text-white shadow-md'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600',
-                    ]"
-                    @click="selectedLanguage = language.code"
-                  >
-                    <span class="flex items-center">
-                      {{ language.name }}
-                      <span
-                        v-if="!language.hasData"
-                        class="ml-1 text-xs opacity-50"
-                        >(No data)</span
-                      >
-                    </span>
-                  </button>
-                </div>
-              </div>
-
               <!-- Price Data for Selected Language -->
-              <div v-if="selectedLanguagePrices.length > 0" class="space-y-4">
-                <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Showing prices for
-                  <strong>{{ selectedLanguageData?.name }}</strong>
-                </div>
-
-                <!-- Price Cards Grid -->
-                <div class="grid gap-3">
-                  <div
-                    v-for="price in selectedLanguagePrices"
-                    :key="`${price.condition}-${price.language}`"
-                    class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200"
-                  >
-                    <div class="flex items-center justify-between">
-                      <div class="flex-1">
-                        <div class="flex items-center space-x-2 mb-2">
-                          <span
-                            :class="`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-${getConditionColor(price.condition)}-100 text-${getConditionColor(price.condition)}-800 dark:bg-${getConditionColor(price.condition)}-900 dark:text-${getConditionColor(price.condition)}-200`"
-                          >
-                            {{ price.condition }}
-                          </span>
-                          <span
-                            v-if="price.is_foil"
-                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
-                          >
-                            ✨ Foil
-                          </span>
-                        </div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                          Updated {{ formatDateShort(price.fetched_at) }}
-                        </div>
-                      </div>
-                      <div class="text-right">
-                        <div
-                          class="text-2xl font-bold text-green-600 dark:text-green-400"
+              <div v-if="selectedLanguagePrices.length > 0" class="space-y-3">
+                <div
+                  v-for="price in selectedLanguagePrices"
+                  :key="`${price.condition}-${price.language}`"
+                  class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200"
+                >
+                  <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                      <div class="flex items-center space-x-2 mb-2">
+                        <span
+                          :class="`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-${getConditionColor(price.condition)}-100 text-${getConditionColor(price.condition)}-800 dark:bg-${getConditionColor(price.condition)}-900 dark:text-${getConditionColor(price.condition)}-200`"
                         >
-                          {{ formatPrice(price.price_cents, price.currency) }}
-                        </div>
+                          {{ price.condition }}
+                        </span>
+                        <span
+                          v-if="price.is_foil"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
+                        >
+                          ✨ Foil
+                        </span>
+                      </div>
+                      <div class="text-xs text-gray-500 dark:text-gray-400">
+                        Updated {{ formatDateShort(price.fetched_at) }}
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <div
+                        class="text-2xl font-bold text-green-600 dark:text-green-400"
+                      >
+                        {{ formatPrice(price.price_cents, price.currency) }}
                       </div>
                     </div>
                   </div>
                 </div>
-
-                <!-- Add to Portfolio button with selected language context -->
-                <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <div class="flex items-center justify-between">
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                      💡 Prices automatically sync from CardTrader marketplace
-                    </p>
-                    <button
-                      class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors duration-200 flex items-center"
-                      @click="addToPortfolio"
-                    >
-                      <svg
-                        class="h-4 w-4 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                        />
-                      </svg>
-                      Add to Portfolio
-                    </button>
-                  </div>
-                </div>
+              </div>
+              <div v-else class="text-center py-8">
+                <p class="text-gray-500 dark:text-gray-400">
+                  No price data for this language.
+                </p>
               </div>
 
-              <!-- No data for selected language -->
-              <div v-else class="text-center py-8">
-                <svg
-                  class="h-12 w-12 text-gray-400 dark:text-gray-600 mx-auto mb-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              <!-- Add to Portfolio button -->
+              <div
+                class="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4"
+              >
+                <button
+                  class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors duration-200 flex items-center justify-center"
+                  @click="addToPortfolio"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                <h4
-                  class="text-lg font-semibold text-gray-900 dark:text-white mb-2"
-                >
-                  No Prices for {{ selectedLanguageData?.name }}
-                </h4>
-                <p class="text-gray-600 dark:text-gray-400 text-sm">
-                  Price data is not available for this language yet.
-                </p>
+                  <svg
+                    class="h-4 w-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  Add to Portfolio
+                </button>
               </div>
             </div>
 
@@ -830,24 +1200,30 @@ onMounted(() => {
               </div>
             </div>
 
-            <!-- Market Stats (Placeholder) -->
+            <!-- Market Statistics -->
             <div
               class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
             >
-              <h3
-                class="text-lg font-semibold text-gray-900 dark:text-white mb-4"
-              >
-                Market Statistics
-              </h3>
-              <div class="space-y-4">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                  Market Statistics
+                </h3>
+                <div
+                  v-if="isLoadingMarketStats"
+                  class="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"
+                />
+              </div>
+
+              <div v-if="marketStatistics" class="space-y-4">
                 <div class="flex items-center justify-between">
                   <span class="text-sm text-gray-500 dark:text-gray-400"
                     >Market Cap</span
                   >
                   <span
                     class="text-sm font-semibold text-gray-900 dark:text-white"
-                    >Coming Soon</span
                   >
+                    {{ marketStatistics.market_cap_formatted }}
+                  </span>
                 </div>
                 <div class="flex items-center justify-between">
                   <span class="text-sm text-gray-500 dark:text-gray-400"
@@ -855,17 +1231,26 @@ onMounted(() => {
                   >
                   <span
                     class="text-sm font-semibold text-gray-900 dark:text-white"
-                    >Coming Soon</span
                   >
+                    {{ marketStatistics.avg_price_30d_formatted }}
+                  </span>
                 </div>
                 <div class="flex items-center justify-between">
                   <span class="text-sm text-gray-500 dark:text-gray-400"
-                    >Price Change</span
+                    >Price Change (7d)</span
                   >
                   <span
-                    class="text-sm font-semibold text-gray-900 dark:text-white"
-                    >Coming Soon</span
+                    :class="[
+                      'text-sm font-semibold',
+                      marketStatistics.price_change_7d_percentage > 0
+                        ? 'text-green-600'
+                        : marketStatistics.price_change_7d_percentage < 0
+                          ? 'text-red-600'
+                          : 'text-gray-900 dark:text-white',
+                    ]"
                   >
+                    {{ marketStatistics.price_change_7d_formatted }}
+                  </span>
                 </div>
                 <div class="flex items-center justify-between">
                   <span class="text-sm text-gray-500 dark:text-gray-400"
@@ -873,8 +1258,51 @@ onMounted(() => {
                   >
                   <span
                     class="text-sm font-semibold text-gray-900 dark:text-white"
-                    >Coming Soon</span
                   >
+                    #{{ marketStatistics.popularity_rank }}
+                  </span>
+                </div>
+              </div>
+
+              <div v-else-if="!isLoadingMarketStats" class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Market Cap</span
+                  >
+                  <span class="text-sm font-semibold text-gray-500">N/A</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Avg. Price (30d)</span
+                  >
+                  <span class="text-sm font-semibold text-gray-500">N/A</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Price Change (7d)</span
+                  >
+                  <span class="text-sm font-semibold text-gray-500">N/A</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Popularity Rank</span
+                  >
+                  <span class="text-sm font-semibold text-gray-500">N/A</span>
+                </div>
+              </div>
+
+              <div v-else class="space-y-4">
+                <div
+                  v-for="i in 4"
+                  :key="i"
+                  class="flex items-center justify-between"
+                >
+                  <span class="text-sm text-gray-500 dark:text-gray-400"
+                    >Loading...</span
+                  >
+                  <div
+                    class="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                  />
                 </div>
               </div>
             </div>
@@ -951,9 +1379,13 @@ onMounted(() => {
               class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
               :disabled="isLoadingPortfolios"
             >
-              <option v-if="isLoadingPortfolios" value="null" disabled>
+              <option v-if="isLoadingPortfolios" value="" disabled>
                 Loading portfolios...
               </option>
+              <option v-else-if="portfolios.length === 0" value="" disabled>
+                No portfolios found
+              </option>
+              <option v-else value="" disabled>Select a portfolio</option>
               <option
                 v-for="portfolio in portfolios"
                 :key="portfolio.id"
@@ -975,11 +1407,22 @@ onMounted(() => {
           </div>
 
           <div>
-            <LanguageSelect
+            <InputLabel for="language" value="Language" />
+            <select
               id="language"
               v-model="form.language"
-              class="mt-1 block w-full"
-            />
+              class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+            >
+              <option value="" disabled>Select a language</option>
+              <option
+                v-for="lang in blueprint.available_languages"
+                :key="lang"
+                :value="lang"
+              >
+                {{ languageDetails[lang]?.flag || '🏳️' }}
+                {{ languageDetails[lang]?.name || lang.toUpperCase() }}
+              </option>
+            </select>
             <InputError class="mt-2" :message="form.errors.language" />
           </div>
 
@@ -1033,31 +1476,6 @@ onMounted(() => {
         </form>
       </div>
     </Modal>
-
-    <!-- Price History Chart -->
-    <div class="py-6">
-      <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div
-          class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6"
-        >
-          <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-            Price History
-          </h3>
-          <div v-if="isLoadingChart" class="text-center">
-            <p>Loading chart...</p>
-          </div>
-          <div v-else-if="priceHistory">
-            <PriceHistoryChart
-              :chart-data="priceHistory"
-              style="height: 300px"
-            />
-          </div>
-          <div v-else class="text-center text-gray-500">
-            <p>No price history available for this blueprint.</p>
-          </div>
-        </div>
-      </div>
-    </div>
   </AuthenticatedLayout>
 </template>
 

@@ -7,9 +7,11 @@ Il nuovo sistema di modal di ItsMint segue il principio DRY (Don't Repeat Yourse
 ### Componenti Base
 
 #### 1. BaseModal
+
 Il componente fondamentale che standardizza tutto il comportamento dei modal.
 
 **Features:**
+
 - Animazioni consistenti con HeadlessUI
 - Slot flessibili (header, icon, content, footer)
 - Controllo delle dimensioni
@@ -17,63 +19,70 @@ Il componente fondamentale che standardizza tutto il comportamento dei modal.
 - Supporto per dark mode
 
 **Props:**
+
 ```typescript
 interface Props {
-  isOpen: boolean
-  title?: string
-  subtitle?: string
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
-  closeable?: boolean
-  showCloseButton?: boolean
+  isOpen: boolean;
+  title?: string;
+  subtitle?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  closeable?: boolean;
+  showCloseButton?: boolean;
 }
 ```
 
 #### 2. FormModal
+
 Estende BaseModal per i form, aggiungendo gestione submit e loading states.
 
 **Features:**
+
 - Submit automatico con preventDefault
 - Loading state con spinner
 - Validazione con disabilitazione bottone
 - Bottoni Cancel/Submit predefiniti
 
 **Props:**
+
 ```typescript
 interface Props {
-  isOpen: boolean
-  title: string
-  subtitle?: string
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
-  isLoading?: boolean
-  canSubmit?: boolean
-  submitText?: string
-  cancelText?: string
-  loadingText?: string
+  isOpen: boolean;
+  title: string;
+  subtitle?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  isLoading?: boolean;
+  canSubmit?: boolean;
+  submitText?: string;
+  cancelText?: string;
+  loadingText?: string;
 }
 ```
 
 #### 3. ConfirmationModal
+
 Specializzato per conferme con diversi tipi (danger, warning, info, success).
 
 **Features:**
+
 - Icone colorate per tipo
 - Bottoni appropriati per tipo (DangerButton per type="danger")
 - Slot per contenuto aggiuntivo (es. input di conferma)
 - Loading state
 
 **Props:**
+
 ```typescript
 interface Props {
-  isOpen: boolean
-  title: string
-  message: string
-  type?: 'danger' | 'warning' | 'info' | 'success'
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
-  isLoading?: boolean
-  canConfirm?: boolean
-  confirmText?: string
-  cancelText?: string
-  loadingText?: string
+  isOpen: boolean;
+  title: string;
+  message: string;
+  type?: 'danger' | 'warning' | 'info' | 'success';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  isLoading?: boolean;
+  canConfirm?: boolean;
+  confirmText?: string;
+  cancelText?: string;
+  loadingText?: string;
 }
 ```
 
@@ -90,7 +99,7 @@ interface Props {
     @close="showModal = false"
   >
     <p>Your content here</p>
-    
+
     <template #footer>
       <button @click="showModal = false">Close</button>
     </template>
@@ -115,7 +124,7 @@ interface Props {
       <label>Name</label>
       <input v-model="form.name" />
     </div>
-    
+
     <div>
       <label>Email</label>
       <input v-model="form.email" type="email" />
@@ -124,26 +133,26 @@ interface Props {
 </template>
 
 <script setup>
-import { reactive, computed, ref } from 'vue'
-import FormModal from '@/Components/Base/FormModal.vue'
+import { reactive, computed, ref } from 'vue';
+import FormModal from '@/Components/Base/FormModal.vue';
 
-const showModal = ref(false)
-const isLoading = ref(false)
-const form = reactive({ name: '', email: '' })
+const showModal = ref(false);
+const isLoading = ref(false);
+const form = reactive({ name: '', email: '' });
 
-const isFormValid = computed(() => 
-  form.name.length > 0 && form.email.includes('@')
-)
+const isFormValid = computed(
+  () => form.name.length > 0 && form.email.includes('@')
+);
 
 const handleSubmit = async () => {
-  isLoading.value = true
+  isLoading.value = true;
   try {
     // API call
-    showModal.value = false
+    showModal.value = false;
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 </script>
 ```
 
@@ -179,8 +188,8 @@ const handleSubmit = async () => {
     @confirm="handleDelete"
   >
     <div>
-      <input 
-        v-model="confirmationText" 
+      <input
+        v-model="confirmationText"
         :placeholder="portfolioName"
         class="w-full"
       />
@@ -189,14 +198,12 @@ const handleSubmit = async () => {
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed } from 'vue';
 
-const confirmationText = ref('')
-const portfolioName = 'My Portfolio'
+const confirmationText = ref('');
+const portfolioName = 'My Portfolio';
 
-const isNameValid = computed(() => 
-  confirmationText.value === portfolioName
-)
+const isNameValid = computed(() => confirmationText.value === portfolioName);
 </script>
 ```
 
@@ -205,6 +212,7 @@ const isNameValid = computed(() =>
 ### Da Modal Personalizzato a Sistema Base
 
 **Prima:**
+
 ```vue
 <template>
   <TransitionRoot :show="isOpen">
@@ -219,6 +227,7 @@ const isNameValid = computed(() =>
 ```
 
 **Dopo:**
+
 ```vue
 <template>
   <BaseModal :is-open="isOpen" title="My Title" @close="close">
@@ -230,6 +239,7 @@ const isNameValid = computed(() =>
 ### Sostituzione Modal per Form
 
 **Prima:**
+
 ```vue
 <form @submit.prevent="submit">
   <!-- form fields -->
@@ -241,12 +251,9 @@ const isNameValid = computed(() =>
 ```
 
 **Dopo:**
+
 ```vue
-<FormModal 
-  :is-loading="isLoading" 
-  @submit="submit" 
-  @close="close"
->
+<FormModal :is-loading="isLoading" @submit="submit" @close="close">
   <!-- only form fields -->
 </FormModal>
 ```
@@ -264,6 +271,7 @@ const isNameValid = computed(() =>
 ## Migrazione Graduale
 
 Il sistema supporta migrazione graduale:
+
 1. Identifica pattern comuni nei modal esistenti
 2. Sostituisci uno alla volta con i componenti base
 3. Testa ogni sostituzione individualmente
@@ -276,4 +284,4 @@ Il sistema supporta migrazione graduale:
 - **Manutenibilità** - modifica in un posto, effetto globale
 - **Accessibilità** - HeadlessUI garantisce supporto screen reader
 - **Performance** - meno bundle duplicato
-- **DX migliore** - API più semplici e prevedibili 
+- **DX migliore** - API più semplici e prevedibili

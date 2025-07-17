@@ -84,7 +84,7 @@ class Blueprint extends Model
                 'Slightly Played',
                 'Moderately Played',
                 'Played',
-                'Poor'
+                'Poor',
             ])
             ->orderByRaw('condition_priority ASC, price_cents DESC, fetched_at DESC');
     }
@@ -216,6 +216,36 @@ class Blueprint extends Model
         }
 
         return null;
+    }
+
+    /**
+     * Get the full price history from all language variants.
+     */
+    public function getPriceHistoryAttribute()
+    {
+        $allVersions = $this->allLanguageVersions()->with('cardPrices')->get();
+        $allPrices = collect();
+
+        foreach ($allVersions as $blueprint) {
+            $allPrices = $allPrices->merge($blueprint->cardPrices);
+        }
+
+        return $allPrices->sortBy('fetched_at')->values();
+    }
+
+    /**
+     * Get the list of available languages for this card's prices.
+     * This returns languages that have actual price data in the CardPrice table.
+     */
+    public function getAvailableLanguagesAttribute()
+    {
+        return $this->cardPrices()
+            ->select('language')
+            ->distinct()
+            ->pluck('language')
+            ->filter() // Remove any null/empty languages
+            ->sort()
+            ->values();
     }
 
     /**

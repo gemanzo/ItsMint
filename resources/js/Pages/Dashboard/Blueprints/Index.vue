@@ -79,8 +79,6 @@ const sortOptions = [
   { value: 'name_desc', label: 'Name: Z-A' },
 ];
 
-
-
 // --- Computed ---
 const activeFiltersCount = computed(() => {
   let count = 0;
@@ -144,8 +142,7 @@ const searchBlueprints = async (loadMore = false) => {
     };
     if (currentFilters.expansion)
       params.expansion_id = Number(currentFilters.expansion);
-    if (currentFilters.sort)
-      params.sort = currentFilters.sort;
+    if (currentFilters.sort) params.sort = currentFilters.sort;
 
     const { data } = await axios.get('/blueprints/search', { params });
     if (data.success && data.data) {
@@ -717,5 +714,3 @@ watch(
     />
   </AuthenticatedLayout>
 </template>
-
-

@@ -74,7 +74,7 @@ class BlueprintObserver
         try {
             Artisan::call('itsmint:generate-blueprint-ocr-match-string', [
                 'blueprint_id' => $blueprint->id,
-                '--force' => true
+                '--force' => true,
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to update OCR match string via command', [

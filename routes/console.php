@@ -37,7 +37,7 @@ Schedule::command('itsmint:queue-price-updates')
     ->everySixHours()
     ->withoutOverlapping();
 
-//clean the horizon.log file
+// clean the horizon.log file
 Schedule::exec(function () {
     $logFile = storage_path('logs/horizon.log');
     if (file_exists($logFile)) {

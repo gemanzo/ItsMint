@@ -105,7 +105,10 @@
     </div>
 
     <!-- Error Display -->
-    <div v-if="formError" class="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md">
+    <div
+      v-if="formError"
+      class="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md"
+    >
       <p class="text-sm text-red-600 dark:text-red-400">
         {{ formError }}
       </p>
@@ -145,16 +148,16 @@ const isOpen = ref(true);
 
 const formData = reactive({
   quantity: props.userCard.pivot?.quantity || 1,
-  purchase_price: props.userCard.purchase_price_cents !== null && props.userCard.purchase_price_cents !== undefined
-    ? props.userCard.purchase_price_cents / 100
-    : null,
+  purchase_price:
+    props.userCard.purchase_price_cents !== null &&
+    props.userCard.purchase_price_cents !== undefined
+      ? props.userCard.purchase_price_cents / 100
+      : null,
   acquired_at: props.userCard.acquired_at
     ? props.userCard.acquired_at.split('T')[0]
     : '',
   notes: props.userCard.notes || '',
 });
-
-
 
 // Use pricing composable
 const blueprintRef = computed(() => props.userCard.blueprint || null);
@@ -163,9 +166,11 @@ const { estimatedPrice } = useCardPricing(blueprintRef, conditionRef);
 
 // Form validation
 const isFormValid = computed(() => {
-  return formData.quantity >= 1 && 
-         formData.quantity <= 999 &&
-         (!formData.notes || formData.notes.length <= 1000);
+  return (
+    formData.quantity >= 1 &&
+    formData.quantity <= 999 &&
+    (!formData.notes || formData.notes.length <= 1000)
+  );
 });
 
 const closeModal = () => {
@@ -197,18 +202,20 @@ const submitEdit = async () => {
       addToast({
         type: 'success',
         title: 'Card updated successfully!',
-        message: `"${props.userCard.blueprint?.name}" has been updated.`
+        message: `"${props.userCard.blueprint?.name}" has been updated.`,
       });
 
       emit('card-updated');
       closeModal();
     } catch (error: any) {
       console.error('Error updating card:', error);
-      
+
       addToast({
         type: 'error',
         title: 'Failed to update card',
-        message: error.response?.data?.message || 'An unexpected error occurred. Please try again.'
+        message:
+          error.response?.data?.message ||
+          'An unexpected error occurred. Please try again.',
       });
     }
   });

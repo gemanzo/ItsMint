@@ -5,14 +5,16 @@
     subtitle="Add this card to one of your portfolios"
     size="lg"
     :is-loading="isSubmitting"
-    :canSubmit="isFormValid"
+    :can-submit="isFormValid"
     submit-text="Add Card"
     loading-text="Adding..."
     @close="closeModal"
     @submit="submitAddCard"
   >
     <!-- Card Preview -->
-    <div class="mb-4 p-3 border rounded-md dark:border-gray-600 flex items-center space-x-4">
+    <div
+      class="mb-4 p-3 border rounded-md dark:border-gray-600 flex items-center space-x-4"
+    >
       <img
         v-if="props.blueprint.image_url"
         :src="props.blueprint.image_url"
@@ -57,7 +59,8 @@
         required
         class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
         :class="{
-          'border-red-500 focus:border-red-500 focus:ring-red-500': formErrors.portfolio
+          'border-red-500 focus:border-red-500 focus:ring-red-500':
+            formErrors.portfolio,
         }"
       >
         <option disabled value="">Please select one</option>
@@ -69,7 +72,10 @@
           {{ p.name }}
         </option>
       </select>
-      <p v-if="formErrors.portfolio" class="mt-1 text-sm text-red-600 dark:text-red-400">
+      <p
+        v-if="formErrors.portfolio"
+        class="mt-1 text-sm text-red-600 dark:text-red-400"
+      >
         {{ formErrors.portfolio }}
       </p>
     </div>
@@ -103,10 +109,14 @@
         required
         class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
         :class="{
-          'border-red-500 focus:border-red-500 focus:ring-red-500': formErrors.quantity
+          'border-red-500 focus:border-red-500 focus:ring-red-500':
+            formErrors.quantity,
         }"
       />
-      <p v-if="formErrors.quantity" class="mt-1 text-sm text-red-600 dark:text-red-400">
+      <p
+        v-if="formErrors.quantity"
+        class="mt-1 text-sm text-red-600 dark:text-red-400"
+      >
         {{ formErrors.quantity }}
       </p>
     </div>
@@ -136,7 +146,10 @@
     </div>
 
     <!-- Error Display -->
-    <div v-if="formErrors.general" class="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md">
+    <div
+      v-if="formErrors.general"
+      class="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md"
+    >
       <p class="text-sm text-red-600 dark:text-red-400">
         {{ formErrors.general }}
       </p>
@@ -186,11 +199,13 @@ const { estimatedPrice } = useCardPricing(
 
 // Form validation
 const isFormValid = computed(() => {
-  return selectedPortfolioId.value !== null &&
-         cardDetails.quantity >= 1 &&
-         cardDetails.quantity <= 999 &&
-         !!cardDetails.condition &&
-         !!cardDetails.language;
+  return (
+    selectedPortfolioId.value !== null &&
+    cardDetails.quantity >= 1 &&
+    cardDetails.quantity <= 999 &&
+    !!cardDetails.condition &&
+    !!cardDetails.language
+  );
 });
 
 const closeModal = () => {
@@ -239,7 +254,7 @@ const submitAddCard = async () => {
       purchase_price: cardDetails.purchase_price,
       acquired_at: cardDetails.acquired_at || undefined,
       notes: undefined,
-      quantity: cardDetails.quantity
+      quantity: cardDetails.quantity,
     });
 
     // Then add it to the portfolio
@@ -253,9 +268,9 @@ const submitAddCard = async () => {
 
       // Get portfolio name for success message
       const selectedPortfolio = portfolioStore.portfolios.find(
-        p => p.id === selectedPortfolioId.value
+        (p) => p.id === selectedPortfolioId.value
       );
-      
+
       // Show success toast
       showSuccessToast(
         'Card added successfully!',
@@ -279,14 +294,12 @@ const submitAddCard = async () => {
     const errorMessage =
       error instanceof Error ? error.message : 'An unknown error occurred.';
     const axiosError = error as { response?: { data?: { message?: string } } };
-    const finalErrorMessage = axiosError.response?.data?.message || errorMessage;
-    
+    const finalErrorMessage =
+      axiosError.response?.data?.message || errorMessage;
+
     // Show error toast
-    showErrorToast(
-      'Error adding card',
-      finalErrorMessage
-    );
-    
+    showErrorToast('Error adding card', finalErrorMessage);
+
     formErrors.general = finalErrorMessage;
   } finally {
     isSubmitting.value = false;
