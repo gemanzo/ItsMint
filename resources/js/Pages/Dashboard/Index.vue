@@ -5,13 +5,19 @@
     <div
       class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700"
     >
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="flex items-center justify-between">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0"
+        >
           <div>
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1
+              class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white"
+            >
               Dashboard
             </h1>
-            <p class="text-gray-600 dark:text-gray-400 mt-1">
+            <p
+              class="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base"
+            >
               Welcome back! Here's your portfolio overview.
             </p>
           </div>
@@ -20,258 +26,20 @@
       </div>
     </div>
 
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-4 sm:py-8">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <!-- Enhanced Metrics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <!-- Total Estimated Value -->
-          <div
-            class="bg-white dark:bg-gray-800 rounded-card p-6 border border-gray-200 dark:border-gray-700 shadow-card hover:shadow-card-hover transition-shadow duration-200"
-          >
-            <div class="flex items-center justify-between">
-              <div class="flex-1">
-                <p
-                  class="text-gray-600 dark:text-gray-400 text-sm font-medium uppercase tracking-wide"
-                >
-                  Total Estimated Value
-                </p>
-                <p
-                  class="text-2xl font-bold text-gray-900 dark:text-white mt-2"
-                >
-                  {{ formatCurrency(totalEstimatedPortfolioValue) }}
-                </p>
-                <div class="flex items-center mt-2">
-                  <svg
-                    class="h-3 w-3 text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                    />
-                  </svg>
-                  <span class="text-gray-600 dark:text-gray-400 text-xs ml-1"
-                    >Portfolio Value</span
-                  >
-                </div>
-              </div>
-              <div
-                class="h-10 w-10 bg-gray-600 rounded-card flex items-center justify-center"
-              >
-                <svg
-                  class="h-5 w-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <!-- Total Purchase Cost -->
-          <div
-            class="bg-white dark:bg-gray-800 rounded-card p-6 border border-gray-200 dark:border-gray-700 shadow-card hover:shadow-card-hover transition-shadow duration-200"
-          >
-            <div class="flex items-center justify-between">
-              <div class="flex-1">
-                <p
-                  class="text-gray-600 dark:text-gray-400 text-sm font-medium uppercase tracking-wide"
-                >
-                  Total Purchase Cost
-                </p>
-                <p
-                  class="text-2xl font-bold text-gray-900 dark:text-white mt-2"
-                >
-                  {{ formatCurrency(totalPurchasePortfolioCost) }}
-                </p>
-                <div class="flex items-center mt-2">
-                  <svg
-                    class="h-3 w-3 text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                  <span class="text-gray-600 dark:text-gray-400 text-xs ml-1"
-                    >Initial Investment</span
-                  >
-                </div>
-              </div>
-              <div
-                class="h-10 w-10 bg-gray-600 rounded-card flex items-center justify-center"
-              >
-                <svg
-                  class="h-5 w-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <!-- Total Profit/Loss -->
-          <div
-            class="bg-white dark:bg-gray-800 rounded-card p-6 border border-gray-200 dark:border-gray-700 shadow-card hover:shadow-card-hover transition-shadow duration-200"
-          >
-            <div class="flex items-center justify-between">
-              <div class="flex-1">
-                <p
-                  class="text-gray-600 dark:text-gray-400 text-sm font-medium uppercase tracking-wide"
-                >
-                  Total Profit / Loss
-                </p>
-                <p
-                  class="text-2xl font-bold text-gray-900 dark:text-white mt-2"
-                >
-                  {{ formatCurrency(totalProfitLoss) }}
-                </p>
-                <div class="flex items-center mt-2">
-                  <svg
-                    v-if="totalProfitLoss >= 0"
-                    class="h-3 w-3 text-green-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                    />
-                  </svg>
-                  <svg
-                    v-else
-                    class="h-3 w-3 text-red-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"
-                    />
-                  </svg>
-                  <span
-                    class="text-xs ml-1"
-                    :class="
-                      totalProfitLoss >= 0 ? 'text-green-600' : 'text-red-600'
-                    "
-                  >
-                    {{ totalProfitLoss >= 0 ? 'Profit' : 'Loss' }}
-                  </span>
-                </div>
-              </div>
-              <div
-                class="h-10 w-10 rounded-card flex items-center justify-center"
-                :class="totalProfitLoss >= 0 ? 'bg-green-600' : 'bg-red-600'"
-              >
-                <svg
-                  v-if="totalProfitLoss >= 0"
-                  class="h-5 w-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M7 11l5-5m0 0l5 5m-5-5v12"
-                  />
-                </svg>
-                <svg
-                  v-else
-                  class="h-5 w-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M17 13l-5 5m0 0l-5-5m5 5V6"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Actions Hub -->
         <div
-          class="bg-white dark:bg-gray-800 rounded-card p-6 shadow-card mb-8 border border-gray-200 dark:border-gray-700"
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8"
         >
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Quick Actions
-          </h3>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <button
-              class="group flex flex-col items-center p-4 rounded-card bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-colors duration-200"
-              @click="showCreatePortfolioModal = true"
-            >
-              <div
-                class="h-8 w-8 bg-gray-600 rounded-button flex items-center justify-center mb-2 group-hover:bg-gray-700 transition-colors"
-              >
+          <!-- Total Portfolios Card -->
+          <div
+            class="bg-white dark:bg-gray-800 rounded-card p-4 sm:p-6 shadow-card border border-gray-200 dark:border-gray-700 hover:shadow-card-hover transition-shadow"
+          >
+            <div class="flex items-center">
+              <div class="p-2 sm:p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
                 <svg
-                  class="h-4 w-4 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-              </div>
-              <span class="text-xs font-medium text-gray-700 dark:text-gray-300"
-                >New Portfolio</span
-              >
-              <span class="text-xs text-gray-500 dark:text-gray-400 mt-1"
-                >Create collection</span
-              >
-            </button>
-
-            <Link
-              :href="route('portfolios.index')"
-              class="group flex flex-col items-center p-4 rounded-card bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-colors duration-200"
-            >
-              <div
-                class="h-8 w-8 bg-gray-600 rounded-button flex items-center justify-center mb-2 group-hover:bg-gray-700 transition-colors"
-              >
-                <svg
-                  class="h-4 w-4 text-white"
+                  class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -284,23 +52,169 @@
                   />
                 </svg>
               </div>
-              <span class="text-xs font-medium text-gray-700 dark:text-gray-300"
-                >View Portfolios</span
-              >
-              <span class="text-xs text-gray-500 dark:text-gray-400 mt-1"
-                >Manage collections</span
-              >
-            </Link>
+              <div class="ml-3 sm:ml-4">
+                <p
+                  class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400"
+                >
+                  Portfolios
+                </p>
+                <p
+                  class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white"
+                >
+                  {{ portfolioStore.portfolios.length }}
+                </p>
+              </div>
+            </div>
+          </div>
 
-            <Link
-              :href="route('blueprints.index')"
-              class="group flex flex-col items-center p-4 rounded-card bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-colors duration-200"
-            >
+          <!-- Total Cards Card -->
+          <div
+            class="bg-white dark:bg-gray-800 rounded-card p-4 sm:p-6 shadow-card border border-gray-200 dark:border-gray-700 hover:shadow-card-hover transition-shadow"
+          >
+            <div class="flex items-center">
               <div
-                class="h-8 w-8 bg-gray-600 rounded-button flex items-center justify-center mb-2 group-hover:bg-gray-700 transition-colors"
+                class="p-2 sm:p-3 bg-green-100 dark:bg-green-900 rounded-full"
               >
                 <svg
-                  class="h-4 w-4 text-white"
+                  class="w-5 h-5 sm:w-6 sm:h-6 text-green-600 dark:text-green-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v6a2 2 0 002 2h2m9-2a2 2 0 01-2 2H7m2-4v1h3m-3 1h7a2 2 0 002-2V7a2 2 0 00-2-2H7z"
+                  />
+                </svg>
+              </div>
+              <div class="ml-3 sm:ml-4">
+                <p
+                  class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400"
+                >
+                  Total Cards
+                </p>
+                <p
+                  class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white"
+                >
+                  {{ totalCards }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Value Card -->
+          <div
+            class="bg-white dark:bg-gray-800 rounded-card p-4 sm:p-6 shadow-card border border-gray-200 dark:border-gray-700 hover:shadow-card-hover transition-shadow"
+          >
+            <div class="flex items-center">
+              <div
+                class="p-2 sm:p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full"
+              >
+                <svg
+                  class="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <div class="ml-3 sm:ml-4">
+                <p
+                  class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400"
+                >
+                  Total Value
+                </p>
+                <p
+                  class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white"
+                >
+                  {{ formatCurrency(totalValue) }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Average Value Card -->
+          <div
+            class="bg-white dark:bg-gray-800 rounded-card p-4 sm:p-6 shadow-card border border-gray-200 dark:border-gray-700 hover:shadow-card-hover transition-shadow"
+          >
+            <div class="flex items-center">
+              <div
+                class="p-2 sm:p-3 bg-purple-100 dark:bg-purple-900 rounded-full"
+              >
+                <svg
+                  class="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+              </div>
+              <div class="ml-3 sm:ml-4">
+                <p
+                  class="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400"
+                >
+                  Avg. Card Value
+                </p>
+                <p
+                  class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white"
+                >
+                  {{ formatCurrency(averageCardValue) }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions Section -->
+        <div class="mb-6 sm:mb-8">
+          <div
+            class="bg-white dark:bg-gray-800 rounded-card p-4 sm:p-6 shadow-card border border-gray-200 dark:border-gray-700"
+          >
+            <h3
+              class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4"
+            >
+              Quick Actions
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              <button
+                class="flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-button hover:bg-blue-700 transition-colors text-sm font-medium"
+                @click="showCreatePortfolioModal = true"
+              >
+                <svg
+                  class="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+                Create Portfolio
+              </button>
+              <Link
+                :href="route('blueprints.index')"
+                class="flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-button hover:bg-green-700 transition-colors text-sm font-medium"
+              >
+                <svg
+                  class="w-4 h-4 mr-2"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -312,24 +226,14 @@
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   />
                 </svg>
-              </div>
-              <span class="text-xs font-medium text-gray-700 dark:text-gray-300"
-                >Search Cards</span
-              >
-              <span class="text-xs text-gray-500 dark:text-gray-400 mt-1"
-                >Browse catalog</span
-              >
-            </Link>
-
-            <button
-              class="group flex flex-col items-center p-4 rounded-card bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-colors duration-200"
-              @click="showPriceAlertsModal = true"
-            >
-              <div
-                class="h-8 w-8 bg-gray-600 rounded-button flex items-center justify-center mb-2 group-hover:bg-gray-700 transition-colors"
+                Browse Cards
+              </Link>
+              <Link
+                :href="route('card-scanner')"
+                class="flex items-center justify-center px-4 py-3 bg-purple-600 text-white rounded-button hover:bg-purple-700 transition-colors text-sm font-medium"
               >
                 <svg
-                  class="h-4 w-4 text-white"
+                  class="w-4 h-4 mr-2"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -338,33 +242,91 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M15 17h5l-5 5-5-5h5zm-5-5l5-5 5 5h-5v-5z"
+                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
                   />
                 </svg>
-              </div>
-              <span class="text-xs font-medium text-gray-700 dark:text-gray-300"
-                >Price Alerts</span
-              >
-              <span class="text-xs text-gray-500 dark:text-gray-400 mt-1"
-                >Track changes</span
-              >
-            </button>
+                Scan Cards
+              </Link>
+            </div>
           </div>
         </div>
 
-        <!-- Getting Started Guide (if no portfolios) -->
+        <!-- Recent Portfolios Section -->
         <div
-          v-if="
-            portfolioStore.portfolios.length === 0 && !portfolioStore.isLoading
-          "
-          class="bg-white dark:bg-gray-800 rounded-card p-8 shadow-card border border-gray-200 dark:border-gray-700 mt-8"
+          class="bg-white dark:bg-gray-800 rounded-card p-4 sm:p-6 shadow-card border border-gray-200 dark:border-gray-700"
         >
-          <div class="text-center">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0"
+          >
+            <h3
+              class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white"
+            >
+              Recent Portfolios
+            </h3>
+            <Link
+              :href="route('portfolios.index')"
+              class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium"
+            >
+              View all portfolios →
+            </Link>
+          </div>
+
+          <div
+            v-if="recentPortfolios.length > 0"
+            class="space-y-3 sm:space-y-4"
+          >
+            <div
+              v-for="portfolio in recentPortfolios"
+              :key="portfolio.id"
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+            >
+              <div class="flex items-center space-x-3 mb-2 sm:mb-0">
+                <div
+                  class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center"
+                >
+                  <span class="text-white font-bold text-xs sm:text-sm">
+                    {{ portfolio.name.charAt(0).toUpperCase() }}
+                  </span>
+                </div>
+                <div>
+                  <Link
+                    :href="route('portfolios.show', portfolio.id)"
+                    class="font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-sm sm:text-base"
+                  >
+                    {{ portfolio.name }}
+                  </Link>
+                  <p
+                    class="text-xs sm:text-sm text-gray-500 dark:text-gray-400"
+                  >
+                    {{ portfolio.user_cards_count || 0 }} cards
+                  </p>
+                </div>
+              </div>
+              <div class="text-right">
+                <div
+                  class="text-sm sm:text-base font-semibold text-gray-900 dark:text-white"
+                >
+                  {{ formatCurrency(calculatePortfolioValue(portfolio)) }}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  Total value
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="text-center py-8 sm:py-12">
             <svg
-              class="h-12 w-12 text-gray-600 mx-auto mb-4"
+              class="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400"
               fill="none"
-              stroke="currentColor"
               viewBox="0 0 24 24"
+              stroke="currentColor"
             >
               <path
                 stroke-linecap="round"
@@ -374,39 +336,46 @@
               />
             </svg>
             <h3
-              class="text-xl font-semibold text-gray-900 dark:text-white mb-2"
+              class="mt-2 text-sm sm:text-base font-medium text-gray-900 dark:text-white"
             >
-              Welcome to ItsMint!
+              No portfolios yet
             </h3>
-            <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
-              Start building your One Piece TCG collection by creating your
-              first portfolio. Track card values, monitor performance, and
-              organize your collection like a pro.
+            <p class="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+              Get started by creating your first portfolio.
             </p>
-            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+            <div class="mt-4 sm:mt-6">
               <button
-                class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-button transition-colors"
+                type="button"
+                class="inline-flex items-center px-3 sm:px-4 py-2 border border-transparent shadow-sm text-xs sm:text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 @click="showCreatePortfolioModal = true"
               >
-                Create Your First Portfolio
+                <svg
+                  class="-ml-1 mr-2 h-4 w-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+                Create Portfolio
               </button>
-              <Link
-                :href="route('blueprints.index')"
-                class="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium rounded-button transition-colors"
-              >
-                Browse Card Catalog
-              </Link>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Modals -->
+    <!-- Create Portfolio Modal -->
     <CreatePortfolioModal
       :is-open="showCreatePortfolioModal"
       @close="showCreatePortfolioModal = false"
-      @created="handlePortfolioCreated"
+      @portfolio-created="handlePortfolioCreated"
     />
 
     <!-- Price Alerts Modal (Placeholder for now) -->
@@ -531,7 +500,7 @@ const totalProfitLoss = computed(() => {
 });
 
 // Computed properties for portfolio statistics
-const totalCardsFromStore = computed(() => {
+const totalCards = computed(() => {
   if (!Array.isArray(portfolioStore.portfolios)) {
     return 0;
   }
@@ -544,50 +513,31 @@ const totalCardsFromStore = computed(() => {
   }, 0);
 });
 
-const averagePortfolioValue = computed(() => {
-  const portfolioCount = portfolioStore.portfolios.length;
-  return portfolioCount > 0
-    ? totalEstimatedPortfolioValue.value / portfolioCount
-    : 0;
+const totalValue = computed(() => {
+  return totalEstimatedPortfolioValue.value;
 });
 
-// Mock recent activities for now
-const recentActivities = computed(() => {
-  // In a real implementation, this would come from the API/store
-  // For now, return mock data to show the UI structure
-  return [
-    {
-      id: 1,
-      title: 'Added Monkey.D.Luffy to Main Collection',
-      time: '2 hours ago',
-      value: '+15.50 €',
-      valueColor: 'text-green-600',
-      iconBg: 'bg-green-100 dark:bg-green-900/30',
-      iconColor: 'text-green-600',
-      iconPath: 'M12 6v6m0 0v6m0-6h6m-6 0H6',
-    },
-    {
-      id: 2,
-      title: 'Portfolio "Championship Deck" created',
-      time: '1 day ago',
-      value: null,
-      valueColor: '',
-      iconBg: 'bg-blue-100 dark:bg-blue-900/30',
-      iconColor: 'text-blue-600',
-      iconPath:
-        'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
-    },
-    {
-      id: 3,
-      title: 'Trafalgar Law price updated',
-      time: '2 days ago',
-      value: '+5.20 €',
-      valueColor: 'text-green-600',
-      iconBg: 'bg-orange-100 dark:bg-orange-900/30',
-      iconColor: 'text-orange-600',
-      iconPath: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6',
-    },
-  ].slice(0, portfolioStore.portfolios.length > 0 ? 3 : 0); // Show activities only if user has portfolios
+const averageCardValue = computed(() => {
+  const cards = totalCards.value;
+  return cards > 0 ? totalEstimatedPortfolioValue.value / cards : 0;
+});
+
+// Helper function to calculate portfolio value
+const calculatePortfolioValue = (portfolio) => {
+  if (!portfolio.user_cards || !Array.isArray(portfolio.user_cards)) {
+    return 0;
+  }
+  return portfolio.user_cards.reduce((total, card) => {
+    const value = card.estimated_value_cents
+      ? card.estimated_value_cents / 100
+      : 0;
+    return total + value * (card.pivot?.quantity || 1);
+  }, 0);
+};
+
+// Computed property for recent portfolios
+const recentPortfolios = computed(() => {
+  return portfolioStore.portfolios.slice(0, 5); // Show up to 5 recent portfolios
 });
 </script>
 

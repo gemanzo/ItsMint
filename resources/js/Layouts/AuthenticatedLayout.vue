@@ -21,8 +21,8 @@ const user = computed(() => page.props.auth.user);
         class="bg-white dark:bg-gray-800 shadow-lg border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50"
       >
         <!-- Primary Navigation Menu -->
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div class="flex h-20 justify-between items-center">
+        <div class="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
+          <div class="flex h-16 sm:h-20 justify-between items-center">
             <div class="flex items-center">
               <!-- Logo -->
               <div class="flex shrink-0 items-center">
@@ -30,12 +30,14 @@ const user = computed(() => page.props.auth.user);
                   :href="route('dashboard')"
                   class="flex items-center hover:opacity-80 transition-opacity"
                 >
-                  <ApplicationLogo />
+                  <ApplicationLogo class="scale-75 sm:scale-100" />
                 </Link>
               </div>
 
               <!-- Navigation Links -->
-              <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+              <div
+                class="hidden space-x-6 lg:space-x-8 sm:-my-px sm:ms-6 lg:ms-10 sm:flex"
+              >
                 <NavLink
                   :href="route('dashboard')"
                   :active="route().current('dashboard')"
@@ -54,7 +56,7 @@ const user = computed(() => page.props.auth.user);
                       d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                     />
                   </svg>
-                  Dashboard
+                  <span class="hidden lg:block">Dashboard</span>
                 </NavLink>
                 <NavLink
                   :href="route('blueprints.index')"
@@ -77,7 +79,7 @@ const user = computed(() => page.props.auth.user);
                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                     />
                   </svg>
-                  Blueprints
+                  <span class="hidden lg:block">Blueprints</span>
                 </NavLink>
                 <NavLink
                   :href="route('portfolios.index')"
@@ -100,7 +102,7 @@ const user = computed(() => page.props.auth.user);
                       d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
                     />
                   </svg>
-                  Portfolios
+                  <span class="hidden lg:block">Portfolios</span>
                 </NavLink>
                 <NavLink
                   :href="route('card-scanner')"
@@ -126,7 +128,7 @@ const user = computed(() => page.props.auth.user);
                       d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
                     />
                   </svg>
-                  Card Scanner
+                  <span class="hidden lg:block">Scanner</span>
                 </NavLink>
                 <NavLink
                   v-if="
@@ -153,7 +155,7 @@ const user = computed(() => page.props.auth.user);
                       d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                     />
                   </svg>
-                  Horizon
+                  <span class="hidden lg:block">Horizon</span>
                 </NavLink>
               </div>
             </div>
@@ -166,15 +168,19 @@ const user = computed(() => page.props.auth.user);
                     <span class="inline-flex rounded-md">
                       <button
                         type="button"
-                        class="inline-flex items-center rounded-lg border border-transparent bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium leading-4 text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200"
+                        class="inline-flex items-center rounded-lg border border-transparent bg-white dark:bg-gray-800 px-3 lg:px-4 py-2 text-sm font-medium leading-4 text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200"
                       >
                         <!-- User Avatar -->
-                        <UserAvatar :user="user" size="sm" class="mr-3" />
+                        <UserAvatar
+                          :user="user"
+                          size="sm"
+                          class="mr-2 lg:mr-3"
+                        />
 
                         <span class="hidden md:block">{{ user.name }}</span>
 
                         <svg
-                          class="ml-2 -mr-0.5 h-4 w-4 transition-transform duration-200"
+                          class="ml-1 lg:ml-2 -mr-0.5 h-4 w-4 transition-transform duration-200"
                           xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 20 20"
                           fill="currentColor"
@@ -238,14 +244,16 @@ const user = computed(() => page.props.auth.user);
               </div>
             </div>
 
-            <!-- Hamburger -->
+            <!-- Enhanced Hamburger Menu -->
             <div class="-me-2 flex items-center sm:hidden">
               <button
-                class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none dark:text-gray-500 dark:hover:bg-gray-900 dark:hover:text-gray-400 dark:focus:bg-gray-900 dark:focus:text-gray-400"
+                class="relative inline-flex items-center justify-center rounded-lg p-3 text-gray-400 transition-all duration-200 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:text-gray-500 dark:hover:bg-gray-900 dark:hover:text-gray-400 dark:focus:bg-gray-900 dark:focus:text-gray-400 dark:focus:ring-offset-gray-800 active:scale-95"
+                aria-label="Toggle navigation menu"
                 @click="showingNavigationDropdown = !showingNavigationDropdown"
               >
                 <svg
-                  class="h-6 w-6"
+                  class="h-6 w-6 transition-transform duration-200"
+                  :class="{ 'rotate-90': showingNavigationDropdown }"
                   stroke="currentColor"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -276,19 +284,34 @@ const user = computed(() => page.props.auth.user);
           </div>
         </div>
 
-        <!-- Responsive Navigation Menu -->
+        <!-- Enhanced Responsive Navigation Menu -->
         <div
           :class="{
-            block: showingNavigationDropdown,
+            'block animate-in slide-in-from-top-2 duration-200':
+              showingNavigationDropdown,
             hidden: !showingNavigationDropdown,
           }"
-          class="sm:hidden"
+          class="sm:hidden border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
         >
-          <div class="space-y-1 pb-3 pt-2">
+          <div class="space-y-1 px-2 pb-3 pt-2">
             <ResponsiveNavLink
               :href="route('dashboard')"
               :active="route().current('dashboard')"
+              class="flex items-center px-3 py-3 rounded-lg text-base font-medium transition-all duration-150"
             >
+              <svg
+                class="w-5 h-5 mr-3 text-gray-500 dark:text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
               Dashboard
             </ResponsiveNavLink>
             <ResponsiveNavLink
@@ -297,7 +320,21 @@ const user = computed(() => page.props.auth.user);
                 route().current('blueprints.index') ||
                 route().current('blueprints.show')
               "
+              class="flex items-center px-3 py-3 rounded-lg text-base font-medium transition-all duration-150"
             >
+              <svg
+                class="w-5 h-5 mr-3 text-gray-500 dark:text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
               Blueprints
             </ResponsiveNavLink>
             <ResponsiveNavLink
@@ -306,14 +343,47 @@ const user = computed(() => page.props.auth.user);
                 route().current('portfolios.index') ||
                 route().current('portfolios.show')
               "
+              class="flex items-center px-3 py-3 rounded-lg text-base font-medium transition-all duration-150"
             >
+              <svg
+                class="w-5 h-5 mr-3 text-gray-500 dark:text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                />
+              </svg>
               Portfolios
             </ResponsiveNavLink>
             <ResponsiveNavLink
               :href="route('card-scanner')"
               :active="route().current('card-scanner')"
-              class="flex items-center"
+              class="flex items-center px-3 py-3 rounded-lg text-base font-medium transition-all duration-150"
             >
+              <svg
+                class="w-5 h-5 mr-3 text-gray-500 dark:text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
               Card Scanner
             </ResponsiveNavLink>
             <ResponsiveNavLink
@@ -325,37 +395,82 @@ const user = computed(() => page.props.auth.user);
               :href="'/horizon'"
               :active="route().current('horizon')"
               target="_self"
-              class="flex items-center"
+              class="flex items-center px-3 py-3 rounded-lg text-base font-medium transition-all duration-150"
             >
+              <svg
+                class="w-5 h-5 mr-3 text-gray-500 dark:text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
               Horizon
             </ResponsiveNavLink>
           </div>
 
-          <!-- Responsive Settings Options -->
-          <div class="border-t border-gray-200 pb-1 pt-4 dark:border-gray-600">
-            <div class="px-4 flex items-center">
+          <!-- Enhanced Responsive Settings Options -->
+          <div
+            class="border-t border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 pb-3 pt-4"
+          >
+            <div class="px-4 flex items-center mb-3">
               <UserAvatar :user="user" size="md" class="mr-3" />
-              <div>
+              <div class="flex-1 min-w-0">
                 <div
-                  class="text-base font-medium text-gray-800 dark:text-gray-200"
+                  class="text-base font-medium text-gray-800 dark:text-gray-200 truncate"
                 >
                   {{ user.name }}
                 </div>
-                <div class="text-sm font-medium text-gray-500">
+                <div class="text-sm font-medium text-gray-500 truncate">
                   {{ user.email }}
                 </div>
               </div>
             </div>
 
-            <div class="mt-3 space-y-1">
-              <ResponsiveNavLink :href="route('profile.edit')">
+            <div class="mt-3 space-y-1 px-2">
+              <ResponsiveNavLink
+                :href="route('profile.edit')"
+                class="flex items-center px-3 py-3 rounded-lg text-base font-medium transition-all duration-150"
+              >
+                <svg
+                  class="w-5 h-5 mr-3 text-gray-500 dark:text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
                 Profile
               </ResponsiveNavLink>
               <ResponsiveNavLink
                 :href="route('logout')"
                 method="post"
                 as="button"
+                class="flex items-center w-full px-3 py-3 rounded-lg text-base font-medium transition-all duration-150 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
               >
+                <svg
+                  class="w-5 h-5 mr-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
                 Log Out
               </ResponsiveNavLink>
             </div>

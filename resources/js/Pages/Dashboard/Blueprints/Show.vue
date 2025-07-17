@@ -46,10 +46,11 @@ const timePeriods = ['1D', '1W', '1M', '3M', '1Y', 'MAX'];
 const languageDetails = {
   en: { name: 'English', flag: '🇬🇧' },
   jp: { name: 'Japanese', flag: '🇯🇵' },
+  ja: { name: 'Japanese', flag: '🇯🇵' },
   fr: { name: 'French', flag: '🇫🇷' },
-  'zh-cn': { name: 'Chinese (Simplified)', flag: '🇨🇳' },
-  'zh-tw': { name: 'Chinese (Traditional)', flag: '🇹🇼' },
   ko: { name: 'Korean', flag: '🇰🇷' },
+  'zh-cn': { name: 'Chinese (Simplified)', flag: '🇨🇳' },
+  'zh-tw': { name: 'Chinese (Traditional)', flag: '��' },
 };
 
 // Toast system
