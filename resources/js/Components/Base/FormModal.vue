@@ -12,16 +12,17 @@
     </template>
 
     <form @submit.prevent="handleSubmit">
-      <div class="space-y-4">
+      <div class="space-y-4 sm:space-y-6">
         <slot />
       </div>
     </form>
 
     <template #footer>
-      <div class="flex justify-end space-x-3">
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end space-y-3 space-y-reverse sm:space-y-0 sm:space-x-3">
         <SecondaryButton
           :disabled="isLoading"
           type="button"
+          class="w-full sm:w-auto order-2 sm:order-1"
           @click="handleClose"
         >
           {{ cancelText }}
@@ -30,6 +31,7 @@
         <PrimaryButton
           :disabled="isLoading || !canSubmit"
           :class="{ 'opacity-50 cursor-not-allowed': isLoading || !canSubmit }"
+          class="w-full sm:w-auto order-1 sm:order-2"
           @click="handleSubmit"
         >
           <svg
