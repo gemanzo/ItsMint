@@ -60,6 +60,19 @@ return [
             'report' => false,
         ],
 
+        's3-card-scans' => [
+            'driver' => 's3',
+            'key' => env('SCAN_AWS_ACCESS_KEY_ID'),
+            'secret' => env('SCAN_AWS_SECRET_ACCESS_KEY'),
+            'region' => env('SCAN_AWS_DEFAULT_REGION'),
+            'bucket' => env('SCAN_AWS_BUCKET'),
+            'url' => env('SCAN_AWS_URL'),
+            'endpoint' => env('SCAN_AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('SCAN_AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

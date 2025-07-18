@@ -276,9 +276,27 @@
 
     <!-- Card Scan Modal -->
     <CardScanModal
-      :is-open="showScanModal"
+      :show="showScanModal"
       @close="closeScanModal"
       @scan-complete="handleScanComplete"
+    />
+
+    <!-- Scan Results Modal -->
+    <ScanResultsModal
+      v-if="showScanResults && currentScan"
+      :show="showScanResults"
+      :scan="currentScan"
+      @close="closeScanResults"
+      @blueprint-selected="handleBlueprintSelected"
+      @card-created="handleCardCreated"
+    />
+
+    <!-- Quick Add Card Modal -->
+    <QuickAddCardModal
+      v-if="showQuickAddModal && selectedBlueprint"
+      :blueprint="selectedBlueprint"
+      @close="closeQuickAddModal"
+      @card-added="handleCardAdded"
     />
   </AuthenticatedLayout>
 </template>
@@ -286,12 +304,21 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import CardScanModal from '@/Components/CardScanModal.vue';
+import ScanResultsModal from '@/Components/ScanResultsModal.vue';
+import QuickAddCardModal from '@/Components/QuickAddCardModal.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { CameraIcon, EyeIcon, PlusIcon } from '@heroicons/vue/24/outline';
+import { useToast } from '@/composables/useToast';
 
 // State
 const showScanModal = ref(false);
+const showScanResults = ref(false);
+const showQuickAddModal = ref(false);
+const currentScan = ref(null);
+const selectedBlueprint = ref(null);
+
+const { success: showSuccessToast } = useToast();
 
 // Methods
 const openScanModal = () => {
@@ -305,9 +332,41 @@ const closeScanModal = () => {
 const handleScanComplete = (result: any) => {
   // Handle scan completion
   console.log('Scan complete:', result);
-  closeScanModal();
+  currentScan.value = result;
+  showScanModal.value = false;
+  showScanResults.value = true;
+};
 
-  // You could navigate to the scan results or add to portfolio
-  // router.visit(route('portfolios.show', { portfolio: result.portfolio_id }));
+const closeScanResults = () => {
+  showScanResults.value = false;
+  currentScan.value = null;
+};
+
+const handleBlueprintSelected = (blueprint: any) => {
+  // Handle blueprint selection - could navigate to blueprint details or add to portfolio
+  console.log('Blueprint selected:', blueprint);
+  selectedBlueprint.value = blueprint;
+  closeScanResults();
+  showQuickAddModal.value = true;
+};
+
+const handleCardCreated = (scan: any) => {
+  // Handle when user clicks "Add to Collection" in ScanResultsModal
+  if (scan.blueprint) {
+    selectedBlueprint.value = scan.blueprint;
+    closeScanResults();
+    showQuickAddModal.value = true;
+  }
+};
+
+const closeQuickAddModal = () => {
+  showQuickAddModal.value = false;
+  selectedBlueprint.value = null;
+};
+
+const handleCardAdded = (data: any) => {
+  // Handle successful card addition
+  // Note: Toast is already shown by QuickAddCardModal, no need to duplicate
+  closeQuickAddModal();
 };
 </script>

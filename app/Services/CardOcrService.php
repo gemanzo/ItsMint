@@ -18,16 +18,12 @@ final class CardOcrService
 
     private ImageManager $imageManager;
 
-    private ElasticsearchService $elasticsearchService;
-
     private GoogleVisionOcrService $googleVisionService;
 
     public function __construct(
-        ElasticsearchService $elasticsearchService,
         GoogleVisionOcrService $googleVisionService
     ) {
         $this->imageManager = new ImageManager(new Driver);
-        $this->elasticsearchService = $elasticsearchService;
         $this->googleVisionService = $googleVisionService;
     }
 
@@ -51,24 +47,18 @@ final class CardOcrService
         ]);
 
         try {
-            // Create user directory if it doesn't exist
-            $userDir = 'card-scans/'.$userId;
-            if (! Storage::disk('public')->exists($userDir)) {
-                Log::info('Creating user directory: '.$userDir);
-                Storage::disk('public')->makeDirectory($userDir);
-            }
 
-            // Store the image using public disk
-            $filename = 'card-scans/'.$userId.'/'.time().'_'.$scan->id.'.jpg';
+            // Store the image using s3-card-scans disk
+            $filename = time() . '_' . $scan->id . '.jpg';
             Log::info('Attempting to store file', ['filename' => $filename, 'user_id' => $userId]);
 
-            $path = $file->storeAs('', $filename, 'public');
+            $path = $file->storeAs('card-scans/' . $userId, $filename, 's3-card-scans');
             Log::info('File stored successfully', ['path' => $path, 'filename' => $filename]);
 
-            $scan->update(['file_path' => $filename]);
+            $scan->update(['file_path' => $path]);
 
             // Verify file exists
-            if (Storage::disk('public')->exists($filename)) {
+            if (Storage::disk('s3-card-scans')->exists($path)) {
                 Log::info('File verified on disk', ['filename' => $filename]);
             } else {
                 Log::error('File not found after storage', ['filename' => $filename]);
@@ -101,7 +91,8 @@ final class CardOcrService
     {
         $scan->update(['status' => 'processing']);
 
-        $fullPath = Storage::disk('public')->path($scan->file_path);
+        $tempPath = null;
+        $preprocessedPath = null;
 
         try {
             // Check if Google Vision is available
@@ -109,8 +100,17 @@ final class CardOcrService
                 throw new \Exception('Google Vision API is not properly configured');
             }
 
+            // For S3, download the file to a temporary local path
+            $imageContent = Storage::disk('s3-card-scans')->get($scan->file_path);
+            if (! $imageContent) {
+                throw new \Exception("Could not retrieve file from S3: {$scan->file_path}");
+            }
+
+            $tempPath = tempnam(sys_get_temp_dir(), 'ocr_') . '.jpg';
+            file_put_contents($tempPath, $imageContent);
+
             // Preprocess image for better OCR (optional for Google Vision)
-            $preprocessedPath = $this->preprocessImage($fullPath);
+            $preprocessedPath = $this->preprocessImage($tempPath);
 
             // Perform OCR using Google Vision
             $ocrResult = $this->googleVisionService->extractTextFromImage($preprocessedPath);
@@ -133,11 +133,6 @@ final class CardOcrService
 
             // Auto-assign blueprint if confidence is high enough
             $this->autoAssignBlueprint($scan);
-
-            // Clean up preprocessed image
-            if (file_exists($preprocessedPath) && $preprocessedPath !== $fullPath) {
-                unlink($preprocessedPath);
-            }
         } catch (\Exception $e) {
             Log::error('Google Vision OCR processing failed', [
                 'scan_id' => $scan->id,
@@ -151,6 +146,14 @@ final class CardOcrService
             ]);
 
             throw $e;
+        } finally {
+            // Clean up temporary files
+            if ($preprocessedPath && file_exists($preprocessedPath)) {
+                unlink($preprocessedPath);
+            }
+            if ($tempPath && file_exists($tempPath)) {
+                unlink($tempPath);
+            }
         }
     }
 
@@ -169,12 +172,12 @@ final class CardOcrService
             }
 
             // Save optimized image
-            $preprocessedPath = sys_get_temp_dir().'/'.uniqid('gv_ocr_').'.jpg';
+            $preprocessedPath = sys_get_temp_dir() . '/' . uniqid('gv_ocr_') . '.jpg';
             $image->save($preprocessedPath, 90, 'jpg');
 
             Log::info('Image preprocessed for Google Vision', [
                 'original_path' => $imagePath,
-                'processed_size' => $image->width().'x'.$image->height(),
+                'processed_size' => $image->width() . 'x' . $image->height(),
                 'processed_path' => $preprocessedPath,
             ]);
 
@@ -402,7 +405,7 @@ final class CardOcrService
 
         // If it's a CardTrader image, use our proxy
         if (str_starts_with($originalUrl, 'https://cardtrader.com/uploads/')) {
-            return url('/api/image-proxy?url='.urlencode($originalUrl));
+            return url('/api/image-proxy?url=' . urlencode($originalUrl));
         }
 
         // For other images, return as-is
