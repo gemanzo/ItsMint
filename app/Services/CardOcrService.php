@@ -53,21 +53,17 @@ final class CardOcrService
         try {
             // Create user directory if it doesn't exist
             $userDir = 'card-scans/' . $userId;
-            if (! Storage::disk('public')->exists($userDir)) {
-                Storage::disk('public')->makeDirectory($userDir);
-            }
 
             // Store the image using s3-card-scans disk
             $filename = time() . '_' . $scan->id . '.jpg';
 
             $path = $file->storeAs('card-scans/' . $userId, $filename, 's3-card-scans');
 
-            $scan->update(['file_path' => $filename]);
+            $scan->update(['file_path' => $path]);
 
             // Verify file exists
-            if (Storage::disk('s3-card-scans')->exists($path)) {
-            } else {
-                Log::error('File not found after storage', ['filename' => $filename]);
+            if (! Storage::disk('s3-card-scans')->exists($path)) {
+                throw new \Exception('File not found after storage');
             }
 
             // Process the image
@@ -97,7 +93,7 @@ final class CardOcrService
     {
         $scan->update(['status' => 'processing']);
 
-        $fullPath = Storage::disk('public')->path($scan->file_path);
+        $fullPath = Storage::disk('s3-card-scans')->path($scan->file_path);
 
         try {
             // Check if Google Vision is available

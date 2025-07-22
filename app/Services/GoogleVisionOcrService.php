@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Exceptions\GoogleVisionOcrException;
 use Exception;
+use Google\Cloud\Vision\V1\Image;
+use Google\Cloud\Vision\V1\Feature;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Google\Cloud\Vision\V1\Feature\Type;
+use App\Exceptions\GoogleVisionOcrException;
 use Google\Cloud\Vision\V1\AnnotateImageRequest;
 use Google\Cloud\Vision\V1\BatchAnnotateImagesRequest;
 use Google\Cloud\Vision\V1\Client\ImageAnnotatorClient;
-use Google\Cloud\Vision\V1\Feature;
-use Google\Cloud\Vision\V1\Feature\Type;
-use Google\Cloud\Vision\V1\Image;
-use Illuminate\Support\Facades\Log;
 
 final class GoogleVisionOcrService
 {
@@ -41,7 +42,7 @@ final class GoogleVisionOcrService
     {
         try {
             // Read image file
-            $imageContent = file_get_contents($imagePath);
+            $imageContent = Storage::disk('s3-card-scans')->get($imagePath);
             if ($imageContent === false) {
                 throw new GoogleVisionOcrException("Failed to read image file: {$imagePath}");
             }

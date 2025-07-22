@@ -280,6 +280,12 @@
       @close="closeScanModal"
       @scan-complete="handleScanComplete"
     />
+    <ScanResultsModal
+      v-if="showScanResults && currentScan"
+      :show="showScanResults"
+      :scan="currentScan"
+      @close="closeScanResults"
+    />
   </AuthenticatedLayout>
 </template>
 
@@ -289,9 +295,12 @@ import CardScanModal from '@/Components/CardScanModal.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { CameraIcon, EyeIcon, PlusIcon } from '@heroicons/vue/24/outline';
+import ScanResultsModal from '@/Components/ScanResultsModal.vue';
 
 // State
 const showScanModal = ref(false);
+const showScanResults = ref(false);
+const currentScan = ref(null);
 
 // Methods
 const openScanModal = () => {
@@ -302,12 +311,14 @@ const closeScanModal = () => {
   showScanModal.value = false;
 };
 
-const handleScanComplete = (result: any) => {
-  // Handle scan completion
-  console.log('Scan complete:', result);
-  closeScanModal();
+const closeScanResults = () => {
+  showScanResults.value = false;
+  currentScan.value = null;
+};
 
-  // You could navigate to the scan results or add to portfolio
-  // router.visit(route('portfolios.show', { portfolio: result.portfolio_id }));
+const handleScanComplete = (result: any) => {
+  currentScan.value = result;
+  showScanModal.value = false;
+  showScanResults.value = true;
 };
 </script>
