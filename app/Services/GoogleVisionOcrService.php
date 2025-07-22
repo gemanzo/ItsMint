@@ -77,13 +77,6 @@ final class GoogleVisionOcrService
             // Process responses
             $result = $this->processVisionResponse($response);
 
-            Log::info('Google Vision OCR completed', [
-                'image_path' => $imagePath,
-                'text_length' => strlen($result['text']),
-                'confidence' => $result['confidence'],
-                'blocks_count' => count($result['blocks']),
-            ]);
-
             return $result;
         } catch (Exception $e) {
             Log::error('Google Vision OCR failed', [
@@ -91,7 +84,7 @@ final class GoogleVisionOcrService
                 'error' => $e->getMessage(),
             ]);
 
-            throw new GoogleVisionOcrException('Google Vision OCR failed: '.$e->getMessage(), 0, $e);
+            throw new GoogleVisionOcrException('Google Vision OCR failed: ' . $e->getMessage(), 0, $e);
         } finally {
             // Clean up client
             $this->client->close();
@@ -116,7 +109,7 @@ final class GoogleVisionOcrService
             // Check for errors
             if ($imageResponse->hasError()) {
                 $error = $imageResponse->getError();
-                throw new GoogleVisionOcrException('Vision API error: '.$error->getMessage());
+                throw new GoogleVisionOcrException('Vision API error: ' . $error->getMessage());
             }
 
             // Process text annotations
@@ -157,7 +150,7 @@ final class GoogleVisionOcrService
                                     $wordText .= $symbol->getText();
                                 }
 
-                                $paragraphText .= $wordText.' ';
+                                $paragraphText .= $wordText . ' ';
 
                                 // Accumulate confidence
                                 if ($word->getConfidence() > 0) {
@@ -166,7 +159,7 @@ final class GoogleVisionOcrService
                                 }
                             }
 
-                            $blockText .= trim($paragraphText)."\n";
+                            $blockText .= trim($paragraphText) . "\n";
                         }
 
                         if (! empty(trim($blockText))) {
@@ -288,19 +281,12 @@ final class GoogleVisionOcrService
                     $fullMatch = trim($match);
                     $numberPart = $matches[2][$index];
 
-                    // Debug log for pattern matching
-                    Log::info('=== OCR DEBUG: Pattern 2 match ===', [
-                        'full_match' => $fullMatch,
-                        'number_part' => $numberPart,
-                        'original_text' => $text,
-                    ]);
-
                     // Special case: if we detect "OP09-0013" or similar, interpret "13" as "001"
                     if (strlen($numberPart) <= 2) {
                         // Create version with number padded to 3 digits with leading zeros
                         // For "OP 09-0013", extract "OP 09" and add "001"
                         $prefixPart = preg_replace('/([A-Z]{2,3}\s?\d{2,3}[\-\.]\s?)0+\d+/', '$1', $fullMatch);
-                        $interpretedAs001 = $prefixPart.str_pad($numberPart, 3, '0', STR_PAD_LEFT);
+                        $interpretedAs001 = $prefixPart . str_pad($numberPart, 3, '0', STR_PAD_LEFT);
                         $normalizedAs001 = $this->normalizeCardCode($interpretedAs001);
 
                         $cardInfo['potential_codes'][] = [
@@ -313,7 +299,7 @@ final class GoogleVisionOcrService
                     }
 
                     // Also add the literal interpretation (lower confidence)
-                    $literalCode = preg_replace('/([A-Z]{2,3}\s?\d{2,3}[\-\.]\s?)0*(\d+)/', '$1'.str_pad($numberPart, 3, '0', STR_PAD_LEFT), $fullMatch);
+                    $literalCode = preg_replace('/([A-Z]{2,3}\s?\d{2,3}[\-\.]\s?)0*(\d+)/', '$1' . str_pad($numberPart, 3, '0', STR_PAD_LEFT), $fullMatch);
                     $normalizedLiteral = $this->normalizeCardCode($literalCode);
 
                     // Only add if different from the corrected version
@@ -402,7 +388,7 @@ final class GoogleVisionOcrService
         if (preg_match('/([A-Z]{2,3}\d{2,3})-0*(\d+)/', $code, $matches)) {
             $prefix = $matches[1];
             $number = str_pad($matches[2], 3, '0', STR_PAD_LEFT);
-            $code = $prefix.'-'.$number;
+            $code = $prefix . '-' . $number;
         }
 
         return strtoupper($code);

@@ -111,8 +111,6 @@ final class OneLogScrapingService
     public function scrapeExpansionCards(string $expansionCode): array
     {
         try {
-            Log::info("Starting OneLog API scraping for expansion: {$expansionCode}");
-
             $seriesId = $this->getSeriesIdForExpansion($expansionCode);
             if (! $seriesId) {
                 throw new Exception("No series ID mapping found for expansion: {$expansionCode}");
@@ -120,12 +118,6 @@ final class OneLogScrapingService
 
             $cardData = $this->fetchCardDataFromOneLogApi($seriesId);
             $processedCards = $this->processCardData($cardData, $expansionCode);
-
-            Log::info('OneLog API scraping completed', [
-                'expansion' => $expansionCode,
-                'series_id' => $seriesId,
-                'cards_found' => count($processedCards),
-            ]);
 
             return $processedCards;
         } catch (Exception $e) {
@@ -155,9 +147,6 @@ final class OneLogScrapingService
                 Log::warning("Blueprint not found for collector number: {$cardData['collector_number']}");
             }
         }
-
-        Log::info("Updated {$updatedCount} blueprints with scraped data");
-
         return $updatedCount;
     }
 
@@ -179,8 +168,6 @@ final class OneLogScrapingService
         $hasMorePages = true;
 
         while ($hasMorePages) {
-            Log::info("Fetching page {$page} for series ID {$seriesId}");
-
             $pageCards = $this->fetchSinglePageFromApi($seriesId, $page);
 
             if (empty($pageCards)) {
@@ -208,11 +195,6 @@ final class OneLogScrapingService
                 'showAltArts' => true,
                 'card set' => [$seriesId],
             ];
-
-            Log::info('OneLog API request', [
-                'url' => self::API_ENDPOINT,
-                'payload' => $payload,
-            ]);
 
             $response = Http::withHeaders([
                 'User-Agent' => self::USER_AGENT,
@@ -244,11 +226,6 @@ final class OneLogScrapingService
                 return [];
             }
 
-            Log::info('OneLog API response received', [
-                'cards_count' => count($data['data']),
-                'total_count' => $data['count'] ?? 'unknown',
-            ]);
-
             return $data['data'];
         } catch (Exception $e) {
             Log::error('Error calling OneLog API', [
@@ -273,11 +250,6 @@ final class OneLogScrapingService
                 'showAltArts' => true,
                 // NO 'card set' filter - fetch ALL cards
             ];
-
-            Log::info('OneLog API request (no filter)', [
-                'url' => self::API_ENDPOINT,
-                'payload' => $payload,
-            ]);
 
             $response = Http::withHeaders([
                 'User-Agent' => self::USER_AGENT,
@@ -308,11 +280,6 @@ final class OneLogScrapingService
 
                 return [];
             }
-
-            Log::info('OneLog API response received (no filter)', [
-                'cards_count' => count($data['data']),
-                'total_count' => $data['count'] ?? 'unknown',
-            ]);
 
             return $data['data'];
         } catch (Exception $e) {
@@ -563,7 +530,7 @@ final class OneLogScrapingService
         // Try with common promo suffixes (p, pr, promo, etc.)
         $promoSuffixes = ['p', 'pr', 'promo', 'alt', 'parallel'];
         foreach ($promoSuffixes as $suffix) {
-            $modifiedNumber = $collectorNumber.$suffix;
+            $modifiedNumber = $collectorNumber . $suffix;
 
             $result = Blueprint::whereJsonContains(
                 'properties->fixed_properties->collector_number',
@@ -571,12 +538,6 @@ final class OneLogScrapingService
             )->first();
 
             if ($result) {
-                Log::info('Found promo card with suffix', [
-                    'original_number' => $collectorNumber,
-                    'matched_number' => $modifiedNumber,
-                    'blueprint_id' => $result->id,
-                ]);
-
                 return $result;
             }
         }
@@ -589,13 +550,6 @@ final class OneLogScrapingService
                 ->first();
 
             if ($result) {
-                Log::info('Found promo card by name and partial collector number', [
-                    'api_name' => $cardName,
-                    'api_collector_number' => $collectorNumber,
-                    'matched_blueprint' => $result->name,
-                    'matched_collector_number' => $result->properties['fixed_properties']['collector_number'] ?? null,
-                ]);
-
                 return $result;
             }
         }
@@ -643,32 +597,19 @@ final class OneLogScrapingService
                     ->first();
 
                 if ($result) {
-                    Log::info('Found promo by version mapping', [
-                        'card_sets' => $cardSets,
-                        'mapped_version' => $versionValue,
-                        'collector_number' => $collectorNumber,
-                    ]);
-
                     return $result;
                 }
 
                 // Try with promo suffixes
                 $promoSuffixes = ['p', 'pr', 'promo'];
                 foreach ($promoSuffixes as $suffix) {
-                    $modifiedNumber = $collectorNumber.$suffix;
+                    $modifiedNumber = $collectorNumber . $suffix;
 
                     $result = Blueprint::where('version', 'LIKE', "%{$versionValue}%")
                         ->whereJsonContains('properties->fixed_properties->collector_number', $modifiedNumber)
                         ->first();
 
                     if ($result) {
-                        Log::info('Found promo by version mapping with suffix', [
-                            'card_sets' => $cardSets,
-                            'mapped_version' => $versionValue,
-                            'original_number' => $collectorNumber,
-                            'matched_number' => $modifiedNumber,
-                        ]);
-
                         return $result;
                     }
                 }
@@ -698,12 +639,6 @@ final class OneLogScrapingService
 
         if (! empty($updateData)) {
             $blueprint->update($updateData);
-
-            Log::info('Updated blueprint with scraped data', [
-                'blueprint_id' => $blueprint->id,
-                'card_number' => $cardData['collector_number'],
-                'updated_fields' => array_keys($updateData),
-            ]);
         }
     }
 
@@ -781,8 +716,6 @@ final class OneLogScrapingService
     public function testApiConnection(): array
     {
         try {
-            Log::info('Testing OneLog API connection with EB02');
-
             $cards = $this->fetchSinglePageFromApi('556202', 0);
 
             return [

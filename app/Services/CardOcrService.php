@@ -52,24 +52,20 @@ final class CardOcrService
 
         try {
             // Create user directory if it doesn't exist
-            $userDir = 'card-scans/'.$userId;
+            $userDir = 'card-scans/' . $userId;
             if (! Storage::disk('public')->exists($userDir)) {
-                Log::info('Creating user directory: '.$userDir);
                 Storage::disk('public')->makeDirectory($userDir);
             }
 
-            // Store the image using public disk
-            $filename = 'card-scans/'.$userId.'/'.time().'_'.$scan->id.'.jpg';
-            Log::info('Attempting to store file', ['filename' => $filename, 'user_id' => $userId]);
+            // Store the image using s3-card-scans disk
+            $filename = time() . '_' . $scan->id . '.jpg';
 
-            $path = $file->storeAs('', $filename, 'public');
-            Log::info('File stored successfully', ['path' => $path, 'filename' => $filename]);
+            $path = $file->storeAs('card-scans/' . $userId, $filename, 's3-card-scans');
 
             $scan->update(['file_path' => $filename]);
 
             // Verify file exists
-            if (Storage::disk('public')->exists($filename)) {
-                Log::info('File verified on disk', ['filename' => $filename]);
+            if (Storage::disk('s3-card-scans')->exists($path)) {
             } else {
                 Log::error('File not found after storage', ['filename' => $filename]);
             }
@@ -169,14 +165,8 @@ final class CardOcrService
             }
 
             // Save optimized image
-            $preprocessedPath = sys_get_temp_dir().'/'.uniqid('gv_ocr_').'.jpg';
+            $preprocessedPath = sys_get_temp_dir() . '/' . uniqid('gv_ocr_') . '.jpg';
             $image->save($preprocessedPath, 90, 'jpg');
-
-            Log::info('Image preprocessed for Google Vision', [
-                'original_path' => $imagePath,
-                'processed_size' => $image->width().'x'.$image->height(),
-                'processed_path' => $preprocessedPath,
-            ]);
 
             return $preprocessedPath;
         } catch (\Exception $e) {
@@ -193,26 +183,11 @@ final class CardOcrService
     {
         $text = $visionResult['text'];
 
-        Log::info('=== OCR DEBUG: Starting new OCR matching ===', [
-            'full_text' => $text,
-            'text_length' => strlen($text),
-        ]);
-
         // Clean and normalize the OCR text
         $cleanedOcrText = $this->normalizeOcrText($text);
 
-        Log::info('=== OCR DEBUG: Cleaned OCR text ===', [
-            'original_text' => $text,
-            'cleaned_text' => $cleanedOcrText,
-        ]);
-
         // Find matches using the new approach
         $matches = $this->findCardMatchesByOcrString($cleanedOcrText);
-
-        Log::info('=== OCR DEBUG: Match results ===', [
-            'matches_found' => count($matches),
-            'matches' => $matches,
-        ]);
 
         return $matches;
     }
@@ -223,12 +198,6 @@ final class CardOcrService
     private function findCardMatchesByOcrString(string $cleanedOcrText): array
     {
         $matches = [];
-
-        Log::info('=== OCR DEBUG: Starting pure trigram similarity search ===', [
-            'cleaned_text' => $cleanedOcrText,
-            'text_length' => strlen($cleanedOcrText),
-            'trigram_threshold' => self::TRIGRAM_THRESHOLD,
-        ]);
 
         try {
             // Use PostgreSQL trigram similarity directly - much simpler!
@@ -243,18 +212,6 @@ final class CardOcrService
                 ->limit(8) // Return top 8 matches only
                 ->get();
 
-            Log::info('=== OCR DEBUG: Pure trigram results ===', [
-                'candidates_found' => count($candidates),
-                'min_threshold' => self::TRIGRAM_THRESHOLD,
-                'candidates' => $candidates->map(function ($candidate) {
-                    return [
-                        'id' => $candidate->id,
-                        'name' => $candidate->name,
-                        'trigram_score' => round($candidate->trigram_score * 100, 2),
-                    ];
-                })->toArray(),
-            ]);
-
             // Convert candidates directly to matches (no additional processing needed)
             foreach ($candidates as $blueprint) {
                 $matches[] = [
@@ -264,22 +221,8 @@ final class CardOcrService
                     'image_url' => $this->getProxiedImageUrl($blueprint->image_url),
                     'card_number' => $blueprint->collector_number,
                 ];
-
-                Log::info('=== OCR DEBUG: Trigram match added ===', [
-                    'blueprint_id' => $blueprint->id,
-                    'blueprint_name' => $blueprint->name,
-                ]);
             }
-
-            Log::info('=== OCR DEBUG: Final pure trigram results ===', [
-                'total_matches' => count($matches),
-                'performance' => 'Single PostgreSQL query - maximum efficiency!',
-            ]);
         } catch (\Exception $e) {
-            Log::error('=== OCR DEBUG: Trigram search failed ===', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
 
             // Fallback to keyword-based filtering if trigram fails
             $matches = $this->fallbackKeywordMatching($cleanedOcrText);
@@ -293,8 +236,6 @@ final class CardOcrService
      */
     private function fallbackKeywordMatching(string $cleanedOcrText): array
     {
-        Log::info('=== OCR DEBUG: Using fallback keyword matching ===');
-
         $keywords = $this->extractKeywords($cleanedOcrText);
         $matches = [];
 
@@ -315,12 +256,6 @@ final class CardOcrService
             ->orderByRaw('similarity(ocr_match_string, ?) DESC', [$cleanedOcrText])
             ->limit(3)
             ->get();
-
-        Log::info('=== OCR DEBUG: Keyword fallback with trigram ===', [
-            'keywords_used' => $keywords,
-            'fallback_threshold' => $fallbackTrigramScore,
-            'candidates_found' => count($candidates),
-        ]);
 
         // Convert candidates directly to matches
         foreach ($candidates as $blueprint) {
@@ -402,7 +337,7 @@ final class CardOcrService
 
         // If it's a CardTrader image, use our proxy
         if (str_starts_with($originalUrl, 'https://cardtrader.com/uploads/')) {
-            return url('/api/image-proxy?url='.urlencode($originalUrl));
+            return url('/api/image-proxy?url=' . urlencode($originalUrl));
         }
 
         // For other images, return as-is

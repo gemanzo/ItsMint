@@ -20,8 +20,6 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
-        Log::info('Profile edit method called');
-
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
@@ -33,34 +31,10 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        Log::info('Profile update method called', [
-            'request_method' => $request->method(),
-            'all_data' => $request->all(),
-            'hasFile_profile_photo' => $request->hasFile('profile_photo'),
-            'file_details' => $request->hasFile('profile_photo') ? [
-                'name' => $request->file('profile_photo')->getClientOriginalName(),
-                'size' => $request->file('profile_photo')->getSize(),
-                'mime' => $request->file('profile_photo')->getMimeType(),
-            ] : null,
-            'remove_photo' => $request->boolean('remove_photo'),
-        ]);
-
-        // Force flush logs
-        Log::info('BEFORE VALIDATION - USER DATA', [
-            'user_id' => $request->user()->id,
-            'current_profile_photo_path' => $request->user()->profile_photo_path,
-        ]);
 
         try {
             $user = $request->user();
             $validated = $request->validated();
-
-            // Debug logging
-            Log::info('Profile update request', [
-                'has_file' => $request->hasFile('profile_photo'),
-                'remove_photo' => $request->boolean('remove_photo'),
-                'user_id' => $user->id,
-            ]);
 
             // Handle profile photo removal
             if ($request->boolean('remove_photo') && $user->profile_photo_path) {
@@ -78,8 +52,6 @@ class ProfileController extends Controller
                 // Store new photo
                 $path = $request->file('profile_photo')->store('profile-photos', 'public');
                 $validated['profile_photo_path'] = $path;
-
-                \Log::info('Photo uploaded', ['path' => $path]);
             }
 
             // Remove the profile_photo from validated data as it's not a model attribute
@@ -93,8 +65,6 @@ class ProfileController extends Controller
             }
 
             $user->save();
-
-            \Log::info('User saved', ['profile_photo_path' => $user->profile_photo_path]);
 
             return Redirect::route('profile.edit')->with('status', 'profile-updated');
         } catch (\Exception $e) {
