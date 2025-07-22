@@ -41,7 +41,6 @@ class BlueprintObserver
     {
         try {
             $this->elasticsearch->deleteBlueprint($blueprint->id);
-            Log::info('Blueprint deleted from Elasticsearch', ['blueprint_id' => $blueprint->id]);
         } catch (\Exception $e) {
             Log::error('Failed to delete blueprint from Elasticsearch', [
                 'blueprint_id' => $blueprint->id,
@@ -158,11 +157,6 @@ class BlueprintObserver
             ];
 
             $this->elasticsearch->indexBlueprint($data);
-            Log::info('Blueprint indexed in Elasticsearch', [
-                'blueprint_id' => $blueprint->id,
-                'languages_indexed' => count($pricesByLanguage),
-                'total_price_records' => $blueprint->cardPrices->count(),
-            ]);
         } catch (\Exception $e) {
             Log::error('Failed to index blueprint in Elasticsearch', [
                 'blueprint_id' => $blueprint->id,

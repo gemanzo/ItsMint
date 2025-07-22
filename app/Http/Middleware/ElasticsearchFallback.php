@@ -31,7 +31,7 @@ class ElasticsearchFallback
                     return $this->fallbackToDatabase($request);
                 }
             } catch (\Exception $e) {
-                \Log::warning('Elasticsearch unavailable, falling back to database', [
+                \Log::error('Elasticsearch unavailable, falling back to database', [
                     'error' => $e->getMessage(),
                     'route' => $request->path(),
                 ]);

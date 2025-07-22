@@ -150,7 +150,7 @@ final class MatchBlueprintsCommand extends Command
         $filtered = $query->get();
 
         // For any blueprints without product_type, do runtime classification
-        $withoutClassification = $filtered->filter(fn ($bp) => is_null($bp->product_type));
+        $withoutClassification = $filtered->filter(fn($bp) => is_null($bp->product_type));
 
         if ($withoutClassification->isNotEmpty()) {
             $this->warn("⚠️  Found {$withoutClassification->count()} blueprints without classification. Consider running: php artisan itsmint:classify-blueprints --save");
@@ -240,13 +240,6 @@ final class MatchBlueprintsCommand extends Command
                         'score_breakdown' => $this->getScoreBreakdown($blueprint, $card, $blueprintRarity),
                     ],
                 ];
-
-                Log::info('Exact collector number match found', [
-                    'blueprint_id' => $blueprint->id,
-                    'blueprint_collector_number' => $collectorNumber,
-                    'card_serial' => $card->serial,
-                    'confidence' => $matchScore,
-                ]);
             }
         }
 
@@ -266,7 +259,7 @@ final class MatchBlueprintsCommand extends Command
             $topScore = $matches[0]['confidence'];
 
             // Riduco la varianza accettabile per essere più selettivi
-            return array_filter($matches, fn ($match) => $match['confidence'] >= $topScore - 0.02);
+            return array_filter($matches, fn($match) => $match['confidence'] >= $topScore - 0.02);
         }
 
         return [];
@@ -295,14 +288,6 @@ final class MatchBlueprintsCommand extends Command
         if (! $baseSerial || ! $variantSuffix) {
             return [];
         }
-
-        Log::info('Searching variant matches', [
-            'blueprint_id' => $blueprint->id,
-            'collector_number' => $collectorNumber,
-            'base_serial' => $baseSerial,
-            'variant_suffix' => $variantSuffix,
-            'blueprint_version' => $blueprint->version,
-        ]);
 
         // Cerca carte OneLog con base serial corrispondente
         $cards = OneLogCard::where('serial', $baseSerial)
@@ -345,27 +330,6 @@ final class MatchBlueprintsCommand extends Command
                             'score_breakdown' => $this->getScoreBreakdown($blueprint, $card, $blueprintRarity),
                         ],
                     ];
-
-                    Log::info('Variant collector number match found', [
-                        'blueprint_id' => $blueprint->id,
-                        'blueprint_collector_number' => $collectorNumber,
-                        'card_serial' => $card->serial,
-                        'base_serial' => $baseSerial,
-                        'variant_suffix' => $variantSuffix,
-                        'variant_match_score' => $variantMatchScore,
-                        'total_confidence' => $totalScore,
-                        'blueprint_version' => $blueprint->version,
-                        'card_sets' => $card->card_sets,
-                    ]);
-                } else {
-                    Log::info('Variant match rejected - low confidence', [
-                        'blueprint_id' => $blueprint->id,
-                        'blueprint_collector_number' => $collectorNumber,
-                        'card_serial' => $card->serial,
-                        'variant_match_score' => $variantMatchScore,
-                        'total_confidence' => $totalScore,
-                        'required_minimum' => 0.7,
-                    ]);
                 }
             }
         }
@@ -733,25 +697,6 @@ final class MatchBlueprintsCommand extends Command
                         'match_type' => $isDirectSerialMatch ? 'direct_base_match' : 'base_serial_match',
                     ],
                 ];
-
-                // Log per debug dei base serial match
-                Log::info('Base serial match found', [
-                    'blueprint_id' => $blueprint->id,
-                    'blueprint_collector_number' => $collectorNumber,
-                    'base_serial' => $baseSerial,
-                    'onelog_card_id' => $card->id,
-                    'card_serial' => $card->serial,
-                    'confidence' => $confidence,
-                    'match_type' => $isDirectSerialMatch ? 'direct_base_match' : 'base_serial_match',
-                ]);
-            } else {
-                Log::info('Base serial match rejected - low confidence', [
-                    'blueprint_id' => $blueprint->id,
-                    'blueprint_collector_number' => $collectorNumber,
-                    'onelog_card_id' => $card->id,
-                    'confidence' => $confidence,
-                    'required_minimum' => 0.75,
-                ]);
             }
         }
 
@@ -802,14 +747,6 @@ final class MatchBlueprintsCommand extends Command
                     'normalized_card_name' => $this->normalizeName($card->name),
                 ],
             ];
-
-            Log::info('Exact name match found', [
-                'blueprint_id' => $blueprint->id,
-                'blueprint_name' => $blueprint->name,
-                'onelog_card_id' => $card->id,
-                'card_name' => $card->name,
-                'confidence' => 0.85,
-            ]);
         }
 
         // If no exact matches, try fuzzy matching CON SOGLIE PIÙ RIGOROSE
@@ -831,11 +768,6 @@ final class MatchBlueprintsCommand extends Command
 
         // VALIDAZIONE: Nome non troppo corto per fuzzy matching
         if (strlen(trim($blueprint->name)) < 4) {
-            Log::info('Name too short for fuzzy matching', [
-                'blueprint_id' => $blueprint->id,
-                'blueprint_name' => $blueprint->name,
-                'name_length' => strlen(trim($blueprint->name)),
-            ]);
 
             return [];
         }
@@ -871,15 +803,6 @@ final class MatchBlueprintsCommand extends Command
                             'normalized_card_name' => $cardName,
                         ],
                     ];
-
-                    Log::info('Fuzzy name match found', [
-                        'blueprint_id' => $blueprint->id,
-                        'blueprint_name' => $blueprint->name,
-                        'onelog_card_id' => $card->id,
-                        'card_name' => $card->name,
-                        'similarity' => $similarity,
-                        'confidence' => $confidence,
-                    ]);
                 }
             }
         }
@@ -938,19 +861,6 @@ final class MatchBlueprintsCommand extends Command
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
-
-                    Log::info('High-quality blueprint match stored', [
-                        'blueprint_id' => $blueprint->id,
-                        'blueprint_name' => $blueprint->name,
-                        'blueprint_collector_number' => $blueprint->collector_number,
-                        'onelog_card_id' => $match['card']->id,
-                        'card_name' => $match['card']->name,
-                        'card_serial' => $match['card']->serial,
-                        'match_type' => $match['type'],
-                        'confidence' => $match['confidence'],
-                        'is_verified' => $match['confidence'] >= 0.95,
-                        'action' => 'created',
-                    ]);
                 } else {
                     // Update existing relationship with new data
                     $blueprint->oneLogCards()->updateExistingPivot($match['card']->id, [
@@ -959,17 +869,6 @@ final class MatchBlueprintsCommand extends Command
                         'match_metadata' => json_encode($match['metadata']),
                         'is_verified' => $match['confidence'] >= 0.95,
                         'updated_at' => now(),
-                    ]);
-
-                    Log::info('Blueprint relationship updated with improved quality', [
-                        'blueprint_id' => $blueprint->id,
-                        'blueprint_collector_number' => $blueprint->collector_number,
-                        'onelog_card_id' => $match['card']->id,
-                        'card_serial' => $match['card']->serial,
-                        'match_type' => $match['type'],
-                        'confidence' => $match['confidence'],
-                        'is_verified' => $match['confidence'] >= 0.95,
-                        'action' => 'updated',
                     ]);
                 }
             } catch (\Exception $e) {
@@ -1069,7 +968,7 @@ final class MatchBlueprintsCommand extends Command
             // Verifica che il variant match score sia ragionevole
             $variantMatchScore = $metadata['variant_match_score'] ?? 0;
             if ($variantMatchScore <= 0.2) { // Soglia minima per variant type matching
-                Log::info('Variant match rejected due to low variant type score', [
+                Log::warning('Variant match rejected due to low variant type score', [
                     'blueprint_id' => $blueprint->id,
                     'collector_number' => $collectorNumber,
                     'variant_match_score' => $variantMatchScore,
@@ -1292,7 +1191,7 @@ final class MatchBlueprintsCommand extends Command
             }
 
             if ($excludedBlueprints->count() > 5) {
-                $this->line('  ... and '.($excludedBlueprints->count() - 5).' more');
+                $this->line('  ... and ' . ($excludedBlueprints->count() - 5) . ' more');
             }
         }
 
@@ -1357,11 +1256,11 @@ final class MatchBlueprintsCommand extends Command
                 $examples = array_slice($stats[$type], 0, 5);
                 foreach ($examples as $example) {
                     $score = $example['analysis']['analysis_score'];
-                    $this->line("  - {$example['name']} (score: ".number_format($score, 2).')');
+                    $this->line("  - {$example['name']} (score: " . number_format($score, 2) . ')');
                 }
 
                 if ($count > 5) {
-                    $this->line('  ... and '.($count - 5).' more');
+                    $this->line('  ... and ' . ($count - 5) . ' more');
                 }
                 $this->newLine();
             }
@@ -1384,7 +1283,7 @@ final class MatchBlueprintsCommand extends Command
 
         $this->newLine();
         $this->info('📊 Runtime Classification Summary:');
-        $this->info('  Total blueprints: '.count($results));
+        $this->info('  Total blueprints: ' . count($results));
         $this->info("  Single cards (will be matched): {$totalIncluded}");
         $this->info("  Products (excluded): {$totalExcluded}");
         $this->info("  Unknown/unclear: {$unknownCount}");
@@ -1441,7 +1340,7 @@ final class MatchBlueprintsCommand extends Command
 
         $this->info("📋 Found {$blueprints->count()} blueprint(s):");
         foreach ($blueprints as $blueprint) {
-            $this->line("  - ID: {$blueprint->id}, Name: {$blueprint->name}, Rarity: {$blueprint->rarity}, Version: '{$blueprint->version}', Promo: ".($blueprint->is_promo_card ? 'Yes' : 'No'));
+            $this->line("  - ID: {$blueprint->id}, Name: {$blueprint->name}, Rarity: {$blueprint->rarity}, Version: '{$blueprint->version}', Promo: " . ($blueprint->is_promo_card ? 'Yes' : 'No'));
 
             // NUOVO: Mostra info variant se applicabile
             if ($this->hasVariantSuffix($blueprint->collector_number)) {
@@ -1471,7 +1370,7 @@ final class MatchBlueprintsCommand extends Command
                 if ($baseCards->isNotEmpty()) {
                     $this->info("🃏 Found {$baseCards->count()} OneLog card(s) for base serial:");
                     foreach ($baseCards as $card) {
-                        $this->line("  - ID: {$card->id}, Name: {$card->name}, Serial: {$card->serial}, Base: {$card->base_serial}, Rarity: {$card->rarity}, Variant: ".($card->is_variant ? 'Yes' : 'No').', Promo: '.($card->is_promo ? 'Yes' : 'No').", Sets: '{$card->card_sets}'");
+                        $this->line("  - ID: {$card->id}, Name: {$card->name}, Serial: {$card->serial}, Base: {$card->base_serial}, Rarity: {$card->rarity}, Variant: " . ($card->is_variant ? 'Yes' : 'No') . ', Promo: ' . ($card->is_promo ? 'Yes' : 'No') . ", Sets: '{$card->card_sets}'");
                     }
                 }
             }
@@ -1481,7 +1380,7 @@ final class MatchBlueprintsCommand extends Command
 
         $this->info("🃏 Found {$oneLogCards->count()} OneLog card(s):");
         foreach ($oneLogCards as $card) {
-            $this->line("  - ID: {$card->id}, Name: {$card->name}, Rarity: {$card->rarity}, Variant: ".($card->is_variant ? 'Yes' : 'No').', Promo: '.($card->is_promo ? 'Yes' : 'No').", IMG_ID: {$card->img_id}, Sets: '{$card->card_sets}'");
+            $this->line("  - ID: {$card->id}, Name: {$card->name}, Rarity: {$card->rarity}, Variant: " . ($card->is_variant ? 'Yes' : 'No') . ', Promo: ' . ($card->is_promo ? 'Yes' : 'No') . ", IMG_ID: {$card->img_id}, Sets: '{$card->card_sets}'");
         }
 
         $this->newLine();
@@ -1501,7 +1400,7 @@ final class MatchBlueprintsCommand extends Command
                     $variantMatches = $this->findVariantMatches($blueprint, $blueprint->collector_number, $blueprint->rarity);
 
                     if (! empty($variantMatches)) {
-                        $this->line('  ✅ Found '.count($variantMatches).' variant match(es):');
+                        $this->line('  ✅ Found ' . count($variantMatches) . ' variant match(es):');
                         foreach ($variantMatches as $match) {
                             $card = $match['card'];
                             $confidence = number_format($match['confidence'], 3);
@@ -1511,14 +1410,14 @@ final class MatchBlueprintsCommand extends Command
                             $this->line("      Type: {$match['type']}");
                             $this->line("      Base Serial: {$metadata['base_serial']}");
                             $this->line("      Variant Suffix: {$metadata['variant_suffix']}");
-                            $this->line('      Variant Match Score: '.number_format($metadata['variant_match_score'], 3));
+                            $this->line('      Variant Match Score: ' . number_format($metadata['variant_match_score'], 3));
                         }
                     } else {
                         $this->line('  ❌ No variant matches found');
                     }
                 }
             } else {
-                $this->line('  ✅ Found '.count($matches).' match(es):');
+                $this->line('  ✅ Found ' . count($matches) . ' match(es):');
 
                 foreach ($matches as $match) {
                     $card = $match['card'];
@@ -1528,13 +1427,13 @@ final class MatchBlueprintsCommand extends Command
                     $this->line("    - OneLog Card #{$card->id}: {$card->name} (confidence: {$confidence})");
                     $this->line("      Type: {$match['type']}");
                     $this->line("      Rarities: Blueprint='{$metadata['blueprint_rarity']}' vs Card='{$metadata['card_rarity']}'");
-                    $this->line('      Promo: Blueprint='.($metadata['blueprint_is_promo'] ? 'Yes' : 'No').' vs Card='.($metadata['card_is_promo'] ? 'Yes' : 'No'));
-                    $this->line('      Variant: Card='.($metadata['card_is_variant'] ? 'Yes' : 'No'));
+                    $this->line('      Promo: Blueprint=' . ($metadata['blueprint_is_promo'] ? 'Yes' : 'No') . ' vs Card=' . ($metadata['card_is_promo'] ? 'Yes' : 'No'));
+                    $this->line('      Variant: Card=' . ($metadata['card_is_variant'] ? 'Yes' : 'No'));
                     $this->line("      Version: Blueprint='{$metadata['blueprint_version']}' vs CardSets='{$metadata['card_sets']}'");
 
                     // NUOVO: Mostra info variant se presente
                     if (isset($metadata['variant_suffix'])) {
-                        $this->line("      Variant Info: Base='{$metadata['base_serial']}', Suffix='{$metadata['variant_suffix']}', Score=".number_format($metadata['variant_match_score'], 3));
+                        $this->line("      Variant Info: Base='{$metadata['base_serial']}', Suffix='{$metadata['variant_suffix']}', Score=" . number_format($metadata['variant_match_score'], 3));
                     }
 
                     $this->line('      Score breakdown:');
@@ -1601,21 +1500,8 @@ final class MatchBlueprintsCommand extends Command
                         'updated_at' => now(),
                     ]);
                 $updatedRelations++;
-                Log::info('Updated relation', [
-                    'relation_id' => $relation->id,
-                    'blueprint_id' => $relation->blueprint_id,
-                    'onelog_card_id' => $relation->onelog_card_id,
-                    'old_confidence' => $currentConfidence,
-                    'new_confidence' => $newConfidence,
-                    'old_verified' => $currentVerified,
-                    'new_verified' => $newVerified,
-                ]);
             } else {
-                Log::info('Relation already up-to-date', [
-                    'relation_id' => $relation->id,
-                    'blueprint_id' => $relation->blueprint_id,
-                    'onelog_card_id' => $relation->onelog_card_id,
-                ]);
+                $updatedRelations++;
             }
         }
 

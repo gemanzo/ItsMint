@@ -73,13 +73,13 @@ class UpdateBlueprintPriceJob implements ShouldQueue
             ]);
 
             if (is_null($adjustedPrices)) {
-                Log::info('BlueprintPriceService returned null, skipping price updates for blueprint.', ['blueprint_id' => $blueprint->id, 'ct_id' => $blueprintCtId]);
+                Log::warning('BlueprintPriceService returned null, skipping price updates for blueprint.', ['blueprint_id' => $blueprint->id, 'ct_id' => $blueprintCtId]);
 
                 return;
             }
 
             if (empty($adjustedPrices)) {
-                Log::info('No prices to save after service calculation for blueprint.', ['blueprint_id' => $blueprint->id, 'ct_id' => $blueprintCtId]);
+                Log::warning('No prices to save after service calculation for blueprint.', ['blueprint_id' => $blueprint->id, 'ct_id' => $blueprintCtId]);
 
                 return;
             }
@@ -135,7 +135,7 @@ class UpdateBlueprintPriceJob implements ShouldQueue
                         'source' => $priceData['source'] ?? 'Default Source',
                         'fetched_at' => $priceData['fetched_at'], // Keep updating timestamp
                     ]);
-                    Log::info('Updated daily price for blueprint.', array_merge($logData, ['action' => 'updated']));
+                    Log::warning('Updated daily price for blueprint.', array_merge($logData, ['action' => 'updated']));
                 } else {
                     // Create a new entry for today
                     CardPrice::create([
@@ -148,13 +148,13 @@ class UpdateBlueprintPriceJob implements ShouldQueue
                         'source' => $priceData['source'] ?? 'Default Source',
                         'fetched_at' => $priceData['fetched_at'],
                     ]);
-                    Log::info('Created new daily price for blueprint.', array_merge($logData, ['action' => 'created']));
+                    Log::warning('Created new daily price for blueprint.', array_merge($logData, ['action' => 'created']));
                 }
 
                 $pricesProcessed++;
             }
 
-            Log::info('UpdateBlueprintPriceJob completed successfully', [
+            Log::warning('UpdateBlueprintPriceJob completed successfully', [
                 'blueprint_id' => $blueprint->id,
                 'ct_id' => $blueprintCtId,
                 'prices_processed' => $pricesProcessed,

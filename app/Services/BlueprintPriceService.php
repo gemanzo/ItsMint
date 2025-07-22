@@ -54,18 +54,18 @@ class BlueprintPriceService
             return null;
         }
 
-        $marketplaceUrl = $baseApiUrl.'/marketplace/products';
+        $marketplaceUrl = $baseApiUrl . '/marketplace/products';
 
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer '.$token,
+                'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
             ])->retry(5, function ($attempt, \Illuminate\Http\Client\RequestException $exception) use ($blueprintCtId) {
                 // Retry only on 429 errors
                 if ($exception->response && $exception->response->status() === 429) {
                     // Exponential backoff increased: e.g., 2.25s, 6.75s, 20.25s, ...
                     $delay = pow(3, $attempt) * 750;
-                    Log::warning('CardTrader API rate limit hit. Retrying attempt #'.$attempt.' after '.($delay / 1000).'s.', [
+                    Log::warning('CardTrader API rate limit hit. Retrying attempt #' . $attempt . ' after ' . ($delay / 1000) . 's.', [
                         'blueprint_id' => $blueprintCtId,
                         'status' => $exception->response->status(),
                     ]);
@@ -90,11 +90,9 @@ class BlueprintPriceService
                 return null; // Don't cache failures to allow for retries
             }
 
-            Log::info('CardTrader API Response', ['response' => json_encode($response->json())]);
             $apiProducts = $response->json()[$blueprintCtId] ?? [];
 
             if (empty($apiProducts)) {
-                Log::info('No products found on marketplace for blueprint in Service.', ['blueprint_id' => $blueprint->id, 'ct_id' => $blueprintCtId]);
                 Cache::put($cacheKey, null, now()->addMinutes(60)); // Cache null result
 
                 return null;
@@ -103,7 +101,6 @@ class BlueprintPriceService
             $lowestPricesByConditionAndLanguage = $this->extractLowestPricesByConditionAndLanguage($apiProducts);
 
             if (empty($lowestPricesByConditionAndLanguage)) {
-                Log::info('No valid products with recognized conditions found to process for blueprint in Service.', ['blueprint_id' => $blueprint->id, 'ct_id' => $blueprintCtId]);
                 Cache::put($cacheKey, null, now()->addMinutes(60)); // Cache null result
 
                 return null;
@@ -157,7 +154,7 @@ class BlueprintPriceService
 
             // Skip unknown languages for now, but log them for future support
             if (! isset(self::SUPPORTED_LANGUAGES[$language]) && $language !== 'unknown') {
-                Log::debug('Unsupported language found in CardTrader data', [
+                Log::error('Unsupported language found in CardTrader data', [
                     'language' => $language,
                     'raw_language' => $rawLanguage,
                     'product_id' => $product['id'] ?? 'unknown',
@@ -172,7 +169,7 @@ class BlueprintPriceService
             $priceCents = $product['price_cents'];
 
             // Create unique key for condition-language combination
-            $key = $condition.'_'.$language;
+            $key = $condition . '_' . $language;
 
             if (! isset($lowestPrices[$key]) || $priceCents < $lowestPrices[$key]['price_cents']) {
                 $lowestPrices[$key] = [
@@ -207,7 +204,7 @@ class BlueprintPriceService
                 continue;
             }
 
-            $key = $condition.'_'.$language;
+            $key = $condition . '_' . $language;
             if (isset($lowestPrices[$key])) {
                 $lowestPrices[$key]['product_count'] = ($lowestPrices[$key]['product_count'] ?? 0) + 1;
             }
@@ -254,16 +251,9 @@ class BlueprintPriceService
                     if ($lastValidPriceCents !== null && $originalPriceCents > $lastValidPriceCents) {
                         $adjustedPriceCents = $lastValidPriceCents;
                         $source = 'cardtrader_service_adjusted_hierarchy_by_language';
-
-                        Log::info('Applied hierarchy adjustment', [
-                            'language' => $language,
-                            'condition' => $hierarchicalCondition,
-                            'original_price_cents' => $originalPriceCents,
-                            'adjusted_price_cents' => $adjustedPriceCents,
-                        ]);
                     }
 
-                    $key = $hierarchicalCondition.'_'.$language;
+                    $key = $hierarchicalCondition . '_' . $language;
                     $adjustedPrices[$key] = $currentEntry;
                     $adjustedPrices[$key]['price_cents'] = $adjustedPriceCents;
                     $adjustedPrices[$key]['source'] = $source;
