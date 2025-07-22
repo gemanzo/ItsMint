@@ -18,16 +18,12 @@ final class CardOcrService
 
     private ImageManager $imageManager;
 
-    private ElasticsearchService $elasticsearchService;
-
     private GoogleVisionOcrService $googleVisionService;
 
     public function __construct(
-        ElasticsearchService $elasticsearchService,
         GoogleVisionOcrService $googleVisionService
     ) {
         $this->imageManager = new ImageManager(new Driver);
-        $this->elasticsearchService = $elasticsearchService;
         $this->googleVisionService = $googleVisionService;
     }
 
@@ -51,9 +47,6 @@ final class CardOcrService
         ]);
 
         try {
-            // Create user directory if it doesn't exist
-            $userDir = 'card-scans/' . $userId;
-
             // Store the image using s3-card-scans disk
             $filename = time() . '_' . $scan->id . '.jpg';
 
@@ -93,19 +86,20 @@ final class CardOcrService
     {
         $scan->update(['status' => 'processing']);
 
-        $fullPath = Storage::disk('s3-card-scans')->path($scan->file_path);
-
         try {
             // Check if Google Vision is available
             if (! $this->googleVisionService->isAvailable()) {
                 throw new \Exception('Google Vision API is not properly configured');
             }
 
-            // Preprocess image for better OCR (optional for Google Vision)
-            $preprocessedPath = $this->preprocessImage($fullPath);
+            // For S3, download the file to a temporary local path
+            $imageContent = Storage::disk('s3-card-scans')->get($scan->file_path);
+            if (! $imageContent) {
+                throw new \Exception("Could not retrieve file from S3: {$scan->file_path}");
+            }
 
             // Perform OCR using Google Vision
-            $ocrResult = $this->googleVisionService->extractTextFromImage($preprocessedPath);
+            $ocrResult = $this->googleVisionService->extractTextFromImage($imageContent);
 
             // Extract card information from Google Vision results
             $detectedCards = $this->extractCardInformationFromVision($ocrResult);
@@ -125,11 +119,6 @@ final class CardOcrService
 
             // Auto-assign blueprint if confidence is high enough
             $this->autoAssignBlueprint($scan);
-
-            // Clean up preprocessed image
-            if (file_exists($preprocessedPath) && $preprocessedPath !== $fullPath) {
-                unlink($preprocessedPath);
-            }
         } catch (\Exception $e) {
             Log::error('Google Vision OCR processing failed', [
                 'scan_id' => $scan->id,
@@ -143,32 +132,6 @@ final class CardOcrService
             ]);
 
             throw $e;
-        }
-    }
-
-    /**
-     * Preprocess image to improve OCR accuracy (lighter processing for Google Vision)
-     */
-    private function preprocessImage(string $imagePath): string
-    {
-        try {
-            $image = $this->imageManager->read($imagePath);
-
-            // Light preprocessing for Google Vision (it handles most optimization internally)
-            // Resize only if too large (>2000px width)
-            if ($image->width() > 2000) {
-                $image->scale(2000);
-            }
-
-            // Save optimized image
-            $preprocessedPath = sys_get_temp_dir() . '/' . uniqid('gv_ocr_') . '.jpg';
-            $image->save($preprocessedPath, 90, 'jpg');
-
-            return $preprocessedPath;
-        } catch (\Exception $e) {
-            Log::warning('Image preprocessing failed, using original', ['error' => $e->getMessage()]);
-
-            return $imagePath;
         }
     }
 

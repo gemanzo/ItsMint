@@ -38,15 +38,10 @@ final class GoogleVisionOcrService
     /**
      * Extract text from image using Google Vision API
      */
-    public function extractTextFromImage(string $imagePath): array
+    public function extractTextFromImage(string $imageContent): array
     {
         try {
             // Read image file
-            $imageContent = Storage::disk('s3-card-scans')->get($imagePath);
-            if ($imageContent === false) {
-                throw new GoogleVisionOcrException("Failed to read image file: {$imagePath}");
-            }
-
             // Create image object
             $image = new Image;
             $image->setContent($imageContent);

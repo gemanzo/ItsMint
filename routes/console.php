@@ -32,15 +32,21 @@ Schedule::command('elasticsearch:index-blueprints --fresh')
     ->withoutOverlapping()
     ->runInBackground();
 
-// 3. Continuous price updates every 6 hours
+// 5. Continuous price updates every 6 hours
 Schedule::command('itsmint:queue-price-updates')
     ->everySixHours()
     ->withoutOverlapping();
 
+// 6. Backup the database
+Schedule::command('backup:run --only-db')
+    ->dailyAt('06:00')
+    ->withoutOverlapping()
+    ->runInBackground();
+
 // clean the horizon.log file
 Schedule::exec(function () {
-    $logFile = storage_path('logs/horizon.log');
-    if (file_exists($logFile)) {
-        file_put_contents($logFile, '');
+    $horizonLogFile = storage_path('logs/horizon.log');
+    if (file_exists($horizonLogFile)) {
+        file_put_contents($horizonLogFile, '');
     }
 })->weeklyOn(1, '00:00');

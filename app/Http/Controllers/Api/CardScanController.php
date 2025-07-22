@@ -38,7 +38,7 @@ final class CardScanController extends Controller
                             ->minHeight($ocrConfig['upload']['min_height'])
                     ),
             ],
-            'source' => 'sometimes|string|in:'.implode(',', $ocrConfig['upload']['allowed_sources']),
+            'source' => 'sometimes|string|in:' . implode(',', $ocrConfig['upload']['allowed_sources']),
         ]);
 
         try {
@@ -73,7 +73,7 @@ final class CardScanController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to process image: '.$e->getMessage(),
+                'message' => 'Failed to process image: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -87,7 +87,7 @@ final class CardScanController extends Controller
 
         $validated = $request->validate([
             'status' => 'sometimes|string|in:pending,processing,completed,failed',
-            'per_page' => 'sometimes|integer|min:1|max:'.$ocrConfig['pagination']['max_per_page'],
+            'per_page' => 'sometimes|integer|min:1|max:' . $ocrConfig['pagination']['max_per_page'],
         ]);
 
         $query = CardScan::with(['blueprint.expansion', 'blueprint.latestPrice'])
@@ -157,7 +157,7 @@ final class CardScanController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retry scan: '.$e->getMessage(),
+                'message' => 'Failed to retry scan: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -206,9 +206,9 @@ final class CardScanController extends Controller
             ], 404);
         }
 
-        // Delete associated image file
-        if ($scan->file_path && Storage::disk('public')->exists($scan->file_path)) {
-            Storage::disk('public')->delete($scan->file_path);
+        // Delete associated image file from S3
+        if ($scan->file_path && Storage::disk('s3-card-scans')->exists($scan->file_path)) {
+            Storage::disk('s3-card-scans')->delete($scan->file_path);
         }
 
         $scan->delete();
@@ -235,23 +235,18 @@ final class CardScanController extends Controller
             ], 404);
         }
 
-        // Check if file exists on public disk
-        if (! Storage::disk('public')->exists($scan->file_path)) {
+        // Check if file exists on S3
+        if (! Storage::disk('s3-card-scans')->exists($scan->file_path)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Image file not found on disk',
+                'message' => 'Image file not found on S3',
             ], 404);
         }
 
-        // Return the image file directly
-        $file = Storage::disk('public')->get($scan->file_path);
-        $mimeType = Storage::disk('public')->mimeType($scan->file_path);
+        // For S3, generate a temporary signed URL for secure access
+        $temporaryUrl = Storage::disk('s3-card-scans')->temporaryUrl($scan->file_path, now()->addMinutes(15));
 
-        return response($file, 200, [
-            'Content-Type' => $mimeType,
-            'Content-Disposition' => 'inline; filename="'.basename($scan->file_path).'"',
-            'Cache-Control' => 'public, max-age=3600',
-        ]);
+        return redirect($temporaryUrl);
     }
 
     /**
@@ -311,7 +306,7 @@ final class CardScanController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create user card: '.$e->getMessage(),
+                'message' => 'Failed to create user card: ' . $e->getMessage(),
             ], 500);
         }
     }

@@ -296,7 +296,7 @@
                   <p
                     class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
                   >
-                    {{ portfolio.cards_count || 0 }}
+                    {{ portfolio.user_cards_count || 0 }}
                   </p>
                 </div>
                 <div
@@ -310,7 +310,7 @@
                   <p
                     class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
                   >
-                    {{ formatCurrency(portfolio.total_value || 0) }}
+                    {{ formatCurrency(portfolio.total_value_cents / 100 || 0) }}
                   </p>
                 </div>
               </div>
