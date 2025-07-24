@@ -1472,7 +1472,7 @@ onMounted(() => {
               Cancel
             </SecondaryButton>
 
-            <PrimaryButton class="ms-3"> Add Card </PrimaryButton>
+            <PrimaryButton class="ms-3" type="submit"> Add Card </PrimaryButton>
           </div>
         </form>
       </div>
