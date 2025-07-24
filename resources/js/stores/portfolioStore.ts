@@ -48,7 +48,6 @@ export interface Portfolio {
   description?: string;
   user_cards_count?: number;
   user_cards?: UserCard[]; // Should now use the updated UserCard interface
-  // Add other portfolio fields as needed
 }
 
 interface PortfolioState {
@@ -125,7 +124,12 @@ export const usePortfolioStore = defineStore('portfolio', {
 
         // Ensure we always set an array, even if the response is unexpected
         if (Array.isArray(data)) {
-          this.portfolios = data;
+          console.log('data:', data);
+          
+          this.portfolios = data.map(portfolio => ({
+            ...portfolio,
+            user_cards_count: portfolio.user_cards_count ?? (portfolio.user_cards?.reduce((sum, card) => sum + (card.pivot?.quantity || 1), 0) || 0),
+          }));
         } else {
           console.warn(
             'API response is not an array, setting empty array:',
@@ -135,7 +139,6 @@ export const usePortfolioStore = defineStore('portfolio', {
         }
       } catch (error) {
         this.error = 'Failed to fetch portfolios';
-        console.error(error);
         // Ensure portfolios remains an array even on error
         this.portfolios = [];
       } finally {

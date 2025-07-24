@@ -304,7 +304,7 @@
                   <p
                     class="text-xs sm:text-sm text-gray-500 dark:text-gray-400"
                   >
-                    {{ portfolio.user_cards_count || 0 }} cards
+                    {{ portfolio.user_cards_count }} cards
                   </p>
                 </div>
               </div>
@@ -375,7 +375,6 @@
     <CreatePortfolioModal
       :is-open="showCreatePortfolioModal"
       @close="showCreatePortfolioModal = false"
-      @portfolio-created="handlePortfolioCreated"
     />
 
     <!-- Price Alerts Modal (Placeholder for now) -->
@@ -426,24 +425,6 @@ onMounted(async () => {
   if (portfolioStore.portfolios.length === 0) {
     await portfolioStore.fetchPortfolios();
   }
-
-  // Debug: log the portfolios data
-  console.log('Dashboard portfolios data:', portfolioStore.portfolios);
-  if (
-    portfolioStore.portfolios.length > 0 &&
-    portfolioStore.portfolios[0].user_cards
-  ) {
-    console.log(
-      'First portfolio user_cards:',
-      portfolioStore.portfolios[0].user_cards
-    );
-    if (portfolioStore.portfolios[0].user_cards.length > 0) {
-      console.log(
-        'First card estimated_value_cents:',
-        portfolioStore.portfolios[0].user_cards[0].estimated_value_cents
-      );
-    }
-  }
 });
 
 // Methods
@@ -453,13 +434,6 @@ const formatCurrency = (value: number | null | undefined, currency = 'EUR') => {
     style: 'currency',
     currency: currency,
   }).format(value);
-};
-
-const handlePortfolioCreated = () => {
-  console.log('Portfolio created event received on dashboard');
-  // Store updates itself, dashboard computed properties will react.
-  // Optionally, redirect to the new portfolio or the portfolios index:
-  // router.visit(route('portfolios.index'));
 };
 
 // Computed properties for financial metrics
@@ -504,12 +478,12 @@ const totalCards = computed(() => {
   if (!Array.isArray(portfolioStore.portfolios)) {
     return 0;
   }
+  
   return portfolioStore.portfolios.reduce((total, portfolio) => {
-    const portfolioCardCount =
-      portfolio.user_cards?.reduce((sum, card) => {
-        return sum + (card.pivot?.quantity || 1);
-      }, 0) || 0;
-    return total + portfolioCardCount;
+    const portfolioCardCount = portfolio.user_cards?.reduce((sum, card) => {
+      return sum + (card.pivot?.quantity || 1);
+    }, 0);
+    return total + (portfolioCardCount || 0);
   }, 0);
 });
 

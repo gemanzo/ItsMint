@@ -588,11 +588,19 @@ interface PortfolioData {
   id: number;
   name: string;
   description?: string;
+  user_cards: UserCard[];
   user_cards_count: number;
   created_at: string;
   total_value_cents: number;
   cards_count?: number;
   total_value?: number;
+}
+
+interface UserCard {
+  id: number;
+  pivot: {
+    quantity: number;
+  };
 }
 
 const props = defineProps<{
@@ -616,10 +624,14 @@ const targetPortfolio = ref<PortfolioData | null>(null);
 
 // Computed properties
 const totalCards = computed(() => {
-  return props.portfolios.reduce(
-    (sum, portfolio) => sum + (portfolio.user_cards_count || 0),
-    0
-  );
+  return props.portfolios.reduce((portfolioSum, portfolio) => {
+    const cards = portfolio.user_cards || [];
+    const cardsSum = cards.reduce((cardSum, card) => {
+      return cardSum + (card.pivot?.quantity ?? 1);
+    }, 0);
+
+    return portfolioSum + cardsSum;
+  }, 0);
 });
 
 const totalValue = computed(() => {
@@ -709,7 +721,6 @@ const handlePortfolioDeleted = () => {
 };
 
 const handlePortfolioCreated = () => {
-  console.log('Portfolio created, refreshing list');
   portfolioStore.fetchPortfolios();
   router.reload({ only: ['portfolios'] });
 };
