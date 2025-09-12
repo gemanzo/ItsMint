@@ -44,12 +44,17 @@ Schedule::command('backup:run --only-db')
     ->runInBackground();
 
 // 7. Refresh latest card prices
-Schedule::command('prices:refresh-latest')
+Schedule::command('itsmint:refresh-latest')
     ->hourly()
     ->withoutOverlapping();
 
 // 8. Ingest Cardmarket price guide daily before queueing price updates
-Schedule::command('prices:ingest-cardmarket --limit=0')
+Schedule::command('itsmint:download-cardmarket-guide')
+    ->dailyAt('01:25')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+Schedule::command('itsmint:ingest-cardmarket --limit=0')
     ->dailyAt('01:30')
     ->withoutOverlapping()
     ->runInBackground();

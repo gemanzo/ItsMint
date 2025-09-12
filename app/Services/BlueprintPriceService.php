@@ -60,20 +60,36 @@ class BlueprintPriceService
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
-            ])->retry(5, function ($attempt, \Illuminate\Http\Client\RequestException $exception) use ($blueprintCtId) {
-                // Retry only on 429 errors
-                if ($exception->response && $exception->response->status() === 429) {
-                    // Exponential backoff increased: e.g., 2.25s, 6.75s, 20.25s, ...
-                    $delay = pow(3, $attempt) * 750;
-                    Log::warning('CardTrader API rate limit hit. Retrying attempt #' . $attempt . ' after ' . ($delay / 1000) . 's.', [
+            ])->retry(5, function (int $attempt, \Throwable $exception) use ($blueprintCtId) {
+                // Handle HTTP 429 rate limit
+                if ($exception instanceof \Illuminate\Http\Client\RequestException) {
+                    $response = $exception->response;
+                    if ($response && $response->status() === 429) {
+                        // Exponential backoff: ~0.75s, 2.25s, 6.75s, ...
+                        $delay = (int) (pow(3, $attempt) * 750);
+                        Log::warning('CardTrader API rate limit hit. Retrying.', [
+                            'attempt' => $attempt,
+                            'blueprint_id' => $blueprintCtId,
+                            'status' => $response->status(),
+                        ]);
+
+                        return $delay;
+                    }
+                }
+
+                // Handle transient connection issues
+                if ($exception instanceof \Illuminate\Http\Client\ConnectionException) {
+                    $delay = (int) (pow(2, $attempt) * 500);
+                    Log::warning('CardTrader API connection issue. Retrying.', [
+                        'attempt' => $attempt,
                         'blueprint_id' => $blueprintCtId,
-                        'status' => $exception->response->status(),
+                        'error' => $exception->getMessage(),
                     ]);
 
                     return $delay;
                 }
 
-                // Do not retry for other errors
+                // No retry for other errors
                 return 0;
             })->get($marketplaceUrl, [
                 'blueprint_id' => $blueprintCtId,

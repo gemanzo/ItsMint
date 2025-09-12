@@ -11,7 +11,7 @@ use Illuminate\Console\Command;
 
 final class DebugPrices extends Command
 {
-    protected $signature = 'prices:debug {blueprintId : The local blueprint id}';
+    protected $signature = 'itsmint:prices-debug {blueprintId : The local blueprint id}';
 
     protected $description = 'Print raw price points by provider and the final aggregated estimate';
 

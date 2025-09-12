@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 final class RefreshLatestCardPrices extends Command
 {
-    protected $signature = 'prices:refresh-latest';
+    protected $signature = 'itsmint:refresh-latest';
 
     protected $description = 'Refresh materialized view for latest/best card prices';
 

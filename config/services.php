@@ -78,6 +78,7 @@ return [
 
     'cardmarket' => [
         'op_price_guide_url' => env('CARDMARKET_OP_PRICE_GUIDE'),
+        'op_price_guide_path' => env('CARDMARKET_OP_PRICE_GUIDE_PATH', storage_path('app/public/cardmarket/price_guide_18.json')),
     ],
 
 ];

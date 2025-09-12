@@ -7,17 +7,22 @@ namespace App\Console\Commands;
 use App\Models\Blueprint;
 use App\Services\Pricing\PriceAggregatorService;
 use App\Services\Pricing\Providers\CardmarketGuidePriceProvider;
+use App\Services\Pricing\Providers\CardmarketGuideReader;
 use Illuminate\Console\Command;
 
 final class IngestCardmarketGuide extends Command
 {
-    protected $signature = 'prices:ingest-cardmarket {--limit= : Max blueprints to process}';
+    protected $signature = 'itsmint:ingest-cardmarket {--limit= : Max blueprints to process}';
 
-    protected $description = 'Download Cardmarket price guide JSON and create price points + estimates';
+    protected $description = 'Use Cardmarket local guide to create price points + estimates';
 
-    public function handle(PriceAggregatorService $aggregator, CardmarketGuidePriceProvider $provider): int
+    public function handle(PriceAggregatorService $aggregator, CardmarketGuidePriceProvider $provider, CardmarketGuideReader $reader): int
     {
         $limit = (int) ($this->option('limit') ?? 0);
+
+        // Preload Cardmarket JSON once (cached 24h + in-memory) before iterating
+        $this->info('Preloading Cardmarket price guide...');
+        $reader->preload();
 
         $query = Blueprint::query()->singleCards();
         if ($limit > 0) {

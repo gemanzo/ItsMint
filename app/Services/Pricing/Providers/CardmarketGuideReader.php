@@ -12,9 +12,36 @@ use Illuminate\Support\Str;
 
 final class CardmarketGuideReader
 {
+    private ?array $data = null;
+    private array $byIdProduct = [];
+    private bool $isIndexed = false;
+
     public function __construct(
         private readonly ?string $downloadUrl = null,
     ) {}
+
+    /**
+     * Preload and index the JSON once per process (command run).
+     */
+    public function preload(): void
+    {
+        $data = $this->fetchGuideJson();
+        if (!is_array($data)) {
+            return;
+        }
+        $rows = $data['priceGuides'] ?? [];
+        if (!is_array($rows)) {
+            return;
+        }
+        if (!$this->isIndexed) {
+            foreach ($rows as $row) {
+                if (isset($row['idProduct']) && is_numeric($row['idProduct'])) {
+                    $this->byIdProduct[(int) $row['idProduct']] = $row;
+                }
+            }
+            $this->isIndexed = true;
+        }
+    }
 
     /**
      * Lookup normalized rows for a blueprint from Cardmarket guide JSON.
@@ -43,19 +70,24 @@ final class CardmarketGuideReader
 
         $lang = strtolower($blueprint->primary_language ?? 'en');
 
-        $matches = [];
-        foreach ($rows as $row) {
-            $idProduct = isset($row['idProduct']) && is_numeric($row['idProduct']) ? (int) $row['idProduct'] : null;
-            if ($idProduct === null) {
-                continue;
+        // Build fast index once per process
+        if (!$this->isIndexed) {
+            foreach ($rows as $row) {
+                if (isset($row['idProduct']) && is_numeric($row['idProduct'])) {
+                    $this->byIdProduct[(int) $row['idProduct']] = $row;
+                }
             }
-            if (!$bpCmkIds->contains($idProduct)) {
-                continue;
-            }
+            $this->isIndexed = true;
+        }
 
+        $matches = [];
+        foreach ($bpCmkIds as $id) {
+            $row = $this->byIdProduct[$id] ?? null;
+            if (!$row) {
+                continue;
+            }
             $avg = $row['avg'] ?? null;
             $trend = $row['trend'] ?? null;
-
             $matches[] = [
                 'avg_price_eur' => is_numeric($avg) ? (float) $avg : null,
                 'trend_price_eur' => is_numeric($trend) ? (float) $trend : null,
@@ -79,9 +111,28 @@ final class CardmarketGuideReader
     private function fetchGuideJson(): ?array
     {
         $cacheKey = 'cardmarket_price_guide_json_v1';
+        if ($this->data !== null) {
+            return $this->data;
+        }
+        // 1) Try local file first
+        $local = config('services.cardmarket.op_price_guide_path');
+        if (is_string($local) && is_file($local)) {
+            try {
+                $raw = file_get_contents($local);
+                $json = json_decode($raw, true);
+                if (is_array($json)) {
+                    $this->data = $json;
+                    return $this->data;
+                }
+            } catch (\Throwable) {
+                // fallback to cache/http
+            }
+        }
+        // 2) App cache
         $cached = Cache::get($cacheKey);
         if ($cached !== null) {
-            return $cached;
+            $this->data = $cached;
+            return $this->data;
         }
 
         $url = $this->downloadUrl ?? (config('services.cardmarket.op_price_guide_url') ?: env('CARDMARKET_OP_PRICE_GUIDE'));
@@ -100,8 +151,9 @@ final class CardmarketGuideReader
             if (!is_array($data)) {
                 return null;
             }
-            Cache::put($cacheKey, $data, now()->addMinutes(60));
-            return $data;
+            $this->data = $data;
+            Cache::put($cacheKey, $data, now()->addHours(24));
+            return $this->data;
         } catch (\Throwable $e) {
             Log::error('CardmarketGuideReader exception', ['error' => $e->getMessage()]);
             return null;
