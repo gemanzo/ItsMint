@@ -51,6 +51,17 @@ class UserCard extends Model
         'DMG' => 0.25, // -75%
     ];
 
+    protected static array $conditionAbbreviations = [
+        'Near Mint' => 'NM',
+        'Slightly Played' => 'LP',
+        'Lightly Played' => 'LP',
+        'Moderately Played' => 'MP',
+        'Played' => 'HP',
+        'Heavily Played' => 'HP',
+        'Poor' => 'DMG',
+        'Damaged' => 'DMG',
+    ];
+
     /**
      * Get condition-based price adjustments array
      */
@@ -64,7 +75,8 @@ class UserCard extends Model
      */
     public static function calculateEstimatedPriceCents(int $basePriceCents, string $condition): int
     {
-        $adjustmentFactor = self::$conditionPriceAdjustments[$condition] ?? 1.00;
+        $conditionAbbreviation = self::$conditionAbbreviations[$condition] ?? $condition;
+        $adjustmentFactor = self::$conditionPriceAdjustments[$conditionAbbreviation] ?? 1.00;
 
         return (int) round($basePriceCents * $adjustmentFactor);
     }
@@ -111,19 +123,29 @@ class UserCard extends Model
     }
 
     /**
-     * Get the estimated value of the card in cents based on its condition and blueprint's latest price.
+     * Get the estimated value of the card in cents based on its language, condition, and blueprint's latest price.
      */
     public function getEstimatedValueCentsAttribute(): ?int
     {
-        if (! $this->blueprint || ! $this->blueprint->latestPrice) {
+        if (! $this->blueprint) {
             return null;
         }
 
-        $basePriceCents = $this->blueprint->latestPrice->price_cents;
-        if ($basePriceCents === null) {
+        // Prioritize the price for the specific language of the user's card.
+        $priceModel = $this->blueprint->latestPriceForLanguage($this->language)->first();
+
+        // If no price is found for the specific language, fallback to the generic latest price.
+        if (! $priceModel) {
+            $priceModel = $this->blueprint->latestPrice;
+        }
+
+        if (! $priceModel || $priceModel->price_cents === null) {
             return null;
         }
 
+        $basePriceCents = $priceModel->price_cents;
+
+        // The condition of the UserCard should be used, not the condition from the fetched price.
         return self::calculateEstimatedPriceCents($basePriceCents, $this->condition);
     }
 

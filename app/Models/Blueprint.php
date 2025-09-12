@@ -107,7 +107,21 @@ class Blueprint extends Model
     {
         return $this->hasOne(CardPrice::class)
             ->where('language', strtolower($language))
-            ->latestOfMany('fetched_at');
+            ->selectRaw('*, CASE 
+                WHEN condition = ? THEN 1
+                WHEN condition = ? THEN 2  
+                WHEN condition = ? THEN 3
+                WHEN condition = ? THEN 4
+                WHEN condition = ? THEN 5
+                ELSE 6
+            END as condition_priority', [
+                'Near Mint',
+                'Slightly Played',
+                'Moderately Played',
+                'Played',
+                'Poor',
+            ])
+            ->orderByRaw('condition_priority ASC, price_cents DESC, fetched_at DESC');
     }
 
     /**

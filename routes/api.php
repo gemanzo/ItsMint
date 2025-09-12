@@ -72,6 +72,7 @@ Route::prefix('blueprints')->middleware(['auth:sanctum', \App\Http\Middleware\El
     Route::get('search', [BlueprintSearchController::class, 'search'])->name('api.blueprints.search');
     Route::get('suggestions', [BlueprintSearchController::class, 'suggestions'])->name('api.blueprints.suggestions');
     Route::get('search/stats', [BlueprintSearchController::class, 'stats'])->name('api.blueprints.search.stats');
+    Route::get('{blueprint}', [BlueprintController::class, 'show'])->name('api.blueprints.show');
 });
 
 // DEPRECATED: Old database-based search (keep for backward compatibility during transition)

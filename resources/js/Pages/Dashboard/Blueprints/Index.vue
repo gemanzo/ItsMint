@@ -208,7 +208,6 @@ const handleCardAdded = (event: {
   totalQuantity: number;
 }) => {
   // Gestisci l'evento di aggiunta carta se necessario
-  console.log('Card added:', event);
   closeAddToPortfolioModal();
 };
 

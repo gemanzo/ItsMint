@@ -238,7 +238,6 @@ const fetchMarketStatistics = async (language) => {
     );
 
     marketStatistics.value = response.data.data;
-    console.log('Market statistics loaded:', marketStatistics.value);
   } catch (err) {
     console.error(`Failed to fetch market statistics for ${language}:`, err);
     marketStatistics.value = null;
@@ -338,7 +337,6 @@ const fetchPortfolios = async () => {
     const response = await axios.get(route('api.portfolios.index'));
     // Handle both possible response structures
     portfolios.value = response.data.data || response.data;
-    console.log('Portfolios response:', response.data); // Debug log
     if (portfolios.value.length > 0) {
       form.portfolio_id = portfolios.value[0].id;
     }
@@ -400,7 +398,7 @@ const addToPortfolio = () => {
     form.is_foil = false;
   }
 
-  console.log('Opening modal with form:', form); // Debug log
+  
   showAddToPortfolioModal.value = true;
   fetchPortfolios();
 };
@@ -431,7 +429,7 @@ const submitAddToPortfolio = () => {
         `"${props.blueprint.name}" has been successfully added to "${portfolioName}".`
       );
 
-      console.log('Card added successfully', response.data);
+      
       // Optionally, redirect or update UI
     })
     .catch((error) => {

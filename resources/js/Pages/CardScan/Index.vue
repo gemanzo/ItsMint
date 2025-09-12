@@ -331,7 +331,6 @@ const closeScanModal = () => {
 
 const handleScanComplete = (result: any) => {
   // Handle scan completion
-  console.log('Scan complete:', result);
   currentScan.value = result;
   showScanModal.value = false;
   showScanResults.value = true;
@@ -344,7 +343,6 @@ const closeScanResults = () => {
 
 const handleBlueprintSelected = (blueprint: any) => {
   // Handle blueprint selection - could navigate to blueprint details or add to portfolio
-  console.log('Blueprint selected:', blueprint);
   selectedBlueprint.value = blueprint;
   closeScanResults();
   showQuickAddModal.value = true;

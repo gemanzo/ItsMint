@@ -124,7 +124,6 @@ export const usePortfolioStore = defineStore('portfolio', {
 
         // Ensure we always set an array, even if the response is unexpected
         if (Array.isArray(data)) {
-          console.log('data:', data);
           
           this.portfolios = data.map(portfolio => ({
             ...portfolio,

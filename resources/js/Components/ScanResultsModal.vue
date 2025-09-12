@@ -138,10 +138,7 @@
                               :alt="card.name"
                               class="h-20 w-auto object-contain rounded-md border border-gray-200 dark:border-gray-600"
                               @error="handleImageError"
-                              @load="
-                                (e) =>
-                                  console.log('Image loaded:', card.image_url)
-                              "
+                              @load="() => {}"
                             />
                             <div
                               v-else
@@ -691,8 +688,7 @@ watch(
   () => props.scan,
   (newScan) => {
     if (newScan && props.show) {
-      console.log('Scan data received:', newScan);
-      console.log('Detected cards:', newScan.detected_cards);
+      
       selectedCard.value = null; // Reset selection when new scan arrives
       searchQuery.value = ''; // Reset search
       searchResults.value = []; // Reset search results
