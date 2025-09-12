@@ -874,17 +874,31 @@
                   <div class="card-content flex items-start space-x-6">
                     <!-- Card Image - Larger -->
                     <div class="card-image flex-shrink-0">
-                      <img
-                        v-if="group.blueprint?.image_url"
-                        :src="group.blueprint.image_url"
-                        :alt="group.blueprint.name"
-                        class="h-36 w-auto object-contain rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-sm"
-                      />
-                      <div
-                        v-else
-                        class="h-36 w-24 bg-gray-200 dark:bg-gray-600 rounded-lg border-2 border-gray-300 dark:border-gray-500 flex items-center justify-center text-sm text-gray-500 dark:text-gray-400 font-medium"
+                      <Link
+                        v-if="group.blueprint?.id"
+                        :href="route('blueprints.show', group.blueprint.id)"
+                        class="block"
                       >
-                        No Image
+                        <img
+                          v-if="group.blueprint?.image_url"
+                          :src="group.blueprint.image_url"
+                          :alt="group.blueprint.name"
+                          class="h-36 w-auto object-contain rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md transition-shadow"
+                        />
+                        <div
+                          v-else
+                          class="h-36 w-24 bg-gray-200 dark:bg-gray-600 rounded-lg border-2 border-gray-300 dark:border-gray-500 flex items-center justify-center text-sm text-gray-500 dark:text-gray-400 font-medium"
+                        >
+                          No Image
+                        </div>
+                      </Link>
+                      <div v-else>
+                        <img
+                          v-if="group.blueprint?.image_url"
+                          :src="group.blueprint.image_url"
+                          :alt="group.blueprint?.name || 'Blueprint'"
+                          class="h-36 w-auto object-contain rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-sm"
+                        />
                       </div>
                     </div>
 
@@ -893,10 +907,15 @@
                       <div class="flex justify-between items-start">
                         <!-- Left Column - Card Details -->
                         <div class="flex-1 min-w-0 pr-4">
-                          <h3
-                            class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2"
-                          >
-                            {{ group.blueprint?.name }}
+                          <h3 class="text-xl font-bold mb-2">
+                            <Link
+                              v-if="group.blueprint?.id"
+                              :href="route('blueprints.show', group.blueprint.id)"
+                              class="text-gray-900 dark:text-gray-100 hover:underline hover:text-blue-600 dark:hover:text-blue-400"
+                            >
+                              {{ group.blueprint?.name || 'Unknown Card' }}
+                            </Link>
+                            <span v-else class="text-gray-900 dark:text-gray-100">{{ group.blueprint?.name || 'Unknown Card' }}</span>
                           </h3>
 
                           <div class="space-y-2">
@@ -1162,7 +1181,7 @@ import EditCardModal from '@/Components/EditCardModal.vue';
 import RemoveCardModal from '@/Components/RemoveCardModal.vue';
 import PriceHistoryChart from '@/Components/PriceHistoryChart.vue';
 import TooltipHelper from '@/Components/TooltipHelper.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, Link } from '@inertiajs/vue3';
 import { ref, computed, onMounted, reactive } from 'vue';
 import {
   usePortfolioStore,
@@ -1268,10 +1287,6 @@ const closeEditCardModal = () => {
 };
 
 const handleCardUpdated = () => {
-  showSuccessToast(
-    'Card updated successfully!',
-    'Card details have been updated in your portfolio'
-  );
   closeEditCardModal();
   isLoading.value = true;
   router.reload({
