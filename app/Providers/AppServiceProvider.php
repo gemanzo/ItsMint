@@ -4,6 +4,11 @@ namespace App\Providers;
 
 use App\Models\Blueprint;
 use App\Observers\BlueprintObserver;
+use App\Services\BlueprintPriceService;
+use App\Services\Pricing\PriceAggregatorService;
+use App\Services\Pricing\Providers\CardmarketGuidePriceProvider;
+use App\Services\Pricing\Providers\CardmarketGuideReader;
+use App\Services\Pricing\Providers\CardTraderPriceProvider;
 use App\Services\ElasticsearchService;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
@@ -17,6 +22,25 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ElasticsearchService::class);
+
+        // Pricing providers wiring
+        $this->app->singleton(CardmarketGuideReader::class, fn() => new CardmarketGuideReader());
+        $this->app->singleton(CardmarketGuidePriceProvider::class, function ($app) {
+            return new CardmarketGuidePriceProvider($app->make(CardmarketGuideReader::class));
+        });
+
+        // Wrap existing CardTrader service as a provider
+        $this->app->singleton(CardTraderPriceProvider::class, function ($app) {
+            return new CardTraderPriceProvider($app->make(BlueprintPriceService::class));
+        });
+
+        $this->app->singleton(PriceAggregatorService::class, function ($app) {
+            $providers = [
+                $app->make(CardmarketGuidePriceProvider::class),
+                $app->make(CardTraderPriceProvider::class),
+            ];
+            return new PriceAggregatorService($providers);
+        });
     }
 
     /**

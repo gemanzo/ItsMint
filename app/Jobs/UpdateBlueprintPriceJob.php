@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Blueprint;
 use App\Models\CardPrice;
 use App\Services\BlueprintPriceService;
+use App\Services\Pricing\PriceAggregatorService;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -26,6 +27,8 @@ class UpdateBlueprintPriceJob implements ShouldQueue
 
     protected BlueprintPriceService $blueprintPriceService;
 
+    protected ?PriceAggregatorService $priceAggregator = null;
+
     /**
      * Create a new job instance.
      */
@@ -33,6 +36,9 @@ class UpdateBlueprintPriceJob implements ShouldQueue
     {
         $this->localBlueprint = $localBlueprint;
         $this->blueprintPriceService = $blueprintPriceService;
+        $this->priceAggregator = app()->has(PriceAggregatorService::class)
+            ? app(PriceAggregatorService::class)
+            : null;
     }
 
     /**
@@ -62,7 +68,9 @@ class UpdateBlueprintPriceJob implements ShouldQueue
         $blueprintCtId = $blueprint->ct_id;
 
         try {
-            $adjustedPrices = $this->blueprintPriceService->calculatePrices($blueprint);
+            $adjustedPrices = $this->priceAggregator
+                ? $this->priceAggregator->estimate($blueprint)
+                : $this->blueprintPriceService->calculatePrices($blueprint);
 
             Log::debug('UpdateBlueprintPriceJob: Data received from BlueprintPriceService', [
                 'blueprint_id' => $blueprint->id,

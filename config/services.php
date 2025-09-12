@@ -76,4 +76,8 @@ return [
         ],
     ],
 
+    'cardmarket' => [
+        'op_price_guide_url' => env('CARDMARKET_OP_PRICE_GUIDE'),
+    ],
+
 ];

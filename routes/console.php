@@ -48,6 +48,12 @@ Schedule::command('prices:refresh-latest')
     ->hourly()
     ->withoutOverlapping();
 
+// 8. Ingest Cardmarket price guide daily before queueing price updates
+Schedule::command('prices:ingest-cardmarket --limit=0')
+    ->dailyAt('01:30')
+    ->withoutOverlapping()
+    ->runInBackground();
+
 // clean the horizon.log file
 Schedule::exec(function () {
     $horizonLogFile = storage_path('logs/horizon.log');
