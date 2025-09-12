@@ -86,7 +86,7 @@ class Blueprint extends Model
                 'Played',
                 'Poor',
             ])
-            ->orderByRaw('condition_priority ASC, price_cents DESC, fetched_at DESC');
+            ->orderByRaw('condition_priority ASC, fetched_at DESC, price_cents DESC');
     }
 
     /**
@@ -121,7 +121,7 @@ class Blueprint extends Model
                 'Played',
                 'Poor',
             ])
-            ->orderByRaw('condition_priority ASC, price_cents DESC, fetched_at DESC');
+            ->orderByRaw('condition_priority ASC, fetched_at DESC, price_cents DESC');
     }
 
     /**
