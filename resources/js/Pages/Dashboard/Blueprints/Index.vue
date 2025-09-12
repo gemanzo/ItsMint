@@ -71,7 +71,8 @@ const searchInputRef = ref<HTMLInputElement | null>(null);
 const showAddToPortfolioModal = ref(false);
 const selectedBlueprint = ref<Blueprint | null>(null);
 // Language selection (string code; default EN)
-const searchLanguageCode = ref('en');
+// Default EN; server may not provide language in filters yet
+const searchLanguageCode = ref<'en' | ''>((props as any).filters?.language || 'en');
 
 // --- Constants ---
 const sortOptions = [
@@ -227,6 +228,7 @@ watch(
         {
           expansion_id: newFilters.expansion || undefined,
           sort: newFilters.sort || undefined,
+          language: searchLanguageCode.value || undefined,
         },
         {
           preserveState: true,
@@ -242,6 +244,17 @@ watch(
 watch(searchLanguageCode, () => {
   if (searchQuery.value.length >= 2) {
     debouncedSearch();
+  }
+  if (!isSearchMode.value) {
+    router.get(
+      route('blueprints.index'),
+      {
+        expansion_id: currentFilters.expansion || undefined,
+        sort: currentFilters.sort || undefined,
+        language: searchLanguageCode.value || undefined,
+      },
+      { preserveState: true, replace: true }
+    );
   }
 });
 </script>

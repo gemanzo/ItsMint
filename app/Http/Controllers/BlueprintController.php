@@ -20,15 +20,24 @@ class BlueprintController extends Controller
         $request->validate([
             'expansion_id' => 'nullable|integer|exists:expansions,id',
             'sort' => 'nullable|string|in:price_asc,price_desc,name_asc,name_desc',
+            'language' => 'nullable|string',
         ]);
 
         $selectedExpansionId = $request->input('expansion_id');
         $sort = $request->input('sort');
+        // Default EN when not provided
+        $language = strtolower($request->input('language', 'en'));
 
-        $blueprints = Blueprint::with(['expansion', 'latestPrice'])
+        $blueprints = Blueprint::with(['expansion'])
             ->where('ct_category_id', 192) // Only show single cards
             ->when($selectedExpansionId, function ($query, $expansionId) {
                 return $query->where('expansion_id', $expansionId);
+            })
+            ->when($language !== '' && $language !== null, function ($query) use ($language) {
+                // Only include blueprints that have at least one price in the selected language
+                return $query->whereHas('cardPrices', function ($q) use ($language) {
+                    $q->where('language', $language);
+                });
             });
 
         // Apply sorting
@@ -73,6 +82,17 @@ class BlueprintController extends Controller
 
         $blueprints = $blueprints->paginate(30)->withQueryString();
 
+        // Override latestPrice with language-specific one when language filter is present (default EN)
+        if (! empty($language)) {
+            $blueprints->getCollection()->transform(function (Blueprint $bp) use ($language) {
+                $lp = $bp->latestPriceForLanguage($language)->first();
+                if ($lp) {
+                    $bp->setRelation('latestPrice', $lp);
+                }
+                return $bp;
+            });
+        }
+
         // Get available expansions that have at least one blueprint
         $availableExpansions = Expansion::whereHas('blueprints')
             ->orderBy('name')
@@ -83,6 +103,7 @@ class BlueprintController extends Controller
             'filters' => [
                 'expansion_id' => $selectedExpansionId,
                 'sort' => $sort,
+                'language' => $language,
             ],
             'availableExpansions' => $availableExpansions,
         ]);
