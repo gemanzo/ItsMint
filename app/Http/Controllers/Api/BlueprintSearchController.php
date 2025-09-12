@@ -73,6 +73,40 @@ final class BlueprintSearchController extends Controller
                 ];
             }
 
+            // Post-process: if language requested, enforce DB truth for latest price per language
+            if ($language && !empty($response['data'])) {
+                $lang = strtolower($language);
+                $ids = collect($results['hits'])->pluck('id')->unique()->values();
+                if ($ids->isNotEmpty()) {
+                    $byId = \App\Models\Blueprint::whereIn('id', $ids)->get()->keyBy('id');
+                    $response['data'] = collect($response['data'])
+                        ->map(function ($hit) use ($byId, $lang) {
+                            $bp = $byId->get($hit['id'] ?? null);
+                            if ($bp) {
+                                $lp = $bp->latestPriceForLanguage($lang)->first();
+                                if ($lp) {
+                                    $hit['latest_price'] = [
+                                        'price_cents' => $lp->price_cents,
+                                        'currency' => $lp->currency,
+                                        'language' => $lp->language,
+                                        'condition' => $lp->condition,
+                                        'is_foil' => (bool) ($lp->is_foil ?? false),
+                                        'fetched_at' => $lp->fetched_at,
+                                    ];
+                                    return $hit;
+                                }
+                            }
+                            // If no price for requested language, drop the hit from the results
+                            return null;
+                        })
+                        ->filter()
+                        ->values()
+                        ->all();
+                    // Adjust pagination total to match filtered results window
+                    $response['pagination']['total'] = count($response['data']);
+                }
+            }
+
             return response()->json($response);
         } catch (\Exception $e) {
             \Log::error('Blueprint search failed', [

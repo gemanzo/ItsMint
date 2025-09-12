@@ -112,6 +112,7 @@ class BlueprintController extends Controller
         $validated = $request->validate([
             'query' => 'required|string|min:2',
             'expansion_id' => 'nullable|exists:expansions,id',
+            'language' => 'nullable|string',
         ]);
 
         $searchQuery = trim($validated['query']);
@@ -139,7 +140,7 @@ class BlueprintController extends Controller
         $query = Blueprint::query()->with(['expansion', 'latestPrice']);
 
         if (! empty($searchQuery)) {
-            $query->where('name', 'ILIKE', '%'.$searchQuery.'%');
+            $query->where('name', 'ILIKE', '%' . $searchQuery . '%');
         }
 
         // Use the normalized expansion code for querying the relationship
@@ -153,7 +154,20 @@ class BlueprintController extends Controller
             $query->where('expansion_id', $validated['expansion_id']);
         }
 
-        $blueprints = $query->take(15)->get();
+        $blueprints = $query->take(50)->get();
+
+        // If language filter is provided, override latestPrice with language-specific latest
+        if (! empty($validated['language'])) {
+            $language = strtolower($validated['language']);
+            $blueprints = $blueprints->filter(function (Blueprint $bp) use ($language) {
+                $lp = $bp->latestPriceForLanguage($language)->first();
+                if ($lp) {
+                    $bp->setRelation('latestPrice', $lp);
+                    return true; // keep only if price exists for requested language
+                }
+                return false;
+            })->values();
+        }
 
         return response()->json($blueprints);
     }

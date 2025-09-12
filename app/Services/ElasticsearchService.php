@@ -443,22 +443,11 @@ class ElasticsearchService
         }
 
         if ($language) {
-            // Filter by language using prices_by_language or latest_price.language
+            $lang = strtolower($language);
+            // Strict filter: latest_price.language must match requested language
             $filterClauses[] = [
-                'bool' => [
-                    'should' => [
-                        [
-                            'exists' => [
-                                'field' => "prices_by_language.{strtolower($language)}",
-                            ],
-                        ],
-                        [
-                            'term' => [
-                                'latest_price.language' => strtolower($language),
-                            ],
-                        ],
-                    ],
-                    'minimum_should_match' => 1,
+                'term' => [
+                    'latest_price.language' => $lang,
                 ],
             ];
         }

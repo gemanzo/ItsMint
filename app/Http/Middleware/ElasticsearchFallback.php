@@ -50,6 +50,7 @@ class ElasticsearchFallback
     {
         // Redirect to legacy database search controller
         $query = $request->input('q', '');
+        $language = $request->input('language');
         $size = $request->input('size', 20);
 
         try {
@@ -58,6 +59,7 @@ class ElasticsearchFallback
             // Create a new request with the expected format for legacy search
             $fallbackRequest = new Request([
                 'query' => $query,
+                'language' => $language,
             ]);
 
             $response = $blueprintController->search($fallbackRequest);

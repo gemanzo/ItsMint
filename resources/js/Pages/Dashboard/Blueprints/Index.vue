@@ -6,6 +6,7 @@ import axios from 'axios';
 import debounce from 'lodash/debounce';
 import QuickAddCardModal from '@/Components/QuickAddCardModal.vue';
 import BlueprintCard from '@/Components/BlueprintCard.vue';
+import BlueprintSearchBar from '@/Components/BlueprintSearchBar.vue';
 
 // --- Types ---
 interface Blueprint {
@@ -69,6 +70,8 @@ const viewMode = ref<'grid' | 'list'>('grid');
 const searchInputRef = ref<HTMLInputElement | null>(null);
 const showAddToPortfolioModal = ref(false);
 const selectedBlueprint = ref<Blueprint | null>(null);
+// Language selection (string code; default EN)
+const searchLanguageCode = ref('en');
 
 // --- Constants ---
 const sortOptions = [
@@ -143,6 +146,7 @@ const searchBlueprints = async (loadMore = false) => {
     if (currentFilters.expansion)
       params.expansion_id = Number(currentFilters.expansion);
     if (currentFilters.sort) params.sort = currentFilters.sort;
+    if (searchLanguageCode.value) params.language = searchLanguageCode.value;
 
     const { data } = await axios.get('/blueprints/search', { params });
     if (data.success && data.data) {
@@ -233,6 +237,13 @@ watch(
   },
   { deep: true }
 );
+
+// Re-run search when language changes (if user is searching)
+watch(searchLanguageCode, () => {
+  if (searchQuery.value.length >= 2) {
+    debouncedSearch();
+  }
+});
 </script>
 
 <template>
@@ -462,55 +473,14 @@ watch(
                   />
                 </svg>
               </div>
-              <input
-                ref="searchInputRef"
-                type="text"
-                :value="searchQuery"
+              <BlueprintSearchBar
+                v-model:modelValue="searchQuery"
+                v-model:language="searchLanguageCode"
+                :loading="isSearching"
                 placeholder="Search cards..."
-                class="block w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-card placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 bg-white dark:bg-gray-700 transition-colors"
-                @input="handleDirectInput"
+                @update:modelValue="handleSearchInput()"
+                @clear="clearSearch"
               />
-              <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                <button
-                  v-if="searchQuery.length > 0"
-                  class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                  @click="clearSearch"
-                >
-                  <svg
-                    class="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-                <div
-                  v-else-if="isSearching"
-                  class="animate-spin h-4 w-4 text-gray-400"
-                >
-                  <svg fill="none" viewBox="0 0 24 24">
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    />
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                </div>
-              </div>
             </div>
             <div
               v-if="isSearchMode"

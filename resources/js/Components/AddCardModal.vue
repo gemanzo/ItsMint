@@ -93,139 +93,13 @@
       </div>
 
       <div class="relative mt-1 rounded-md shadow-sm">
-        <input
-          id="searchBlueprint"
-          v-model="blueprintSearchQuery"
-          type="text"
+        <BlueprintSearchBar
+          v-model:modelValue="blueprintSearchQuery"
+          v-model:language="searchLanguageCode"
+          :loading="isSearching"
           placeholder="Type to search... e.g., Luffy OP01-001"
-          class="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400 pl-3 pr-24"
-          autocomplete="off"
-          @input="handleSearchInput"
+          @update:modelValue="handleSearchInput()"
         />
-        <div class="absolute inset-y-0 right-0 flex items-center">
-          <Listbox v-model="selectedLanguageObject" as="div" class="relative">
-            <ListboxButton
-              class="relative flex h-full items-center justify-center rounded-md border-0 bg-transparent py-0 pl-2 pr-8 text-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:text-gray-400 sm:text-sm"
-            >
-              <span
-                v-if="selectedLanguageObject.countryCode"
-                :class="['fi', `fi-${selectedLanguageObject.countryCode}`]"
-                class="mr-2 h-4 w-6"
-              />
-              <svg
-                v-else
-                class="h-5 w-5 text-gray-400 mr-2"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M10.5 21l-5.25-11.25L.75 21m10.5 0H22.5M3.75 12h15M12 12V5.25M15 5.25H9"
-                />
-              </svg>
-              <span class="block truncate">{{
-                selectedLanguageObject.name
-              }}</span>
-              <span
-                class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"
-              >
-                <svg
-                  class="h-5 w-5 text-gray-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M10 3a.75.75 0 01.53.22l3.5 3.5a.75.75 0 01-1.06 1.06L10 4.81 7.53 7.28a.75.75 0 01-1.06-1.06l3.5-3.5A.75.75 0 0110 3zM10 17a.75.75 0 01-.53-.22l-3.5-3.5a.75.75 0 011.06-1.06L10 15.19l2.47-2.47a.75.75 0 011.06 1.06l-3.5 3.5A.75.75 0 0110 17z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-              </span>
-            </ListboxButton>
-
-            <ListboxOptions
-              class="absolute z-50 right-0 mt-1 max-h-56 w-40 overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
-            >
-              <ListboxOption
-                v-for="lang in CARD_LANGUAGES"
-                :key="lang.code"
-                v-slot="{ active, selected }"
-                :value="lang"
-                as="template"
-              >
-                <li
-                  :class="[
-                    active
-                      ? 'bg-indigo-600 text-white'
-                      : 'text-gray-900 dark:text-gray-100',
-                    'relative cursor-default select-none py-2 pl-3 pr-9',
-                  ]"
-                >
-                  <div class="flex items-center">
-                    <span
-                      v-if="lang.countryCode"
-                      :class="['fi', `fi-${lang.countryCode}`]"
-                      class="mr-3 h-4 w-6"
-                    />
-                    <svg
-                      v-else
-                      class="h-5 w-5 text-gray-400 mr-3"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke-width="1.5"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M10.5 21l-5.25-11.25L.75 21m10.5 0H22.5M3.75 12h15M12 12V5.25M15 5.25H9"
-                      />
-                    </svg>
-                    <span
-                      :class="[
-                        selected ? 'font-semibold' : 'font-normal',
-                        'ml-3 block truncate',
-                      ]"
-                    >
-                      {{ lang.name }}
-                    </span>
-                  </div>
-
-                  <span
-                    v-if="selected"
-                    :class="[
-                      active
-                        ? 'text-white'
-                        : 'text-indigo-600 dark:text-indigo-400',
-                      'absolute inset-y-0 right-0 flex items-center pr-4',
-                    ]"
-                  >
-                    <svg
-                      class="h-5 w-5"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </li>
-              </ListboxOption>
-            </ListboxOptions>
-          </Listbox>
-        </div>
       </div>
 
       <!-- Search Results -->
@@ -267,6 +141,9 @@
                     <span v-if="bp.collector_number">
                       - #{{ bp.collector_number }}</span
                     >
+                    <span v-if="bp.latest_price?.language" class="ml-1 opacity-80">
+                      • {{ (bp.latest_price.language || '').toUpperCase() }}
+                    </span>
                   </p>
                 </div>
               </div>
@@ -457,12 +334,6 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted, watchEffect } from 'vue';
-import {
-  Listbox,
-  ListboxButton,
-  ListboxOption,
-  ListboxOptions,
-} from '@headlessui/vue';
 import { debounce } from 'lodash';
 import axios from 'axios';
 
@@ -471,6 +342,7 @@ import { useCardPricing } from '@/composables/useCardPricing';
 import { useCurrency } from '@/composables/useCurrency';
 import { useApiError } from '@/composables/useApiError';
 import { CARD_LANGUAGES } from '@/constants/cardLanguages';
+import BlueprintSearchBar from '@/Components/BlueprintSearchBar.vue';
 
 import FormModal from '@/Components/Base/FormModal.vue';
 import PriceInput from '@/Components/Forms/PriceInput.vue';
@@ -501,11 +373,8 @@ const blueprintSearchQuery = ref('');
 const blueprintSearchResults = ref<Blueprint[]>([]);
 const selectedBlueprint = ref<Blueprint | null>(null);
 
-// Initialize with EN language (index 1) instead of Any (index 0)
-const selectedLanguageObject = ref(
-  CARD_LANGUAGES.find((lang) => lang.code === 'en') || CARD_LANGUAGES[1]
-);
-const searchLanguage = computed(() => selectedLanguageObject.value.code);
+// Unified search language code for the reusable search bar
+const searchLanguageCode = ref('en');
 
 const searchPage = ref(1);
 const hasMoreResults = ref(false);
@@ -529,7 +398,8 @@ const formErrors = reactive<Record<string, string>>({});
 // Use pricing composable
 const { estimatedPrice } = useCardPricing(
   selectedBlueprint,
-  computed(() => cardDetails.condition)
+  computed(() => cardDetails.condition),
+  computed(() => cardDetails.language)
 );
 
 // Computed property to get the selected portfolio name
@@ -589,8 +459,8 @@ const searchBlueprints = async (loadMore = false) => {
         from: (searchPage.value - 1) * 15,
         size: 15,
         language:
-          searchLanguage.value && searchLanguage.value !== ''
-            ? searchLanguage.value
+          searchLanguageCode.value && searchLanguageCode.value !== ''
+            ? searchLanguageCode.value
             : undefined,
       },
     });
@@ -634,10 +504,17 @@ const selectBlueprint = (blueprint: Blueprint) => {
   // Auto-set language based on selection context
   if (blueprint.latest_price?.language) {
     cardDetails.language = blueprint.latest_price.language.toUpperCase();
-  } else if (searchLanguage.value) {
-    cardDetails.language = searchLanguage.value.toUpperCase();
+  } else if (searchLanguageCode.value !== undefined) {
+    cardDetails.language = (searchLanguageCode.value || 'en').toUpperCase();
   } else {
     cardDetails.language = 'EN';
+  }
+  // If blueprint.latest_price refers to another language, clear purchase price to recompute
+  if (
+    blueprint.latest_price?.language &&
+    blueprint.latest_price.language.toUpperCase() !== cardDetails.language
+  ) {
+    cardDetails.purchase_price = null;
   }
 };
 
@@ -745,16 +622,21 @@ watch(blueprintSearchQuery, (newQuery) => {
 });
 
 // Watch for language changes - restart search if there's an active query
-watch(selectedLanguageObject, () => {
+watch(searchLanguageCode, () => {
   if (blueprintSearchQuery.value && blueprintSearchQuery.value.length >= 2) {
     debouncedSearchBlueprints();
+  }
+  // Language changed: clear cached selection price so estimatedPrice recomputes
+  if (selectedBlueprint.value) {
+    // Force re-evaluation; if latest_price is for another language, estimated will be null
+    cardDetails.language = (searchLanguageCode.value || 'en').toUpperCase();
+    cardDetails.purchase_price = null;
   }
 });
 
 // Sync language selection with card details
 watchEffect(() => {
-  cardDetails.language =
-    selectedLanguageObject.value.code.toUpperCase() || 'EN';
+  cardDetails.language = (searchLanguageCode.value || 'en').toUpperCase();
 });
 
 onMounted(async () => {
