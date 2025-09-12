@@ -43,6 +43,11 @@ Schedule::command('backup:run --only-db')
     ->withoutOverlapping()
     ->runInBackground();
 
+// 7. Refresh latest card prices
+Schedule::command('prices:refresh-latest')
+    ->hourly()
+    ->withoutOverlapping();
+
 // clean the horizon.log file
 Schedule::exec(function () {
     $horizonLogFile = storage_path('logs/horizon.log');

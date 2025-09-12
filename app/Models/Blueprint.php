@@ -72,21 +72,9 @@ class Blueprint extends Model
     public function latestPrice()
     {
         return $this->hasOne(CardPrice::class)
-            ->selectRaw('*, CASE 
-                WHEN condition = ? THEN 1
-                WHEN condition = ? THEN 2  
-                WHEN condition = ? THEN 3
-                WHEN condition = ? THEN 4
-                WHEN condition = ? THEN 5
-                ELSE 6
-            END as condition_priority', [
-                'Near Mint',
-                'Slightly Played',
-                'Moderately Played',
-                'Played',
-                'Poor',
-            ])
-            ->orderByRaw('condition_priority ASC, fetched_at DESC, price_cents DESC');
+            ->orderBy('condition_priority', 'asc')
+            ->orderBy('fetched_at', 'desc')
+            ->orderBy('price_cents', 'desc');
     }
 
     /**
@@ -107,21 +95,9 @@ class Blueprint extends Model
     {
         return $this->hasOne(CardPrice::class)
             ->where('language', strtolower($language))
-            ->selectRaw('*, CASE 
-                WHEN condition = ? THEN 1
-                WHEN condition = ? THEN 2  
-                WHEN condition = ? THEN 3
-                WHEN condition = ? THEN 4
-                WHEN condition = ? THEN 5
-                ELSE 6
-            END as condition_priority', [
-                'Near Mint',
-                'Slightly Played',
-                'Moderately Played',
-                'Played',
-                'Poor',
-            ])
-            ->orderByRaw('condition_priority ASC, fetched_at DESC, price_cents DESC');
+            ->orderBy('condition_priority', 'asc')
+            ->orderBy('fetched_at', 'desc')
+            ->orderBy('price_cents', 'desc');
     }
 
     /**

@@ -34,9 +34,12 @@ class BlueprintController extends Controller
                 return $query->where('expansion_id', $expansionId);
             })
             ->when($language !== '' && $language !== null, function ($query) use ($language) {
-                // Only include blueprints that have at least one price in the selected language
-                return $query->whereHas('cardPrices', function ($q) use ($language) {
-                    $q->where('language', $language);
+                // Use MV presence instead of raw card_prices existence for performance
+                return $query->whereExists(function ($sub) use ($language) {
+                    $sub->selectRaw('1')
+                        ->from('card_latest_prices_mv as mv')
+                        ->whereColumn('mv.blueprint_id', 'blueprints.id')
+                        ->where('mv.language', $language);
                 });
             });
 
@@ -44,27 +47,21 @@ class BlueprintController extends Controller
         if ($sort) {
             switch ($sort) {
                 case 'price_asc':
-                    $blueprints->leftJoin('card_prices as cp', function ($join) {
-                        $join->on('blueprints.id', '=', 'cp.blueprint_id')
-                            ->whereRaw('cp.id = (
-                                SELECT id FROM card_prices 
-                                WHERE blueprint_id = blueprints.id 
-                                ORDER BY fetched_at DESC 
-                                LIMIT 1
-                            )');
-                    })->orderByRaw('COALESCE(cp.price_cents, 999999999) ASC')
+                    $blueprints->leftJoin('card_latest_prices_mv as mv', function ($join) use ($language) {
+                        $join->on('blueprints.id', '=', 'mv.blueprint_id');
+                        if (!empty($language)) {
+                            $join->where('mv.language', $language);
+                        }
+                    })->orderByRaw('COALESCE(mv.price_cents, 999999999) ASC')
                         ->select('blueprints.*');
                     break;
                 case 'price_desc':
-                    $blueprints->leftJoin('card_prices as cp', function ($join) {
-                        $join->on('blueprints.id', '=', 'cp.blueprint_id')
-                            ->whereRaw('cp.id = (
-                                SELECT id FROM card_prices 
-                                WHERE blueprint_id = blueprints.id 
-                                ORDER BY fetched_at DESC 
-                                LIMIT 1
-                            )');
-                    })->orderByRaw('COALESCE(cp.price_cents, 0) DESC')
+                    $blueprints->leftJoin('card_latest_prices_mv as mv', function ($join) use ($language) {
+                        $join->on('blueprints.id', '=', 'mv.blueprint_id');
+                        if (!empty($language)) {
+                            $join->where('mv.language', $language);
+                        }
+                    })->orderByRaw('COALESCE(mv.price_cents, 0) DESC')
                         ->select('blueprints.*');
                     break;
                 case 'name_asc':
@@ -82,15 +79,32 @@ class BlueprintController extends Controller
 
         $blueprints = $blueprints->paginate(30)->withQueryString();
 
-        // Override latestPrice with language-specific one when language filter is present (default EN)
+        // Override latestPrice using MV when language is provided (default EN)
         if (! empty($language)) {
-            $blueprints->getCollection()->transform(function (Blueprint $bp) use ($language) {
-                $lp = $bp->latestPriceForLanguage($language)->first();
-                if ($lp) {
-                    $bp->setRelation('latestPrice', $lp);
-                }
-                return $bp;
-            });
+            $ids = $blueprints->getCollection()->pluck('id')->all();
+            if (!empty($ids)) {
+                $mv = \DB::table('card_latest_prices_mv')
+                    ->whereIn('blueprint_id', $ids)
+                    ->where('language', $language)
+                    ->get()
+                    ->keyBy('blueprint_id');
+
+                $blueprints->getCollection()->transform(function (Blueprint $bp) use ($mv) {
+                    $row = $mv->get($bp->id);
+                    if ($row) {
+                        // Create a lightweight object mimicking CardPrice attributes expected by FE
+                        $bp->setRelation('latestPrice', new \App\Models\CardPrice([
+                            'blueprint_id' => $row->blueprint_id,
+                            'language' => $row->language,
+                            'is_foil' => $row->is_foil,
+                            'condition' => $row->condition,
+                            'price_cents' => $row->price_cents,
+                            'fetched_at' => $row->fetched_at,
+                        ]));
+                    }
+                    return $bp;
+                });
+            }
         }
 
         // Get available expansions that have at least one blueprint
