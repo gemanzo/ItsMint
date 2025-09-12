@@ -14,7 +14,7 @@ docker-compose -f compose.yml exec -T php composer install --no-interaction --no
 # 3. Install/update NPM dependencies and build frontend assets
 echo ">>> Building frontend assets..."
 # Run build in a one-off container to avoid file locks and "resource busy" during installs
-docker compose -f compose.yml run --rm node sh -lc '
+docker-compose -f compose.yml run --rm node sh -lc '
   set -e
   export CI=1
   # Reproducible install first
