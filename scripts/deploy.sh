@@ -13,8 +13,17 @@ docker-compose -f compose.yml exec -T php composer install --no-interaction --no
 
 # 3. Install/update NPM dependencies and build frontend assets
 echo ">>> Building frontend assets..."
-docker-compose -f compose.yml exec -T node npm install
-docker-compose -f compose.yml exec -T node npm run build
+# Try reproducible install first; if rollup optional deps fail, clean and reinstall
+docker-compose -f compose.yml exec -T node sh -lc '
+  set -e
+  export CI=1
+  if ! npm ci --no-audit --no-fund; then
+    echo "npm ci failed; cleaning lockfile and node_modules due to rollup optional deps bug"
+    rm -rf node_modules package-lock.json
+    npm i --no-audit --no-fund
+  fi
+  npm run build
+'
 
 # 4. Run database migrations
 echo ">>> Running database migrations..."
