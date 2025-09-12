@@ -353,20 +353,32 @@ const fetchPortfolios = async () => {
 };
 
 // Methods
-const addToPortfolio = () => {
+const addToPortfolio = async () => {
   // Reset errors
   form.errors = {};
 
-  // Ensure we have a valid language - use activeLanguage if available, otherwise first available language
-  const validLanguage =
-    activeLanguage.value &&
-    props.blueprint.available_languages.includes(activeLanguage.value)
+  // Resolve intended language (prefer current selection)
+  const lang =
+    (activeLanguage.value &&
+      props.blueprint.available_languages?.includes(activeLanguage.value)
       ? activeLanguage.value
-      : props.blueprint.available_languages[0];
+      : props.blueprint.available_languages?.[0]) || 'en';
 
-  // Set default values based on selected language and available prices
-  if (validLanguage && props.pricesByLanguage[validLanguage]) {
-    const langPrices = props.pricesByLanguage[validLanguage];
+  // Use prices from props if present, otherwise fetch via API
+  let langPrices = (props.pricesByLanguage && props.pricesByLanguage[lang]) || null;
+  if (!langPrices || Object.keys(langPrices).length === 0) {
+    try {
+      const resp = await axios.get(
+        route('api.blueprints.prices.by-language', { blueprint: props.blueprint.id })
+      );
+      const allPrices = resp.data?.data || resp.data;
+      langPrices = allPrices?.[lang] || null;
+    } catch (e) {
+      // ignore error; fallbacks below
+    }
+  }
+
+  if (langPrices && Object.keys(langPrices).length > 0) {
     const conditions = Object.keys(langPrices).sort((a, b) => {
       const indexA = conditionOrder.indexOf(a);
       const indexB = conditionOrder.indexOf(b);
@@ -374,31 +386,24 @@ const addToPortfolio = () => {
       if (indexB === -1) return -1;
       return indexA - indexB;
     });
-
-    if (conditions.length > 0) {
-      const bestCondition = conditions[0];
-      const bestConditionPrice = langPrices[bestCondition];
-
-      form.language = validLanguage;
-      form.condition = bestCondition;
-      form.purchase_price_cents = bestConditionPrice.price_cents;
-      form.is_foil = bestConditionPrice.is_foil || false;
-    }
+    const bestCondition = conditions[0];
+    const best = langPrices[bestCondition] || {};
+    form.language = lang;
+    form.condition = bestCondition;
+    form.purchase_price_cents = best.price_cents ?? 0;
+    form.is_foil = best.is_foil ?? false;
   } else if (props.blueprint.latest_price) {
-    // Fallback to latest price if no data for selected language
-    form.language = props.blueprint.latest_price.language;
-    form.condition = props.blueprint.latest_price.condition;
-    form.purchase_price_cents = props.blueprint.latest_price.price_cents;
+    form.language = lang;
+    form.condition = props.blueprint.latest_price.condition ?? 'Near Mint';
+    form.purchase_price_cents = props.blueprint.latest_price.price_cents ?? 0;
     form.is_foil = props.blueprint.latest_price.is_foil || false;
   } else {
-    // Final fallback - set default language and basic values
-    form.language = validLanguage || 'en';
+    form.language = lang;
     form.condition = 'Near Mint';
     form.purchase_price_cents = 0;
     form.is_foil = false;
   }
 
-  
   showAddToPortfolioModal.value = true;
   fetchPortfolios();
 };

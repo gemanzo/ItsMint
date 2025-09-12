@@ -22,6 +22,21 @@ interface Blueprint {
   available_languages?: string[];
 }
 
+interface Portfolio {
+  id: number;
+  name: string;
+}
+
+interface FormData {
+  portfolio_id: number | null;
+  condition: string;
+  language: string;
+  quantity: number;
+  purchase_price_cents: number;
+  is_foil: boolean;
+  errors: Record<string, string>;
+}
+
 const props = defineProps<{
   blueprint: Blueprint;
 }>();
@@ -30,12 +45,12 @@ const emit = defineEmits(['close', 'card-added']);
 
 const { success, error } = useToast();
 
-const portfolios = ref([]);
+const portfolios = ref<Portfolio[]>([]);
 const isLoadingPortfolios = ref(false);
 const detailedBlueprint = ref<Blueprint | null>(null);
 const isLoadingBlueprint = ref(false);
 
-const form = reactive({
+const form = reactive<FormData>({
   portfolio_id: null,
   condition: 'Near Mint', // Corrected condition
   language: 'en',
@@ -46,13 +61,25 @@ const form = reactive({
 });
 
 const purchasePriceEuros = computed({
-  get: () => form.purchase_price_cents / 100,
-  set: (value) => {
-    const numValue = parseFloat(value);
+  get: () => (form.purchase_price_cents / 100).toString(),
+  set: (value: string | number) => {
+    const numValue = parseFloat(String(value));
     if (!isNaN(numValue)) {
       form.purchase_price_cents = Math.round(numValue * 100);
     } else {
       form.purchase_price_cents = 0;
+    }
+  },
+});
+
+const quantityString = computed({
+  get: () => form.quantity.toString(),
+  set: (value: string | number) => {
+    const numValue = parseInt(String(value));
+    if (!isNaN(numValue) && numValue > 0) {
+      form.quantity = numValue;
+    } else {
+      form.quantity = 1;
     }
   },
 });
@@ -164,7 +191,7 @@ onMounted(() => {
 
         <div>
           <InputLabel for="quantity" value="Quantity" />
-          <TextInput id="quantity" v-model="form.quantity" type="number" class="mt-1 block w-full" min="1" />
+          <TextInput id="quantity" v-model="quantityString" type="number" class="mt-1 block w-full" min="1" />
           <InputError class="mt-2" :message="form.errors.quantity" />
         </div>
 
