@@ -13,25 +13,24 @@ docker-compose -f compose.yml exec -T php composer install --no-interaction --no
 
 # 3. Install/update NPM dependencies and build frontend assets
 echo ">>> Building frontend assets..."
-# Try reproducible install first; on rollup optional deps failure, clean and reinstall then retry build
-docker-compose -f compose.yml exec -T node sh -lc '
+# Run build in a one-off container to avoid file locks and "resource busy" during installs
+docker compose -f compose.yml run --rm node sh -lc '
   set -e
   export CI=1
-  # First attempt: reproducible install
+  # Reproducible install first
   if ! npm ci --no-audit --no-fund; then
-    echo "npm ci failed; cleaning lockfile and node_modules due to rollup optional deps bug"
-    rm -rf node_modules package-lock.json
+    echo "npm ci failed; retrying with npm i (workaround for npm optional deps bug)"
     npm i --no-audit --no-fund
   fi
 
-  echo "Running frontend build (attempt 1)"
+  # Attempt build, skipping native rollup to avoid platform optional deps
+  echo "Running frontend build (attempt 1) with ROLLUP_SKIP_NATIVE=1"
+  export ROLLUP_SKIP_NATIVE=1
   if npm run build; then
     echo "Build succeeded on first attempt"
   else
-    echo "Build failed, likely due to rollup native optional deps. Applying clean reinstall and retrying..."
-    rm -rf node_modules package-lock.json
-    npm cache clean --force >/dev/null 2>&1 || true
-    npm i --no-audit --no-fund
+    echo "Build failed; installing rollup MUSL binary explicitly and retrying..."
+    npm i --no-audit --no-fund --no-save @rollup/rollup-linux-x64-musl || true
     echo "Running frontend build (attempt 2)"
     npm run build
   fi
