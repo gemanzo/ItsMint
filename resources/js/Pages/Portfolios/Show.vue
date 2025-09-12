@@ -819,8 +819,8 @@
               <span
                 class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
               >
-                {{ groupedCards.length }} unique
-                {{ groupedCards.length === 1 ? 'card' : 'cards' }}
+                {{ totalCards }} total
+                {{ totalCards === 1 ? 'card' : 'cards' }}
               </span>
             </div>
           </div>
@@ -1514,6 +1514,15 @@ const totalEstimatedValue = computed(() => {
         ? card.estimated_value_cents / 100
         : 0;
       return sum + value * (card.pivot?.quantity || 1);
+    }, 0) || 0
+  );
+});
+
+// Total number of cards (sum of quantities)
+const totalCards = computed(() => {
+  return (
+    props.portfolio.user_cards?.reduce((sum, card) => {
+      return sum + (card.pivot?.quantity || 1);
     }, 0) || 0
   );
 });

@@ -296,7 +296,7 @@
                   <p
                     class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white"
                   >
-                    {{ portfolio.user_cards_count || 0 }}
+                    {{ getPortfolioTotalCards(portfolio) }}
                   </p>
                 </div>
                 <div
@@ -369,7 +369,7 @@
                       <div
                         class="flex flex-wrap items-center space-x-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1"
                       >
-                        <span>{{ portfolio.cards_count || 0 }} cards</span>
+                        <span>{{ getPortfolioTotalCards(portfolio) }} cards</span>
                         <span>{{
                           formatCurrency(portfolio.total_value || 0)
                         }}</span>
@@ -702,6 +702,11 @@ const formatDate = (dateString: string) => {
 
 const calculatePortfolioValue = (portfolio: PortfolioData) => {
   return (portfolio.total_value_cents || 0) / 100;
+};
+
+const getPortfolioTotalCards = (portfolio: PortfolioData) => {
+  const cards = portfolio.user_cards || [];
+  return cards.reduce((sum, card) => sum + (card.pivot?.quantity ?? 1), 0);
 };
 
 const editPortfolio = (portfolio: PortfolioData) => {
