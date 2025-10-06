@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\BlueprintSearchController;
 use App\Http\Controllers\Api\CardScanController;
 use App\Http\Controllers\Api\ImageProxyController;
 use App\Http\Controllers\PortfolioController;
+use App\Http\Controllers\Api\PortfolioTradeController;
 use App\Http\Controllers\UserCardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/card-scan', [CardScanController::class, 'scan']);
     Route::get('/image-proxy', [ImageProxyController::class, 'proxy']);
     Route::apiResource('portfolios', PortfolioController::class);
+
+    // Ledger & Sales endpoints
+    Route::post('/portfolios/{portfolio}/sell', [PortfolioTradeController::class, 'sell'])->name('api.portfolios.sell');
+    Route::get('/portfolios/{portfolio}/sales', [PortfolioTradeController::class, 'salesIndex'])->name('api.portfolios.sales.index');
+    Route::put('/portfolios/{portfolio}/sales/{sale}', [PortfolioTradeController::class, 'salesUpdate'])->name('api.portfolios.sales.update');
+    Route::delete('/portfolios/{portfolio}/sales/{sale}', [PortfolioTradeController::class, 'salesDestroy'])->name('api.portfolios.sales.destroy');
+    Route::get('/portfolios/{portfolio}/cash-history', [PortfolioTradeController::class, 'cashHistory'])->name('api.portfolios.cash-history');
+    Route::get('/portfolios/{portfolio}/piggy-bank/metrics', [PortfolioTradeController::class, 'piggyBankMetrics'])->name('api.portfolios.piggy-bank.metrics');
+    Route::post('/portfolios/{portfolio}/transactions', [PortfolioTradeController::class, 'transactionsStore'])->name('api.portfolios.transactions.store');
+    Route::get('/portfolios/{portfolio}/sales/export', [PortfolioTradeController::class, 'salesExport'])->name('api.portfolios.sales.export');
 });
 
 // Removed route for live price, as it's handled by background jobs now

@@ -182,6 +182,9 @@ class PortfolioController extends Controller
             $portfolio->userCards()->attach($userCard->id, ['quantity' => $validated['quantity']]);
         }
 
+        // Record purchase in ledger (cash out)
+        app(\App\Services\PortfolioTradingService::class)->recordPurchase($portfolio, $userCard, (int) $validated['quantity']);
+
         return response()->json($userCard->load('blueprint'), 201);
     }
 
@@ -212,6 +215,9 @@ class PortfolioController extends Controller
         $portfolio->userCards()->syncWithoutDetaching([
             $validated['user_card_id'] => ['quantity' => $validated['quantity']],
         ]);
+
+        // Record purchase in ledger (cash out)
+        app(\App\Services\PortfolioTradingService::class)->recordPurchase($portfolio, $userCard, (int) $validated['quantity']);
 
         return response()->json($portfolio->load('userCards'));
     }

@@ -17,6 +17,11 @@ class Portfolio extends Model
         'user_id',
         'name',
         'description',
+        'cash_linked',
+    ];
+
+    protected $casts = [
+        'cash_linked' => 'boolean',
     ];
 
     public function user(): BelongsTo

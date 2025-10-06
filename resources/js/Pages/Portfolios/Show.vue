@@ -826,6 +826,29 @@
           </div>
 
           <div class="divide-y divide-gray-200 dark:divide-gray-700">
+            <!-- Tabs Holding/Sold -->
+            <div class="px-6 pt-4">
+              <div class="flex items-center border-b border-gray-200 dark:border-gray-700">
+                <button
+                  :class="[
+                    'w-1/2 text-center px-4 py-3 text-sm font-semibold -mb-px',
+                    activeTab==='holding'
+                      ? 'text-gray-900 dark:text-white border-b-2 border-gray-300 dark:border-gray-500'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                  ]"
+                  @click="activeTab='holding'"
+                >Holding</button>
+                <button
+                  :class="[
+                    'w-1/2 text-center px-4 py-3 text-sm font-semibold -mb-px',
+                    activeTab==='sold'
+                      ? 'text-gray-900 dark:text-white border-b-2 border-gray-300 dark:border-gray-500'
+                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                  ]"
+                  @click="loadSoldIfNeeded()"
+                >Sold</button>
+              </div>
+            </div>
             <!-- Loading State -->
             <div v-if="isLoading" class="p-12 text-center">
               <div
@@ -862,7 +885,7 @@
             </div>
 
             <div
-              v-else-if="groupedCards && groupedCards.length > 0"
+              v-if="activeTab==='holding' && groupedCards && groupedCards.length > 0"
               class="space-y-0"
             >
               <div
@@ -1089,12 +1112,238 @@
                               </svg>
                               Remove
                             </button>
+                            <button
+                              class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors duration-150"
+                              @click="openSell(group)"
+                            >
+                              <svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21h6"/></svg>
+                              Sold
+                            </button>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+            <div v-else-if="activeTab==='sold'" class="px-6 py-4">
+              <!-- Filters & actions -->
+              <div class="mb-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 p-3">
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">From</label>
+                    <div class="relative">
+                      <svg class="absolute left-2 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"/></svg>
+                      <input type="date" v-model="soldFilters.dateFrom" class="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">To</label>
+                    <div class="relative">
+                      <svg class="absolute left-2 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"/></svg>
+                      <input type="date" v-model="soldFilters.dateTo" class="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Min sale (€)</label>
+                    <div class="relative">
+                      <span class="absolute left-2 top-1.5 text-gray-400">€</span>
+                      <input type="number" step="0.01" placeholder="0.00" v-model.number="soldFilters.minSalePrice" class="w-full pl-6 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Max sale (€)</label>
+                    <div class="relative">
+                      <span class="absolute left-2 top-1.5 text-gray-400">€</span>
+                      <input type="number" step="0.01" placeholder="9999.99" v-model.number="soldFilters.maxSalePrice" class="w-full pl-6 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">P&L</label>
+                    <div class="inline-flex w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
+                      <button
+                        :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.pnl==='all' ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300']"
+                        @click="soldFilters.pnl='all'">All</button>
+                      <button
+                        :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.pnl==='gain' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' : 'text-gray-600 dark:text-gray-300']"
+                        @click="soldFilters.pnl='gain'">Gain</button>
+                      <button
+                        :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.pnl==='loss' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-300']"
+                        @click="soldFilters.pnl='loss'">Loss</button>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sort</label>
+                    <div class="flex gap-2">
+                      <div class="inline-flex flex-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
+                        <button :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.sortBy==='date' ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300']" @click="soldFilters.sortBy='date'">Date</button>
+                        <button :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.sortBy==='price' ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300']" @click="soldFilters.sortBy='price'">Price</button>
+                      </div>
+                      <button class="px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700" @click="soldFilters.sortDir = soldFilters.sortDir==='asc' ? 'desc' : 'asc'">
+                        <svg v-if="soldFilters.sortDir==='asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                        <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">{{ soldSalesFiltered.length }} results</span>
+                  <div class="flex items-center gap-2">
+                    <button class="inline-flex items-center px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md" @click="toggleSelectAllFiltered()">
+                      Select filtered
+                    </button>
+                    <button class="inline-flex items-center px-3 py-1.5 text-xs font-medium bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md" @click="clearSelection()">
+                      Clear
+                    </button>
+                    <a
+                      :href="selectedSaleIds.length>0 ? (exportUrlSelected || undefined) : (soldSalesFiltered.length>0 ? (exportUrlFiltered || undefined) : undefined)"
+                      :class="[
+                        'inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md border',
+                        (selectedSaleIds.length>0 || soldSalesFiltered.length>0) ? 'text-white bg-indigo-600 hover:bg-indigo-700 border-indigo-600' : 'text-gray-400 bg-gray-100 dark:bg-gray-700 border-gray-300 pointer-events-none'
+                      ]"
+                    >
+                      <svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
+                      {{ selectedSaleIds.length>0 ? 'Export selected' : 'Export filtered' }}
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="soldSalesFiltered.length>0" class="space-y-0">
+                <div
+                  v-for="sale in soldSalesFiltered"
+                  :key="sale.id"
+                  class="card-hover hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 animate-fade-in"
+                >
+                  <div class="p-6">
+                    <div class="card-content flex items-start space-x-6">
+                      <div class="pt-1">
+                        <input type="checkbox" :value="sale.id" v-model="selectedSaleIds" class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500" />
+                      </div>
+                      <!-- Card Image -->
+                      <div class="card-image flex-shrink-0">
+                        <Link
+                          v-if="sale.user_card?.blueprint?.id"
+                          :href="route('blueprints.show', sale.user_card.blueprint.id)"
+                          class="block"
+                        >
+                          <img
+                            v-if="sale.user_card?.blueprint?.image_url"
+                            :src="sale.user_card.blueprint.image_url"
+                            :alt="sale.user_card.blueprint.name"
+                            class="h-36 w-auto object-contain rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md transition-shadow"
+                          />
+                          <div
+                            v-else
+                            class="h-36 w-24 bg-gray-200 dark:bg-gray-600 rounded-lg border-2 border-gray-300 dark:border-gray-500 flex items-center justify-center text-sm text-gray-500 dark:text-gray-400 font-medium"
+                          >
+                            No Image
+                          </div>
+                        </Link>
+                      </div>
+
+                      <!-- Card Info -->
+                      <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-start">
+                          <div class="flex-1 min-w-0 pr-4">
+                            <h3 class="text-xl font-bold mb-2">
+                              <Link
+                                v-if="sale.user_card?.blueprint?.id"
+                                :href="route('blueprints.show', sale.user_card.blueprint.id)"
+                                class="text-gray-900 dark:text-gray-100 hover:underline hover:text-blue-600 dark:hover:text-blue-400"
+                              >
+                                {{ sale.user_card?.blueprint?.name || 'Unknown Card' }}
+                              </Link>
+                              <span v-else class="text-gray-900 dark:text-gray-100">{{ sale.user_card?.blueprint?.name || 'Unknown Card' }}</span>
+                            </h3>
+
+                            <div class="space-y-2">
+                              <div class="flex flex-wrap gap-4 text-sm">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                  {{ sale.user_card?.condition }}
+                                </span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                  {{ sale.user_card?.language }}
+                                </span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                  Qty: {{ sale.quantity }}
+                                </span>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                                  Sold: {{ new Date(sale.sold_at).toLocaleDateString() }}
+                                </span>
+                              </div>
+
+                              <p v-if="sale.user_card?.blueprint?.expansion" class="text-sm text-gray-500 dark:text-gray-500">
+                                {{ sale.user_card.blueprint.expansion.name }} ({{ sale.user_card.blueprint.expansion.code }})
+                              </p>
+                            </div>
+                          </div>
+
+                          <!-- Right Column - Pricing Info -->
+                          <div class="flex-shrink-0 flex space-x-3">
+                            <!-- Per Card -->
+                            <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 w-36">
+                              <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 text-center">Per Card</p>
+                              <div class="text-center space-y-1">
+                                <p class="text-sm font-bold text-gray-900 dark:text-gray-100">
+                                  {{ formatCurrency((sale.unit_sale_price_cents||0)/100) }}
+                                </p>
+                                <p class="text-xs text-gray-600 dark:text-gray-400">Sale Price</p>
+                                <div class="border-t border-gray-200 dark:border-gray-600 pt-1 mt-1">
+                                  <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    {{ formatCurrency((sale.unit_purchase_price_cents||0)/100) }}
+                                  </p>
+                                  <p class="text-xs text-gray-500 dark:text-gray-500">Purchase</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- Group Total Values -->
+                            <div class="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30 p-3 rounded-lg border border-indigo-200 dark:border-indigo-700 w-36">
+                              <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-2 text-center">Total (×{{ sale.quantity }})</p>
+                              <div class="text-center space-y-1">
+                                <p class="text-sm font-bold text-indigo-900 dark:text-indigo-100">
+                                  {{ formatCurrency(((sale.unit_sale_price_cents||0) * sale.quantity)/100) }}
+                                </p>
+                                <p class="text-xs text-indigo-700 dark:text-indigo-300">Total Sale</p>
+                                <div class="border-t border-indigo-200 dark:border-indigo-600 pt-1 mt-1">
+                                  <p class="text-sm font-bold text-indigo-800 dark:text-indigo-200">
+                                    {{ formatCurrency(((sale.unit_purchase_price_cents||0) * sale.quantity)/100) }}
+                                  </p>
+                                  <p class="text-xs text-indigo-600 dark:text-indigo-400">Total Cost</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- P&L -->
+                            <div class="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 w-32">
+                              <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 text-center">P&L</p>
+                              <div class="text-center">
+                                <p :class="[(sale.unit_sale_price_cents - sale.unit_purchase_price_cents) >= 0 ? 'text-emerald-600' : 'text-red-600', 'text-sm font-bold']">
+                                  {{ formatCurrency(((sale.unit_sale_price_cents - sale.unit_purchase_price_cents) * sale.quantity)/100) }}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="text-sm text-gray-500 dark:text-gray-400">No sales yet.</div>
+              <div class="mt-4 flex justify-end">
+                <a
+                  :href="route('api.portfolios.sales.export',{portfolio: props.portfolio.id})"
+                  class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                >
+                  <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                  </svg>
+                  Export All History (CSV)
+                </a>
               </div>
             </div>
             <div v-else class="p-12 text-center">
@@ -1172,6 +1421,15 @@
       @confirm="confirmRemoveCards"
     />
   </AuthenticatedLayout>
+  <SellCardModal
+    v-if="showSellModal && sellingUserCardId"
+    :show="showSellModal"
+    :portfolio-id="portfolio.id"
+    :user-card-id="sellingUserCardId"
+    :max-quantity="sellingMaxQty"
+    @close="closeSell"
+    @sold="handleSold"
+  />
 </template>
 
 <script setup lang="ts">
@@ -1180,8 +1438,11 @@ import AddCardModal from '@/Components/AddCardModal.vue';
 import EditCardModal from '@/Components/EditCardModal.vue';
 import RemoveCardModal from '@/Components/RemoveCardModal.vue';
 import PriceHistoryChart from '@/Components/PriceHistoryChart.vue';
+import SellCardModal from '@/Components/SellCardModal.vue';
 import TooltipHelper from '@/Components/TooltipHelper.vue';
 import { Head, router, Link } from '@inertiajs/vue3';
+// Ziggy's route helper is available globally
+declare const route: any;
 import { ref, computed, onMounted, reactive } from 'vue';
 import {
   usePortfolioStore,
@@ -1226,6 +1487,21 @@ const showRemoveCardModal = ref(false);
 const cardToEdit = ref<UserCardData | null>(null);
 const cardGroupToRemove = ref<CardGroup | null>(null);
 const isLoading = ref(false);
+const activeTab = ref<'holding'|'sold'>('holding');
+const soldSales = ref<any[]>([]);
+  const selectedSaleIds = ref<number[]>([]);
+  const soldFilters = reactive({
+    dateFrom: '',
+    dateTo: '',
+    minSalePrice: null as number | null,
+    maxSalePrice: null as number | null,
+    pnl: 'all' as 'all' | 'gain' | 'loss',
+    sortBy: 'date' as 'date' | 'price',
+    sortDir: 'desc' as 'asc' | 'desc',
+  });
+const showSellModal = ref(false);
+const sellingUserCardId = ref<number|null>(null);
+const sellingMaxQty = ref<number>(1);
 
 // Portfolio value chart state
 const portfolioChartData = reactive<Record<string, any>>({});
@@ -1305,6 +1581,35 @@ const openRemoveCardModal = (group: CardGroup) => {
 const closeRemoveCardModal = () => {
   showRemoveCardModal.value = false;
   cardGroupToRemove.value = null;
+};
+
+const openSell = (group: CardGroup) => {
+  const card = getFirstCardFromGroup(group);
+  sellingUserCardId.value = card.id;
+  sellingMaxQty.value = group.totalQuantity;
+  showSellModal.value = true;
+};
+
+const closeSell = () => {
+  showSellModal.value = false;
+  sellingUserCardId.value = null;
+};
+
+const handleSold = () => {
+  closeSell();
+  isLoading.value = true;
+  router.reload({ only: ['portfolio'], onFinish: async () => {
+    isLoading.value = false;
+    if (activeTab.value === 'sold') await loadSoldIfNeeded(true);
+  }});
+};
+
+const loadSoldIfNeeded = async (force = false) => {
+  if (!force && activeTab.value === 'sold' && soldSales.value.length>0) return;
+  activeTab.value = 'sold';
+  const res = await axios.get(route('api.portfolios.sales.index',{ portfolio: props.portfolio.id }));
+  soldSales.value = res.data || [];
+    selectedSaleIds.value = [];
 };
 
 const confirmRemoveCards = async (quantityToRemove: number) => {
@@ -1596,6 +1901,80 @@ const groupedCards = computed(() => {
 
   return Object.values(grouped);
 });
+
+const soldSalesFiltered = computed(() => {
+  let arr = [...soldSales.value];
+  // Date range
+  if (soldFilters.dateFrom) {
+    const from = new Date(soldFilters.dateFrom);
+    arr = arr.filter((s:any) => new Date(s.sold_at) >= from);
+  }
+  if (soldFilters.dateTo) {
+    const to = new Date(soldFilters.dateTo);
+    // include the whole day
+    to.setHours(23,59,59,999);
+    arr = arr.filter((s:any) => new Date(s.sold_at) <= to);
+  }
+  // Price range (unit sale price)
+  if (soldFilters.minSalePrice != null) {
+    const minC = Math.round((soldFilters.minSalePrice as number) * 100);
+    arr = arr.filter((s:any) => (s.unit_sale_price_cents||0) >= minC);
+  }
+  if (soldFilters.maxSalePrice != null) {
+    const maxC = Math.round((soldFilters.maxSalePrice as number) * 100);
+    arr = arr.filter((s:any) => (s.unit_sale_price_cents||0) <= maxC);
+  }
+  // P&L filter
+  if (soldFilters.pnl !== 'all') {
+    arr = arr.filter((s:any) => {
+      const diff = (s.unit_sale_price_cents||0) - (s.unit_purchase_price_cents||0);
+      return soldFilters.pnl === 'gain' ? diff > 0 : diff < 0;
+    });
+  }
+  // Sort
+  arr.sort((a:any,b:any) => {
+    let va:number, vb:number;
+    if (soldFilters.sortBy === 'price') {
+      va = a.unit_sale_price_cents || 0;
+      vb = b.unit_sale_price_cents || 0;
+    } else {
+      va = new Date(a.sold_at).getTime();
+      vb = new Date(b.sold_at).getTime();
+    }
+    const res = va === vb ? 0 : (va < vb ? -1 : 1);
+    return soldFilters.sortDir === 'asc' ? res : -res;
+  });
+  return arr;
+});
+
+const exportUrlSelected = computed(() => {
+  const base = route('api.portfolios.sales.export',{ portfolio: props.portfolio.id });
+  if (selectedSaleIds.value.length === 0) return '';
+  return `${base}?ids=${selectedSaleIds.value.join(',')}`;
+});
+
+const exportUrlFiltered = computed(() => {
+  const base = route('api.portfolios.sales.export',{ portfolio: props.portfolio.id });
+  const ids = soldSalesFiltered.value.map((s:any) => s.id);
+  if (ids.length === 0) return '';
+  return `${base}?ids=${ids.join(',')}`;
+});
+
+const toggleSelectAllFiltered = () => {
+  const ids = soldSalesFiltered.value.map((s:any) => s.id);
+  selectedSaleIds.value = ids;
+};
+
+const clearSelection = () => {
+  selectedSaleIds.value = [];
+  soldFilters.dateFrom = '';
+  soldFilters.dateTo = '';
+  soldFilters.minSalePrice = null;
+  soldFilters.maxSalePrice = null;
+  soldFilters.pnl = 'all';
+  soldFilters.sortBy = 'date';
+  soldFilters.sortDir = 'desc';
+};
 
 // Portfolio value statistics
 const portfolioStatistics = computed(() => {
