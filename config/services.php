@@ -79,6 +79,8 @@ return [
     'cardmarket' => [
         'op_price_guide_url' => env('CARDMARKET_OP_PRICE_GUIDE'),
         'op_price_guide_path' => env('CARDMARKET_OP_PRICE_GUIDE_PATH', storage_path('app/public/cardmarket/price_guide_18.json')),
+        // mapping of language => index in flat card_market_ids array, e.g. "en:0,ja:1"
+        'preferred_id_index_by_language' => env('CARDMARKET_PREFERRED_ID_INDEX_BY_LANGUAGE', 'en:0,ja:1'),
     ],
 
 ];
