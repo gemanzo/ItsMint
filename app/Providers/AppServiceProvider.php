@@ -10,6 +10,8 @@ use App\Services\Pricing\Providers\CardmarketGuidePriceProvider;
 use App\Services\Pricing\Providers\CardmarketGuideReader;
 use App\Services\Pricing\Providers\CardTraderPriceProvider;
 use App\Services\ElasticsearchService;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -48,6 +50,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Configure rate limiter for CardTrader API to avoid getting blocked
+        RateLimiter::for('cardtrader-api', function () {
+            return Limit::perMinute(30)->by('cardtrader-api');
+        });
+
         // Force HTTPS in production
         if (config('app.env') === 'production') {
             URL::forceScheme('https');

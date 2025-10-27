@@ -32,9 +32,9 @@ Schedule::command('elasticsearch:index-blueprints --fresh')
     ->withoutOverlapping()
     ->runInBackground();
 
-// 5. Continuous price updates every 6 hours
+// 5. Continuous price updates once daily (reduced to avoid rate limiting)
 Schedule::command('itsmint:queue-price-updates')
-    ->everySixHours()
+    ->dailyAt('23:00')
     ->withoutOverlapping();
 
 // 6. Backup the database
