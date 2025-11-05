@@ -630,7 +630,7 @@ const submitAddCard = async () => {
         condition: cardDetails.condition,
         language: cardDetails.language,
         quantity: cardDetails.quantity,
-        purchase_price_cents: Math.round(cardDetails.purchase_price * 100),
+        purchase_price_cents: Math.round(cardDetails.purchase_price! * 100),
         acquired_at: cardDetails.acquired_at,
       }
     );

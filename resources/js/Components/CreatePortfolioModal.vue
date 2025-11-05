@@ -145,19 +145,13 @@ const submitCreatePortfolio = async () => {
     if (error.response?.status === 422 && error.response?.data?.errors) {
       Object.assign(errors, error.response.data.errors);
     } else {
-    const planCta = {
-      type: 'action',
-      actionLabel: 'Upgrade to Premium',
-      actionHref: '/subscribe',
-    } as any;
-    addToast({
-      type: 'error',
-      title: 'Failed to create portfolio',
-      message:
-        error.response?.data?.message ||
-        'An unexpected error occurred. Please try again.',
-      extra: error.response?.status === 403 ? planCta : undefined,
-    });
+      addToast({
+        type: 'error',
+        title: 'Failed to create portfolio',
+        message:
+          error.response?.data?.message ||
+          'An unexpected error occurred. Please try again.',
+      });
     }
   } finally {
     isLoading.value = false;
