@@ -124,6 +124,7 @@ class UserCard extends Model
 
     /**
      * Get the estimated value of the card in cents based on its language, condition, and blueprint's latest price.
+     * Optimized to use eagerly loaded relationships when available to avoid N+1 queries.
      */
     public function getEstimatedValueCentsAttribute(): ?int
     {
@@ -131,8 +132,26 @@ class UserCard extends Model
             return null;
         }
 
-        // Prioritize the price for the specific language of the user's card.
-        $priceModel = $this->blueprint->latestPriceForLanguage($this->language)->first();
+        $priceModel = null;
+
+        // Try to use eagerly loaded cardPrices relationship if available
+        if ($this->blueprint->relationLoaded('cardPrices')) {
+            // Filter the already loaded collection for language-specific price
+            $priceModel = $this->blueprint->cardPrices
+                ->where('language', strtolower($this->language))
+                ->sortBy([
+                    ['condition_priority', 'asc'],
+                    ['fetched_at', 'desc'],
+                    ['price_cents', 'desc'],
+                ])
+                ->first();
+        }
+
+        // Fallback to query if not eagerly loaded
+        if (! $priceModel) {
+            // Prioritize the price for the specific language of the user's card.
+            $priceModel = $this->blueprint->latestPriceForLanguage($this->language)->first();
+        }
 
         // If no price is found for the specific language, fallback to the generic latest price.
         if (! $priceModel) {
@@ -160,6 +179,6 @@ class UserCard extends Model
         }
 
         // Assuming EUR, adapt if currency can vary and needs to be dynamic
-        return number_format($valueCents / 100, 2, ',', '.').' €';
+        return number_format($valueCents / 100, 2, ',', '.') . ' €';
     }
 }

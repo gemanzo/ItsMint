@@ -16,7 +16,11 @@ class UserCardController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $userCards = Auth::user()->userCards()->with(['blueprint.expansion', 'blueprint.latestPrice'])->latest()->get();
+        $userCards = Auth::user()->userCards()->with([
+            'blueprint.expansion',
+            'blueprint.latestPrice',
+            'blueprint.cardPrices', // Eager load all prices to avoid N+1 in estimated_value_cents accessor
+        ])->latest()->get();
 
         return response()->json($userCards);
     }
@@ -107,7 +111,11 @@ class UserCardController extends Controller
         // Create multiple UserCard records based on quantity
         for ($i = 0; $i < $quantity; $i++) {
             $userCard = Auth::user()->userCards()->create($userCardData);
-            $userCard->load(['blueprint.expansion', 'blueprint.latestPrice']);
+            $userCard->load([
+                'blueprint.expansion',
+                'blueprint.latestPrice',
+                'blueprint.cardPrices', // Eager load all prices to avoid N+1 in estimated_value_cents accessor
+            ]);
             $createdCards[] = $userCard;
         }
 
@@ -128,7 +136,12 @@ class UserCardController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        return response()->json($userCard->load(['blueprint.expansion', 'blueprint.latestPrice', 'portfolios']));
+        return response()->json($userCard->load([
+            'blueprint.expansion',
+            'blueprint.latestPrice',
+            'blueprint.cardPrices', // Eager load all prices to avoid N+1 in estimated_value_cents accessor
+            'portfolios',
+        ]));
     }
 
     /**

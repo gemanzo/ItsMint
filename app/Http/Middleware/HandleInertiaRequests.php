@@ -32,9 +32,39 @@ class HandleInertiaRequests extends Middleware
     {
         return array_merge(parent::share($request), [
             'auth' => [
-                'user' => fn () => $request->user() ? $request->user()->load('roles') : null,
+                'user' => function () use ($request) {
+                    $user = $request->user();
+                    // Only load roles if user exists and we need them for hasRole check
+                    // Spatie Permission can work without eager loading, but loading here avoids N+1
+                    return $user ? $user->load('roles') : null;
+                },
             ],
-            'ziggy' => fn () => [
+            'oldest_portfolio_id' => function () use ($request) {
+                $user = $request->user();
+                if (! $user) {
+                    return null;
+                }
+
+                // Cache this calculation since it's used in multiple places
+                return (int) ($user->portfolios()->oldest('created_at')->value('id') ?? 0);
+            },
+            'features' => function () use ($request) {
+                $user = $request->user();
+                if (! $user) {
+                    return null;
+                }
+
+                $feature = \Laravel\Pennant\Feature::for($user);
+                return [
+                    'is_admin' => $user->hasRole('admin'),
+                    'portfolio_unlimited' => $feature->active('portfolio.unlimited'),
+                    'search_advanced' => $feature->active('search.advanced'),
+                    'export_csv' => $feature->active('export.csv'),
+                    'analytics_portfolio' => $feature->active('analytics.portfolio'),
+                    'alerts_price' => $feature->active('alerts.price'),
+                ];
+            },
+            'ziggy' => fn() => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],

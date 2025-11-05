@@ -172,7 +172,21 @@ class BlueprintController extends Controller
             }
         }
 
-        $query = Blueprint::query()->with(['expansion', 'latestPrice']);
+        $query = Blueprint::query()->with(['expansion']);
+
+        // If language filter is provided, eager load language-specific prices
+        if (! empty($validated['language'])) {
+            $language = strtolower($validated['language']);
+            $query->with(['cardPrices' => function ($q) use ($language) {
+                $q->where('language', $language)
+                    ->orderBy('condition_priority', 'asc')
+                    ->orderBy('fetched_at', 'desc')
+                    ->orderBy('price_cents', 'desc');
+            }]);
+        } else {
+            // Otherwise, load the generic latestPrice
+            $query->with('latestPrice');
+        }
 
         if (! empty($searchQuery)) {
             $query->where('name', 'ILIKE', '%' . $searchQuery . '%');
@@ -191,11 +205,12 @@ class BlueprintController extends Controller
 
         $blueprints = $query->take(50)->get();
 
-        // If language filter is provided, override latestPrice with language-specific latest
+        // If language filter is provided, set the language-specific price as latestPrice relation
         if (! empty($validated['language'])) {
             $language = strtolower($validated['language']);
             $blueprints = $blueprints->filter(function (Blueprint $bp) use ($language) {
-                $lp = $bp->latestPriceForLanguage($language)->first();
+                // Use the eagerly loaded cardPrices relationship
+                $lp = $bp->cardPrices->first();
                 if ($lp) {
                     $bp->setRelation('latestPrice', $lp);
                     return true; // keep only if price exists for requested language

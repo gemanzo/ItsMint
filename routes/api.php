@@ -22,8 +22,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/blueprints/{blueprint}/prices/statistics', [BlueprintController::class, 'priceStatistics'])->name('api.blueprints.prices.statistics');
     Route::get('/blueprints/{blueprint}/market-statistics', [BlueprintController::class, 'marketStatistics'])->name('api.blueprints.market-statistics');
 
+    // Portfolio card limit check - MUST be before portfolios/{portfolio} routes
+    Route::get('/portfolios/{portfolio}/card-limit', [PortfolioController::class, 'checkCardLimit'])->name('api.portfolios.checkCardLimit');
+
+    // Portfolio blueprint operations
+    Route::post('/portfolios/{portfolio}/blueprints', [PortfolioController::class, 'addBlueprint'])->name('api.portfolios.addBlueprint');
+    Route::delete('/portfolios/{portfolio}/blueprints', [PortfolioController::class, 'removeBlueprint'])->name('api.portfolios.removeBlueprint');
+
     // Portfolio value history endpoint
-    Route::get('/portfolios/{portfolio}/value-history', [PortfolioController::class, 'valueHistory'])->name('api.portfolios.value-history');
+    Route::get('/portfolios/{portfolio}/value-history', [PortfolioController::class, 'valueHistory'])
+        ->middleware('ensure.feature:analytics.portfolio')
+        ->name('api.portfolios.value-history');
 
     // Other endpoints
     Route::post('/card-scan', [CardScanController::class, 'scan']);
@@ -38,7 +47,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/portfolios/{portfolio}/cash-history', [PortfolioTradeController::class, 'cashHistory'])->name('api.portfolios.cash-history');
     Route::get('/portfolios/{portfolio}/piggy-bank/metrics', [PortfolioTradeController::class, 'piggyBankMetrics'])->name('api.portfolios.piggy-bank.metrics');
     Route::post('/portfolios/{portfolio}/transactions', [PortfolioTradeController::class, 'transactionsStore'])->name('api.portfolios.transactions.store');
-    Route::get('/portfolios/{portfolio}/sales/export', [PortfolioTradeController::class, 'salesExport'])->name('api.portfolios.sales.export');
+    Route::get('/portfolios/{portfolio}/sales/export', [PortfolioTradeController::class, 'salesExport'])
+        ->middleware('ensure.feature:export.csv')
+        ->name('api.portfolios.sales.export');
 });
 
 // Removed route for live price, as it's handled by background jobs now
@@ -53,7 +64,6 @@ Route::apiResource('portfolios', PortfolioController::class)->middleware('auth:s
     'update' => 'api.portfolios.update',
     'destroy' => 'api.portfolios.destroy',
 ]);
-Route::post('portfolios/{portfolio}/blueprints', [PortfolioController::class, 'addBlueprint'])->middleware('auth:sanctum')->name('api.portfolios.addBlueprint');
 Route::post('portfolios/{portfolio}/user-cards', [PortfolioController::class, 'addUserCard'])->middleware('auth:sanctum')->name('api.portfolios.addUserCard');
 Route::delete('portfolios/{portfolio}/user-cards/{userCard}', [PortfolioController::class, 'removeUserCard'])->middleware('auth:sanctum')->name('api.portfolios.removeUserCard');
 Route::put('portfolios/{portfolio}/user-cards/{userCard}', [PortfolioController::class, 'updateUserCardQuantity'])->middleware('auth:sanctum')->name('api.portfolios.updateUserCardQuantity');
@@ -67,7 +77,7 @@ Route::apiResource('user-cards', UserCardController::class)->middleware('auth:sa
 ]);
 
 // Card Scan routes
-Route::prefix('card-scans')->middleware('auth:sanctum')->group(function () {
+Route::prefix('card-scans')->middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('upload', [CardScanController::class, 'upload'])->name('api.card-scans.upload');
     Route::get('/', [CardScanController::class, 'index'])->name('api.card-scans.index');
     Route::get('{id}', [CardScanController::class, 'show'])->name('api.card-scans.show');
@@ -80,9 +90,17 @@ Route::prefix('card-scans')->middleware('auth:sanctum')->group(function () {
 
 // NEW: Elasticsearch-powered Blueprint search routes
 Route::prefix('blueprints')->middleware(['auth:sanctum', \App\Http\Middleware\ElasticsearchFallback::class])->group(function () {
+    // Base search: sempre disponibile (Free)
     Route::get('search', [BlueprintSearchController::class, 'search'])->name('api.blueprints.search');
-    Route::get('suggestions', [BlueprintSearchController::class, 'suggestions'])->name('api.blueprints.suggestions');
+
+    // Suggest/autocomplete: Premium (parte della ricerca avanzata)
+    Route::get('suggestions', [BlueprintSearchController::class, 'suggestions'])
+        ->middleware('ensure.feature:search.advanced')
+        ->name('api.blueprints.suggestions');
+
+    // Stats: lasciamo libero
     Route::get('search/stats', [BlueprintSearchController::class, 'stats'])->name('api.blueprints.search.stats');
+
     Route::get('{blueprint}', [BlueprintController::class, 'show'])->name('api.blueprints.show');
 });
 

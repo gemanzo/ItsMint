@@ -6,9 +6,9 @@ use Illuminate\Foundation\Configuration\Middleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
+        web: __DIR__ . '/../routes/web.php',
+        api: __DIR__ . '/../routes/api.php',
+        commands: __DIR__ . '/../routes/console.php',
         health: '/up',
         apiPrefix: 'api',
     )
@@ -21,6 +21,14 @@ return Application::configure(basePath: dirname(__DIR__))
         // Aggiungi questo per il middleware API per Sanctum SPA
         $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+        ]);
+
+        // Alias middleware feature gating
+        $middleware->alias([
+            'ensure.feature' => \App\Http\Middleware\EnsureFeature::class,
+            'role' => \Spatie\Permission\Middlewares\RoleMiddleware::class,
+            'permission' => \Spatie\Permission\Middlewares\PermissionMiddleware::class,
+            'role_or_permission' => \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

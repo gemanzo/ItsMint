@@ -22,23 +22,59 @@ final class PortfolioTradingService
         ?string $notes = null,
         ?\Carbon\Carbon $soldAt = null
     ): PortfolioSale {
+        // Verify the card is in the portfolio
         $pivot = $portfolio->userCards()->where('user_card_id', $userCard->id)->first();
         if (! $pivot) {
             throw ValidationException::withMessages(['user_card_id' => 'Card not in portfolio.']);
         }
-        $currentQty = (int) ($pivot->pivot->quantity ?? 0);
-        if ($quantity < 1 || $quantity > $currentQty) {
+
+        // Calculate total available quantity for this card type (same blueprint, condition, language, purchase_price)
+        // This handles cases where multiple UserCard entries exist for the same card type
+        $totalAvailableQty = $portfolio->userCards()
+            ->where('blueprint_id', $userCard->blueprint_id)
+            ->where('condition', $userCard->condition)
+            ->where('language', $userCard->language)
+            ->where('purchase_price_cents', $userCard->purchase_price_cents ?? 0)
+            ->sum('portfolio_user_card.quantity');
+
+        if ($quantity < 1 || $quantity > $totalAvailableQty) {
             throw ValidationException::withMessages(['quantity' => 'Invalid quantity.']);
         }
 
         $soldAt = $soldAt ?? now();
 
-        return DB::transaction(function () use ($portfolio, $userCard, $quantity, $unitSalePriceCents, $platform, $notes, $soldAt, $currentQty) {
-            $newQty = $currentQty - $quantity;
-            if ($newQty > 0) {
-                $portfolio->userCards()->updateExistingPivot($userCard->id, ['quantity' => $newQty]);
-            } else {
-                $portfolio->userCards()->detach($userCard->id);
+        return DB::transaction(function () use ($portfolio, $userCard, $quantity, $unitSalePriceCents, $platform, $notes, $soldAt) {
+            // Find all UserCard entries that match this card type
+            $matchingCards = $portfolio->userCards()
+                ->where('blueprint_id', $userCard->blueprint_id)
+                ->where('condition', $userCard->condition)
+                ->where('language', $userCard->language)
+                ->where('purchase_price_cents', $userCard->purchase_price_cents ?? 0)
+                ->get();
+
+            $remainingToSell = $quantity;
+
+            // Sell from matching cards until we reach the desired quantity
+            foreach ($matchingCards as $matchingCard) {
+                if ($remainingToSell <= 0) {
+                    break;
+                }
+
+                $availableQty = (int) ($matchingCard->pivot->quantity ?? 0);
+                if ($availableQty <= 0) {
+                    continue;
+                }
+
+                $qtyToSellFromThisCard = min($remainingToSell, $availableQty);
+                $newQty = $availableQty - $qtyToSellFromThisCard;
+
+                if ($newQty > 0) {
+                    $portfolio->userCards()->updateExistingPivot($matchingCard->id, ['quantity' => $newQty]);
+                } else {
+                    $portfolio->userCards()->detach($matchingCard->id);
+                }
+
+                $remainingToSell -= $qtyToSellFromThisCard;
             }
 
             $unitPurchaseCents = (int) ($userCard->purchase_price_cents ?? 0);

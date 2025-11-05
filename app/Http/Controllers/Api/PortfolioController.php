@@ -20,6 +20,7 @@ class PortfolioController extends Controller
         $user = Auth::user();
         $portfolios = $user->portfolios()->with([
             'userCards.blueprint.latestPrice', // Ensure blueprint.latestPrice is loaded
+            'userCards.blueprint.cardPrices', // Eager load all prices to avoid N+1 in estimated_value_cents accessor
             'userCards.user', // Keep user relationship if needed, or remove if not directly used by client here
         ])->withCount('userCards')->get();
 
@@ -37,6 +38,7 @@ class PortfolioController extends Controller
 
         $portfolio->load([
             'userCards.blueprint.latestPrice', // Ensure blueprint.latestPrice is loaded
+            'userCards.blueprint.cardPrices', // Eager load all prices to avoid N+1 in estimated_value_cents accessor
             'userCards.user', // Keep user relationship if needed
         ])->loadCount('userCards');
 

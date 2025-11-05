@@ -76,6 +76,13 @@ return [
         ],
     ],
 
+    'stripe' => [
+        'secret' => env('STRIPE_SECRET'),
+        'key' => env('STRIPE_KEY'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'price_id_premium' => env('STRIPE_PRICE_ID_PREMIUM'),
+    ],
+
     'cardmarket' => [
         'op_price_guide_url' => env('CARDMARKET_OP_PRICE_GUIDE'),
         'op_price_guide_path' => env('CARDMARKET_OP_PRICE_GUIDE_PATH', storage_path('app/public/cardmarket/price_guide_18.json')),

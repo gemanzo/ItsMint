@@ -104,7 +104,8 @@ const user = computed(() => page.props.auth.user);
                   </svg>
                   <span class="hidden lg:block">Portfolios</span>
                 </NavLink>
-                <NavLink
+                <!-- Card Scanner temporarily hidden - feature not ready yet -->
+                <!-- <NavLink
                   :href="route('card-scanner')"
                   :active="route().current('card-scanner')"
                   class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
@@ -129,7 +130,7 @@ const user = computed(() => page.props.auth.user);
                     />
                   </svg>
                   <span class="hidden lg:block">Scanner</span>
-                </NavLink>
+                </NavLink> -->
                 <NavLink
                   v-if="
                     user &&
@@ -360,7 +361,8 @@ const user = computed(() => page.props.auth.user);
               </svg>
               Portfolios
             </ResponsiveNavLink>
-            <ResponsiveNavLink
+            <!-- Card Scanner temporarily hidden - feature not ready yet -->
+            <!-- <ResponsiveNavLink
               :href="route('card-scanner')"
               :active="route().current('card-scanner')"
               class="flex items-center px-3 py-3 rounded-lg text-base font-medium transition-all duration-150"
@@ -385,7 +387,7 @@ const user = computed(() => page.props.auth.user);
                 />
               </svg>
               Card Scanner
-            </ResponsiveNavLink>
+            </ResponsiveNavLink> -->
             <ResponsiveNavLink
               v-if="
                 user &&

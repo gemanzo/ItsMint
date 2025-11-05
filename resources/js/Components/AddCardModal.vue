@@ -4,13 +4,14 @@
     title="Add New Card"
     subtitle="Search for a card and add it to your portfolio"
     size="2xl"
-    :is-loading="isSubmitting"
-    :can-submit="isFormValid"
+    :is-loading="isSubmitting || showPaywall"
+    :can-submit="isFormValid && !showPaywall"
     submit-text="Add Card"
     loading-text="Adding..."
     @close="closeModal"
     @submit="submitAddCard"
   >
+    <div class="relative">
     <!-- Portfolio Selection -->
     <div>
       <label
@@ -286,6 +287,8 @@
       v-model="cardDetails.purchase_price"
       label="Purchase Price"
       :estimated-price="estimatedPrice"
+      :required="true"
+      :error="formErrors.purchase_price"
     />
 
     <!-- Acquired Date -->
@@ -294,14 +297,25 @@
         for="acquiredAt"
         class="block text-sm font-medium text-gray-700 dark:text-gray-300"
       >
-        Acquired Date
+        Acquired Date *
       </label>
       <input
         id="acquiredAt"
         v-model="cardDetails.acquired_at"
         type="date"
+        required
         class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+        :class="{
+          'border-red-500 focus:border-red-500 focus:ring-red-500':
+            formErrors.acquired_at,
+        }"
       />
+      <p
+        v-if="formErrors.acquired_at"
+        class="mt-1 text-sm text-red-600 dark:text-red-400"
+      >
+        {{ formErrors.acquired_at }}
+      </p>
     </div>
 
     <!-- Error Display -->
@@ -329,6 +343,17 @@
       @close="closeScanResults"
       @blueprint-selected="handleBlueprintSelected"
     />
+
+    <!-- Paywall Overlay for card limit -->
+    <PaywallOverlay
+      v-if="showPaywall"
+      :upgrade-url="'/subscribe'"
+      :message="paywallMessage"
+      :features="paywallFeatures"
+      :show-close="true"
+      @close="showPaywall = false"
+    />
+    </div>
   </FormModal>
 </template>
 
@@ -348,6 +373,7 @@ import FormModal from '@/Components/Base/FormModal.vue';
 import PriceInput from '@/Components/Forms/PriceInput.vue';
 import CardScanModal from '@/Components/CardScanModal.vue';
 import ScanResultsModal from '@/Components/ScanResultsModal.vue';
+import PaywallOverlay from '@/Components/PaywallOverlay.vue';
 
 interface Props {
   portfolioId?: number | null;
@@ -394,6 +420,9 @@ const cardDetails = reactive({
 });
 
 const formErrors = reactive<Record<string, string>>({});
+const showPaywall = ref(false);
+const paywallMessage = ref('');
+const paywallFeatures = ref<string[]>([]);
 
 // Use pricing composable
 const { estimatedPrice } = useCardPricing(
@@ -423,7 +452,10 @@ const isFormValid = computed(() => {
     selectedBlueprint.value !== null &&
     !!cardDetails.condition &&
     cardDetails.quantity >= 1 &&
-    cardDetails.quantity <= 999
+    cardDetails.quantity <= 999 &&
+    cardDetails.purchase_price !== null &&
+    cardDetails.purchase_price > 0 &&
+    !!cardDetails.acquired_at
   );
 });
 
@@ -538,6 +570,14 @@ const validateForm = (): boolean => {
     formErrors.quantity = 'Quantity must be at least 1.';
     isValid = false;
   }
+  if (!cardDetails.purchase_price || cardDetails.purchase_price <= 0) {
+    formErrors.purchase_price = 'Purchase price is required and must be greater than 0.';
+    isValid = false;
+  }
+  if (!cardDetails.acquired_at) {
+    formErrors.acquired_at = 'Acquired date is required.';
+    isValid = false;
+  }
   return isValid;
 };
 
@@ -547,37 +587,60 @@ const submitAddCard = async () => {
   isSubmitting.value = true;
 
   try {
-    const response = await portfolioStore.createUserCard({
-      blueprint_id: selectedBlueprint.value!.id,
-      condition: cardDetails.condition,
-      language: cardDetails.language,
-      quantity: cardDetails.quantity,
-      purchase_price: cardDetails.purchase_price,
-      acquired_at: cardDetails.acquired_at,
-    });
-
-    const createdCards = Array.isArray(response) ? response : [response];
-
-    if (createdCards.length > 0 && selectedPortfolioId.value) {
-      for (const userCard of createdCards) {
-        await portfolioStore.addUserCardToPortfolio(
-          selectedPortfolioId.value,
-          userCard.id,
-          1
-        );
-      }
-
-      emit('card-added', {
-        portfolioId: selectedPortfolioId.value,
-        cards: createdCards,
-        totalQuantity: cardDetails.quantity,
-      });
-      closeModal();
-    } else {
-      throw new Error(
-        'Failed to create cards or associate them with portfolio.'
-      );
+    // Check card limit BEFORE starting insertion
+    if (!selectedPortfolioId.value) {
+      formErrors.general = 'Please select a portfolio first.';
+      isSubmitting.value = false;
+      return;
     }
+
+    const limitResponse = await axios.get(`/portfolios/${selectedPortfolioId.value}/card-limit`);
+    const limitData = limitResponse.data;
+
+    // If user has a limit and requested quantity exceeds available slots
+    if (!limitData.is_unlimited && limitData.available !== null) {
+      if (cardDetails.quantity > limitData.available) {
+        // Show paywall overlay instead of error message
+        if (limitData.available === 0) {
+          paywallMessage.value = `You've reached the card limit for this portfolio. The Free plan allows up to ${limitData.limit} cards per portfolio. Upgrade to Premium to add unlimited cards.`;
+        } else {
+          paywallMessage.value = `You're trying to add ${cardDetails.quantity} cards, but this portfolio only has ${limitData.available} slot${limitData.available === 1 ? '' : 's'} available (${limitData.current_total}/${limitData.limit} used). Upgrade to Premium to add unlimited cards.`;
+        }
+        
+        paywallFeatures.value = [
+          'Unlimited cards per portfolio',
+          'Unlimited portfolios',
+          'Advanced search',
+          'CSV export',
+          'Portfolio analytics'
+        ];
+        
+        showPaywall.value = true;
+        isSubmitting.value = false;
+        return;
+      }
+    }
+
+    // Proceed with card creation only if limit check passes
+    // Use addBlueprint endpoint which handles quantity in a single API call
+    const response = await axios.post(
+      `/portfolios/${selectedPortfolioId.value}/blueprints`,
+      {
+        blueprint_id: selectedBlueprint.value!.id,
+        condition: cardDetails.condition,
+        language: cardDetails.language,
+        quantity: cardDetails.quantity,
+        purchase_price_cents: Math.round(cardDetails.purchase_price * 100),
+        acquired_at: cardDetails.acquired_at,
+      }
+    );
+
+    emit('card-added', {
+      portfolioId: selectedPortfolioId.value,
+      cards: [response.data],
+      totalQuantity: cardDetails.quantity,
+    });
+    closeModal();
   } catch (error: unknown) {
     console.error('Error adding card:', error);
     const errorMessage =
@@ -626,11 +689,10 @@ watch(searchLanguageCode, () => {
   if (blueprintSearchQuery.value && blueprintSearchQuery.value.length >= 2) {
     debouncedSearchBlueprints();
   }
-  // Language changed: clear cached selection price so estimatedPrice recomputes
+  // Language changed: update language in card details
   if (selectedBlueprint.value) {
-    // Force re-evaluation; if latest_price is for another language, estimated will be null
     cardDetails.language = (searchLanguageCode.value || 'en').toUpperCase();
-    cardDetails.purchase_price = null;
+    // Note: purchase_price is now required, so we don't clear it when language changes
   }
 });
 

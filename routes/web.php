@@ -4,6 +4,7 @@ use App\Http\Controllers\BlueprintController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PortfolioController as WebPortfolioController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -42,6 +43,25 @@ Route::middleware('auth')->group(function () {
     // Portfolio Web Routes
     Route::get('/portfolios', [WebPortfolioController::class, 'index'])->name('portfolios.index');
     Route::get('/portfolios/{portfolio}', [WebPortfolioController::class, 'show'])->name('portfolios.show');
+
+    // Subscription/Checkout placeholder (to be wired with Cashier)
+    Route::get('/subscribe', function () {
+        return Inertia::render('Subscription/Index');
+    })->name('subscription.index');
+    Route::post('/subscribe/checkout', [\App\Http\Controllers\SubscriptionController::class, 'checkout'])
+        ->name('subscription.checkout');
+    Route::get('/subscribe/portal', [\App\Http\Controllers\SubscriptionController::class, 'portal'])
+        ->name('subscription.portal');
+    Route::get('/subscribe/success', [\App\Http\Controllers\SubscriptionController::class, 'success'])
+        ->name('subscription.success');
+    Route::get('/subscribe/canceled', [\App\Http\Controllers\SubscriptionController::class, 'canceled'])
+        ->name('subscription.canceled');
+    Route::get('/subscribe/status', [\App\Http\Controllers\SubscriptionController::class, 'status'])
+        ->name('subscription.status');
 });
 
-require __DIR__.'/auth.php';
+// Stripe webhook endpoint (CSRF exempt)
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
+    ->middleware(\Laravel\Cashier\Http\Middleware\VerifyWebhookSignature::class);
+
+require __DIR__ . '/auth.php';

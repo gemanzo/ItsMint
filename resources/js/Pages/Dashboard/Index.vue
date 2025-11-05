@@ -228,7 +228,8 @@
                 </svg>
                 Browse Cards
               </Link>
-              <Link
+              <!-- Card Scanner temporarily hidden - feature not ready yet -->
+              <!-- <Link
                 :href="route('card-scanner')"
                 class="flex items-center justify-center px-4 py-3 bg-purple-600 text-white rounded-button hover:bg-purple-700 transition-colors text-sm font-medium"
               >
@@ -252,7 +253,7 @@
                   />
                 </svg>
                 Scan Cards
-              </Link>
+              </Link> -->
             </div>
           </div>
         </div>

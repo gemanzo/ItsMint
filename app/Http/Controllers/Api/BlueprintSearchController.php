@@ -33,11 +33,19 @@ final class BlueprintSearchController extends Controller
 
         $query = $validated['q'];
         $from = $validated['from'] ?? 0;
-        $size = $validated['size'] ?? 50;
-        $expansionId = $validated['expansion_id'] ?? null;
+        // Gating: se l'utente non ha search.advanced limitiamo parametri e size
+        $isAdvanced = \Laravel\Pennant\Feature::for($request->user())->active('search.advanced');
+
+        // Base vs Advanced defaults/limits
+        $size = $validated['size'] ?? ($isAdvanced ? 50 : 10);
+        if (! $isAdvanced) {
+            $size = min($size, 10);
+        }
+
+        $expansionId = $isAdvanced ? ($validated['expansion_id'] ?? null) : null;
         $groupByName = $validated['group_by_name'] ?? true;
-        $sort = $validated['sort'] ?? null;
-        $language = $validated['language'] ?? null;
+        $sort = $isAdvanced ? ($validated['sort'] ?? null) : null;
+        $language = $isAdvanced ? ($validated['language'] ?? null) : null;
 
         try {
             $results = $this->elasticsearch->searchBlueprints(
