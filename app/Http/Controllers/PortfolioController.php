@@ -336,6 +336,7 @@ class PortfolioController extends Controller
             'quantity' => 'required|integer|min:1',
             'purchase_price_cents' => 'required|integer|min:1',
             'acquired_at' => 'required|date',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
         $user = $request->user();
@@ -347,6 +348,11 @@ class PortfolioController extends Controller
             'acquired_at' => \Carbon\Carbon::parse($validated['acquired_at']),
         ];
 
+        // Add notes if provided
+        if (isset($validated['notes']) && ! empty($validated['notes'])) {
+            $createData['notes'] = $validated['notes'];
+        }
+
         // Find an existing UserCard or create a new one
         $userCard = $user->userCards()->firstOrCreate(
             [
@@ -357,12 +363,15 @@ class PortfolioController extends Controller
             $createData
         );
 
-        // If UserCard already exists but we want to update acquired_at or purchase_price, update it
+        // If UserCard already exists but we want to update acquired_at, purchase_price, or notes, update it
         if ($userCard->wasRecentlyCreated === false) {
             if (isset($validated['purchase_price_cents'])) {
                 $userCard->purchase_price_cents = $validated['purchase_price_cents'];
             }
             $userCard->acquired_at = \Carbon\Carbon::parse($validated['acquired_at']);
+            if (isset($validated['notes'])) {
+                $userCard->notes = $validated['notes'];
+            }
             $userCard->save();
         }
 

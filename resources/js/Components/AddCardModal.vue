@@ -318,6 +318,37 @@
       </p>
     </div>
 
+    <!-- Notes -->
+    <div>
+      <label
+        for="notes"
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+      >
+        Notes (Optional)
+      </label>
+      <textarea
+        id="notes"
+        v-model="cardDetails.notes"
+        rows="3"
+        maxlength="1000"
+        placeholder="Add any notes about this card..."
+        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400 sm:text-sm"
+        :class="{
+          'border-red-500 focus:border-red-500 focus:ring-red-500':
+            formErrors.notes,
+        }"
+      />
+      <p
+        v-if="formErrors.notes"
+        class="mt-1 text-sm text-red-600 dark:text-red-400"
+      >
+        {{ formErrors.notes }}
+      </p>
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        {{ cardDetails.notes.length }}/1000 characters
+      </p>
+    </div>
+
     <!-- Error Display -->
     <div
       v-if="formErrors.general"
@@ -417,6 +448,7 @@ const cardDetails = reactive({
   quantity: 1,
   purchase_price: null as number | null,
   acquired_at: undefined as string | undefined,
+  notes: '' as string,
 });
 
 const formErrors = reactive<Record<string, string>>({});
@@ -623,16 +655,23 @@ const submitAddCard = async () => {
 
     // Proceed with card creation only if limit check passes
     // Use addBlueprint endpoint which handles quantity in a single API call
+    const requestData: Record<string, any> = {
+      blueprint_id: selectedBlueprint.value!.id,
+      condition: cardDetails.condition,
+      language: cardDetails.language,
+      quantity: cardDetails.quantity,
+      purchase_price_cents: Math.round(cardDetails.purchase_price! * 100),
+      acquired_at: cardDetails.acquired_at,
+    };
+
+    // Add notes only if provided
+    if (cardDetails.notes && cardDetails.notes.trim()) {
+      requestData.notes = cardDetails.notes.trim();
+    }
+
     const response = await axios.post(
       `/portfolios/${selectedPortfolioId.value}/blueprints`,
-      {
-        blueprint_id: selectedBlueprint.value!.id,
-        condition: cardDetails.condition,
-        language: cardDetails.language,
-        quantity: cardDetails.quantity,
-        purchase_price_cents: Math.round(cardDetails.purchase_price! * 100),
-        acquired_at: cardDetails.acquired_at,
-      }
+      requestData
     );
 
     emit('card-added', {
