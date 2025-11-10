@@ -130,8 +130,8 @@ final class PriceAggregatorService
     private function weightFor(PricePoint $pp): float
     {
         $base = match ($pp->source) {
-            'cardmarket_guide' => 1.0,
-            'cardtrader' => 0.7,
+            'cardmarket_guide' => 9.0,
+            'cardtrader' => 1.0,
             default => 0.5,
         };
 
