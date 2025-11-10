@@ -897,7 +897,6 @@ const handleCardAdded = () => {
   // Force a reload to ensure portfolios are updated with new cards
   router.reload({
     only: ['portfolios'],
-    preserveScroll: false,
   });
 };
 </script>

@@ -1150,7 +1150,6 @@ const handleCardAddedToCurrentPortfolio = () => {
   isLoading.value = true;
   router.reload({
     only: ['portfolio', 'userCardsPagination'],
-    preserveScroll: false,
     onFinish: () => {
       isLoading.value = false;
     },
