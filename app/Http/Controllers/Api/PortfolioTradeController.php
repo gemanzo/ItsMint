@@ -12,6 +12,7 @@ use App\Models\UserCard;
 use App\Services\PortfolioTradingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -46,6 +47,9 @@ final class PortfolioTradeController extends Controller
             isset($validated['sold_at']) ? \Carbon\Carbon::parse($validated['sold_at']) : null
         );
 
+        // Clear portfolio value cache after sale
+        Cache::forget("portfolio_total_value_cents_{$portfolio->id}");
+
         $portfolio->load([
             'userCards.blueprint.expansion',
             'userCards.blueprint.latestPrice',
@@ -61,10 +65,59 @@ final class PortfolioTradeController extends Controller
     {
         Gate::authorize('view', $portfolio);
 
-        $sales = PortfolioSale::with('userCard.blueprint.expansion')
-            ->where('portfolio_id', $portfolio->id)
-            ->latest('sold_at')
-            ->get();
+        $validated = $request->validate([
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date',
+            'min_sale_price' => 'nullable|numeric|min:0',
+            'max_sale_price' => 'nullable|numeric|min:0',
+            'pnl' => 'nullable|string|in:all,gain,loss',
+            'sort_by' => 'nullable|string|in:date,price',
+            'sort_dir' => 'nullable|string|in:asc,desc',
+        ]);
+
+        $query = PortfolioSale::with('userCard.blueprint.expansion')
+            ->where('portfolio_id', $portfolio->id);
+
+        // Date range filter
+        if (! empty($validated['date_from'])) {
+            $query->where('sold_at', '>=', $validated['date_from']);
+        }
+        if (! empty($validated['date_to'])) {
+            $query->where('sold_at', '<=', \Carbon\Carbon::parse($validated['date_to'])->endOfDay());
+        }
+
+        // Price range filter (unit sale price)
+        if (isset($validated['min_sale_price'])) {
+            $minCents = (int) round($validated['min_sale_price'] * 100);
+            $query->where('unit_sale_price_cents', '>=', $minCents);
+        }
+        if (isset($validated['max_sale_price'])) {
+            $maxCents = (int) round($validated['max_sale_price'] * 100);
+            $query->where('unit_sale_price_cents', '<=', $maxCents);
+        }
+
+        // P&L filter
+        if (! empty($validated['pnl']) && $validated['pnl'] !== 'all') {
+            if ($validated['pnl'] === 'gain') {
+                $query->whereRaw('unit_sale_price_cents > unit_purchase_price_cents');
+            } else {
+                $query->whereRaw('unit_sale_price_cents < unit_purchase_price_cents');
+            }
+        }
+
+        // Sorting
+        $sortBy = $validated['sort_by'] ?? 'date';
+        $sortDir = $validated['sort_dir'] ?? 'desc';
+
+        if ($sortBy === 'price') {
+            $query->orderBy('unit_sale_price_cents', $sortDir);
+        } else {
+            $query->orderBy('sold_at', $sortDir);
+        }
+
+        // Pagination
+        $perPage = (int) $request->get('per_page', 50);
+        $sales = $query->paginate($perPage);
 
         return response()->json($sales);
     }
@@ -125,6 +178,9 @@ final class PortfolioTradeController extends Controller
         }
 
         $sale->delete();
+
+        // Clear portfolio value cache after sale deletion
+        Cache::forget("portfolio_total_value_cents_{$portfolio->id}");
 
         return response()->json(null, 204);
     }

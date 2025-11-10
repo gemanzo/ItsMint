@@ -6,11 +6,14 @@ namespace App\Services;
 
 use App\Models\Portfolio;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 final class PortfolioValueHistoryService
 {
     /**
      * Calculate portfolio value history for a given period and metric.
+     * Results are cached for 15 minutes to improve performance.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -19,40 +22,66 @@ final class PortfolioValueHistoryService
         string $period = '1M',
         string $metric = 'market_value'
     ): array {
-        $endDate = now();
-        $startDate = $this->calculateStartDate($period, $endDate, $portfolio->created_at);
+        $cacheKey = "portfolio_value_history_{$portfolio->id}_{$period}_{$metric}";
 
-        // Get all user cards in this portfolio with their relationships
-        $userCards = $portfolio->userCards()
-            ->with(['blueprint.cardPrices' => function ($query) use ($startDate, $endDate) {
-                $query->whereBetween('fetched_at', [$startDate, $endDate])
-                    ->orderBy('fetched_at');
-            }])
-            ->get();
+        return Cache::remember($cacheKey, now()->addMinutes(15), function () use ($portfolio, $period, $metric) {
+            $endDate = now();
+            $startDate = $this->calculateStartDate($period, $endDate, $portfolio->created_at);
 
-        if ($userCards->isEmpty()) {
-            return [];
+            // Get user cards with minimal data needed
+            $userCards = $portfolio->userCards()
+                ->with(['blueprint:id'])
+                ->get(['id', 'blueprint_id', 'condition', 'language', 'purchase_price_cents', 'acquired_at']);
+
+            if ($userCards->isEmpty()) {
+                return [];
+            }
+
+            // Calculate data points based on period (limit to reasonable number)
+            $dataPoints = $this->generateDataPoints($startDate, $endDate, $period);
+            
+            // Limit data points to prevent excessive calculations
+            if (count($dataPoints) > 200) {
+                $dataPoints = array_slice($dataPoints, 0, 200);
+            }
+
+            $valueHistory = [];
+
+            // Pre-fetch prices for all blueprints in date range using optimized query
+            $blueprintIds = $userCards->pluck('blueprint_id')->unique()->toArray();
+            $pricesByBlueprint = $this->fetchPricesForBlueprints($blueprintIds, $startDate, $endDate);
+
+            foreach ($dataPoints as $date) {
+                $values = $this->calculateValuesForDateOptimized($userCards, $portfolio, $date, $pricesByBlueprint);
+                $value = $this->calculateMetricValue($values, $metric);
+
+                $valueHistory[] = [
+                    'date' => $date->toDateString(),
+                    'fetched_at' => $date->toISOString(),
+                    'value_cents' => $value,
+                    'market_value_cents' => $values['market_value'],
+                    'cost_basis_cents' => $values['cost_basis'],
+                    'performance_percentage' => $values['performance'],
+                ];
+            }
+
+            return $valueHistory;
+        });
+    }
+
+    /**
+     * Clear portfolio value history cache for a specific portfolio.
+     */
+    public function clearCache(Portfolio $portfolio): void
+    {
+        $periods = ['1D', '1W', '1M', '3M', '1Y', 'MAX'];
+        $metrics = ['market_value', 'cost_basis', 'performance'];
+
+        foreach ($periods as $period) {
+            foreach ($metrics as $metric) {
+                Cache::forget("portfolio_value_history_{$portfolio->id}_{$period}_{$metric}");
+            }
         }
-
-        // Calculate data points based on period
-        $dataPoints = $this->generateDataPoints($startDate, $endDate, $period);
-        $valueHistory = [];
-
-        foreach ($dataPoints as $date) {
-            $values = $this->calculateValuesForDate($userCards, $portfolio, $date);
-            $value = $this->calculateMetricValue($values, $metric);
-
-            $valueHistory[] = [
-                'date' => $date->toDateString(),
-                'fetched_at' => $date->toISOString(),
-                'value_cents' => $value,
-                'market_value_cents' => $values['market_value'],
-                'cost_basis_cents' => $values['cost_basis'],
-                'performance_percentage' => $values['performance'],
-            ];
-        }
-
-        return $valueHistory;
     }
 
     /**
@@ -69,6 +98,148 @@ final class PortfolioValueHistoryService
             'MAX' => $portfolioCreatedAt ?: $endDate->copy()->subYears(2),
             default => $endDate->copy()->subMonth(),
         };
+    }
+
+    /**
+     * Calculate market value and cost basis for a specific date.
+     *
+     * @return array<string, int|float>
+     */
+    private function calculateValuesForDate($userCards, Portfolio $portfolio, Carbon $date): array
+    {
+        $totalMarketValue = 0;
+        $totalCostBasis = 0;
+
+        foreach ($userCards as $userCard) {
+            // Only include cards that were acquired before this date
+            $acquiredAt = $userCard->acquired_at ? Carbon::parse($userCard->acquired_at) : $portfolio->created_at;
+            if ($acquiredAt && $acquiredAt->gt($date)) {
+                continue;
+            }
+
+            $quantity = $userCard->pivot->quantity ?? 1;
+
+            // Add to cost basis (purchase price * quantity)
+            $totalCostBasis += ($userCard->purchase_price_cents ?? 0) * $quantity;
+
+            // Find the closest market price to this date
+            $priceCents = $this->findPriceForDate($userCard, $date, $quantity);
+            $totalMarketValue += $priceCents;
+        }
+
+        $performance = $totalCostBasis > 0
+            ? (($totalMarketValue - $totalCostBasis) / $totalCostBasis) * 100
+            : 0;
+
+        return [
+            'market_value' => $totalMarketValue,
+            'cost_basis' => $totalCostBasis,
+            'performance' => $performance,
+        ];
+    }
+
+    /**
+     * Fetch prices for multiple blueprints optimized with single query.
+     *
+     * @return array<int, \Illuminate\Support\Collection>
+     */
+    private function fetchPricesForBlueprints(array $blueprintIds, Carbon $startDate, Carbon $endDate): array
+    {
+        if (empty($blueprintIds)) {
+            return [];
+        }
+
+        // Use raw query to efficiently fetch prices grouped by blueprint
+        $prices = \Illuminate\Support\Facades\DB::table('card_prices')
+            ->whereIn('blueprint_id', $blueprintIds)
+            ->whereBetween('fetched_at', [$startDate, $endDate])
+            ->select('id', 'blueprint_id', 'price_cents', 'language', 'condition', 'fetched_at')
+            ->orderBy('blueprint_id')
+            ->orderBy('fetched_at', 'desc')
+            ->get()
+            ->groupBy('blueprint_id');
+
+        return $prices->toArray();
+    }
+
+    /**
+     * Calculate market value and cost basis for a specific date (optimized version).
+     *
+     * @return array<string, int|float>
+     */
+    private function calculateValuesForDateOptimized($userCards, Portfolio $portfolio, Carbon $date, array $pricesByBlueprint): array
+    {
+        $totalMarketValue = 0;
+        $totalCostBasis = 0;
+
+        foreach ($userCards as $userCard) {
+            // Only include cards that were acquired before this date
+            $acquiredAt = $userCard->acquired_at ? Carbon::parse($userCard->acquired_at) : $portfolio->created_at;
+            if ($acquiredAt && $acquiredAt->gt($date)) {
+                continue;
+            }
+
+            $quantity = $userCard->pivot->quantity ?? 1;
+
+            // Add to cost basis (purchase price * quantity)
+            $totalCostBasis += ($userCard->purchase_price_cents ?? 0) * $quantity;
+
+            // Find the closest market price to this date using pre-fetched prices
+            $priceCents = $this->findPriceForDateOptimized($userCard, $date, $quantity, $pricesByBlueprint);
+            $totalMarketValue += $priceCents;
+        }
+
+        $performance = $totalCostBasis > 0
+            ? (($totalMarketValue - $totalCostBasis) / $totalCostBasis) * 100
+            : 0;
+
+        return [
+            'market_value' => $totalMarketValue,
+            'cost_basis' => $totalCostBasis,
+            'performance' => $performance,
+        ];
+    }
+
+    /**
+     * Find the appropriate price for a user card at a specific date (optimized version).
+     */
+    private function findPriceForDateOptimized($userCard, Carbon $date, int $quantity, array $pricesByBlueprint): int
+    {
+        $blueprintId = $userCard->blueprint_id;
+        $prices = $pricesByBlueprint[$blueprintId] ?? collect();
+
+        if ($prices->isEmpty()) {
+            // Fallback: Use estimated value from UserCard accessor
+            return ($userCard->estimated_value_cents ?? 0) * $quantity;
+        }
+
+        // Find the closest price to this date matching language and condition
+        $closestPrice = $prices
+            ->filter(function ($price) use ($userCard, $date) {
+                return strtolower($price->language ?? '') === strtolower($userCard->language ?? '') &&
+                    $price->condition === $userCard->condition &&
+                    Carbon::parse($price->fetched_at)->lte($date);
+            })
+            ->first();
+
+        if ($closestPrice) {
+            return $closestPrice->price_cents * $quantity;
+        }
+
+        // Fallback: Use the most recent price available for this card (regardless of date)
+        $fallbackPrice = $prices
+            ->filter(function ($price) use ($userCard) {
+                return strtolower($price->language ?? '') === strtolower($userCard->language ?? '') &&
+                    $price->condition === $userCard->condition;
+            })
+            ->first();
+
+        if ($fallbackPrice) {
+            return $fallbackPrice->price_cents * $quantity;
+        }
+
+        // Ultimate fallback: Use the estimated value from the UserCard
+        return ($userCard->estimated_value_cents ?? 0) * $quantity;
     }
 
     /**

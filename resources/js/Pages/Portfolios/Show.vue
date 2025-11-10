@@ -758,28 +758,28 @@
                     <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">From</label>
                     <div class="relative">
                       <svg class="absolute left-2 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"/></svg>
-                      <input type="date" v-model="soldFilters.dateFrom" class="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      <input type="date" v-model="soldFilters.dateFrom" @change="loadSoldIfNeeded(true)" class="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                     </div>
                   </div>
                   <div>
                     <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">To</label>
                     <div class="relative">
                       <svg class="absolute left-2 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"/></svg>
-                      <input type="date" v-model="soldFilters.dateTo" class="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      <input type="date" v-model="soldFilters.dateTo" @change="loadSoldIfNeeded(true)" class="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                     </div>
                   </div>
                   <div>
                     <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Min sale (€)</label>
                     <div class="relative">
                       <span class="absolute left-2 top-1.5 text-gray-400">€</span>
-                      <input type="number" step="0.01" placeholder="0.00" v-model.number="soldFilters.minSalePrice" class="w-full pl-6 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      <input type="number" step="0.01" placeholder="0.00" v-model.number="soldFilters.minSalePrice" @change="loadSoldIfNeeded(true)" class="w-full pl-6 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                     </div>
                   </div>
                   <div>
                     <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Max sale (€)</label>
                     <div class="relative">
                       <span class="absolute left-2 top-1.5 text-gray-400">€</span>
-                      <input type="number" step="0.01" placeholder="9999.99" v-model.number="soldFilters.maxSalePrice" class="w-full pl-6 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      <input type="number" step="0.01" placeholder="9999.99" v-model.number="soldFilters.maxSalePrice" @change="loadSoldIfNeeded(true)" class="w-full pl-6 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
                     </div>
                   </div>
                   <div>
@@ -787,23 +787,23 @@
                     <div class="inline-flex w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
                       <button
                         :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.pnl==='all' ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300']"
-                        @click="soldFilters.pnl='all'">All</button>
+                        @click="soldFilters.pnl='all'; loadSoldIfNeeded(true)">All</button>
                       <button
                         :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.pnl==='gain' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' : 'text-gray-600 dark:text-gray-300']"
-                        @click="soldFilters.pnl='gain'">Gain</button>
+                        @click="soldFilters.pnl='gain'; loadSoldIfNeeded(true)">Gain</button>
                       <button
                         :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.pnl==='loss' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-300']"
-                        @click="soldFilters.pnl='loss'">Loss</button>
+                        @click="soldFilters.pnl='loss'; loadSoldIfNeeded(true)">Loss</button>
                     </div>
                   </div>
                   <div>
                     <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sort</label>
                     <div class="flex gap-2">
                       <div class="inline-flex flex-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
-                        <button :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.sortBy==='date' ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300']" @click="soldFilters.sortBy='date'">Date</button>
-                        <button :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.sortBy==='price' ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300']" @click="soldFilters.sortBy='price'">Price</button>
+                        <button :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.sortBy==='date' ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300']" @click="soldFilters.sortBy='date'; loadSoldIfNeeded(true)">Date</button>
+                        <button :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.sortBy==='price' ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300']" @click="soldFilters.sortBy='price'; loadSoldIfNeeded(true)">Price</button>
                       </div>
-                      <button class="px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700" @click="soldFilters.sortDir = soldFilters.sortDir==='asc' ? 'desc' : 'asc'">
+                      <button class="px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700" @click="soldFilters.sortDir = soldFilters.sortDir==='asc' ? 'desc' : 'asc'; loadSoldIfNeeded(true)">
                         <svg v-if="soldFilters.sortDir==='asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
                         <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                       </button>
@@ -1063,6 +1063,12 @@ interface CardGroup {
 const props = defineProps<{
   portfolio: PortfolioPageData;
   locked?: boolean;
+  userCardsPagination?: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  } | null;
 }>();
 
 // Inertia shared props (usePage)
@@ -1140,9 +1146,11 @@ const closeAddCardModal = () => {
 const handleCardAddedToCurrentPortfolio = () => {
   // Quando una carta è aggiunta al portfolio corrente, la prop `portfolio` non si aggiorna automaticamente.
   // Dobbiamo ricaricare i dati per questa pagina.
+  showSuccessToast('Card added!', 'The card has been successfully added to your portfolio.');
   isLoading.value = true;
   router.reload({
-    only: ['portfolio'],
+    only: ['portfolio', 'userCardsPagination'],
+    preserveScroll: false,
     onFinish: () => {
       isLoading.value = false;
     },
@@ -1163,7 +1171,7 @@ const handleCardUpdated = () => {
   closeEditCardModal();
   isLoading.value = true;
   router.reload({
-    only: ['portfolio'],
+    only: ['portfolio', 'userCardsPagination'],
     onFinish: () => {
       isLoading.value = false;
     },
@@ -1195,7 +1203,7 @@ const closeSell = () => {
 const handleSold = () => {
   closeSell();
   isLoading.value = true;
-  router.reload({ only: ['portfolio'], onFinish: async () => {
+  router.reload({ only: ['portfolio', 'userCardsPagination'], onFinish: async () => {
     isLoading.value = false;
     if (activeTab.value === 'sold') await loadSoldIfNeeded(true);
   }});
@@ -1204,8 +1212,24 @@ const handleSold = () => {
 const loadSoldIfNeeded = async (force = false) => {
   if (!force && activeTab.value === 'sold' && soldSales.value.length>0) return;
   activeTab.value = 'sold';
-  const res = await axios.get(route('api.portfolios.sales.index',{ portfolio: props.portfolio.id }));
-  soldSales.value = res.data || [];
+  
+  // Build query params for backend filtering
+  const params: Record<string, any> = {};
+  if (soldFilters.dateFrom) params.date_from = soldFilters.dateFrom;
+  if (soldFilters.dateTo) params.date_to = soldFilters.dateTo;
+  if (soldFilters.minSalePrice != null) params.min_sale_price = soldFilters.minSalePrice;
+  if (soldFilters.maxSalePrice != null) params.max_sale_price = soldFilters.maxSalePrice;
+  if (soldFilters.pnl !== 'all') params.pnl = soldFilters.pnl;
+  params.sort_by = soldFilters.sortBy;
+  params.sort_dir = soldFilters.sortDir;
+  
+  const res = await axios.get(route('api.portfolios.sales.index',{ portfolio: props.portfolio.id }), { params });
+  // Handle paginated response
+  if (res.data.data) {
+    soldSales.value = res.data.data || [];
+  } else {
+    soldSales.value = res.data || [];
+  }
   selectedSaleIds.value = [];
 };
 
@@ -1237,7 +1261,7 @@ const confirmRemoveCards = async (quantityToRemove: number) => {
     closeRemoveCardModal();
     isLoading.value = true;
     router.reload({
-      only: ['portfolio'],
+      only: ['portfolio', 'userCardsPagination'],
       onFinish: () => {
         isLoading.value = false;
       },
@@ -1473,49 +1497,9 @@ const groupedCards = computed(() => {
   return Object.values(grouped);
 });
 
+// Backend now handles filtering and sorting, so soldSalesFiltered is just the soldSales array
 const soldSalesFiltered = computed(() => {
-  let arr = [...soldSales.value];
-  // Date range
-  if (soldFilters.dateFrom) {
-    const from = new Date(soldFilters.dateFrom);
-    arr = arr.filter((s:any) => new Date(s.sold_at) >= from);
-  }
-  if (soldFilters.dateTo) {
-    const to = new Date(soldFilters.dateTo);
-    // include the whole day
-    to.setHours(23,59,59,999);
-    arr = arr.filter((s:any) => new Date(s.sold_at) <= to);
-  }
-  // Price range (unit sale price)
-  if (soldFilters.minSalePrice != null) {
-    const minC = Math.round((soldFilters.minSalePrice as number) * 100);
-    arr = arr.filter((s:any) => (s.unit_sale_price_cents||0) >= minC);
-  }
-  if (soldFilters.maxSalePrice != null) {
-    const maxC = Math.round((soldFilters.maxSalePrice as number) * 100);
-    arr = arr.filter((s:any) => (s.unit_sale_price_cents||0) <= maxC);
-  }
-  // P&L filter
-  if (soldFilters.pnl !== 'all') {
-    arr = arr.filter((s:any) => {
-      const diff = (s.unit_sale_price_cents||0) - (s.unit_purchase_price_cents||0);
-      return soldFilters.pnl === 'gain' ? diff > 0 : diff < 0;
-    });
-  }
-  // Sort
-  arr.sort((a:any,b:any) => {
-    let va:number, vb:number;
-    if (soldFilters.sortBy === 'price') {
-      va = a.unit_sale_price_cents || 0;
-      vb = b.unit_sale_price_cents || 0;
-    } else {
-      va = new Date(a.sold_at).getTime();
-      vb = new Date(b.sold_at).getTime();
-    }
-    const res = va === vb ? 0 : (va < vb ? -1 : 1);
-    return soldFilters.sortDir === 'asc' ? res : -res;
-  });
-  return arr;
+  return soldSales.value;
 });
 
 const exportUrlSelected = computed(() => {

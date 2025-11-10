@@ -892,7 +892,13 @@ const closeAddCardModal = () => {
 const handleCardAdded = () => {
   showAddCardModal.value = false;
   targetPortfolio.value = null;
-  router.reload({ only: ['portfolios'] });
+  // Show success message
+  success('Card added!', 'The card has been successfully added to your portfolio.');
+  // Force a reload to ensure portfolios are updated with new cards
+  router.reload({
+    only: ['portfolios'],
+    preserveScroll: false,
+  });
 };
 </script>
 

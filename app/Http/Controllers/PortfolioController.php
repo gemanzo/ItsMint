@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -34,9 +35,14 @@ class PortfolioController extends Controller
     /**
      * Check if a portfolio is locked for free plan users.
      */
-    private function isPortfolioLocked(\Illuminate\Contracts\Auth\Authenticatable $user, Portfolio $portfolio): bool
+    private function isPortfolioLocked(\Illuminate\Contracts\Auth\Authenticatable $user, Portfolio $portfolio, ?int $oldestPortfolioId = null): bool
     {
-        return ! $this->hasUnlimitedPortfolio($user) && $portfolio->id !== $this->getOldestPortfolioId($user);
+        if ($this->hasUnlimitedPortfolio($user)) {
+            return false;
+        }
+
+        $oldestId = $oldestPortfolioId ?? $this->getOldestPortfolioId($user);
+        return $portfolio->id !== $oldestId;
     }
 
     /**
@@ -47,6 +53,37 @@ class PortfolioController extends Controller
         return (int) DB::table('portfolio_user_card')
             ->where('portfolio_id', $portfolio->id)
             ->sum('quantity');
+    }
+
+    /**
+     * Get total value in cents for a portfolio with caching.
+     * Cache TTL: 5 minutes
+     */
+    private function getPortfolioTotalValueCents(Portfolio $portfolio): int
+    {
+        $cacheKey = "portfolio_total_value_cents_{$portfolio->id}";
+
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($portfolio) {
+            $portfolio->load([
+                'userCards.blueprint.latestPrice',
+                'userCards.blueprint.cardPrices',
+            ]);
+
+            return $portfolio->userCards->reduce(function ($carry, $userCard) {
+                $cardValue = $userCard->estimated_value_cents ?? 0;
+                $quantity = $userCard->pivot->quantity ?? 1;
+
+                return $carry + ($cardValue * $quantity);
+            }, 0);
+        });
+    }
+
+    /**
+     * Clear portfolio value cache.
+     */
+    private function clearPortfolioValueCache(Portfolio $portfolio): void
+    {
+        Cache::forget("portfolio_total_value_cents_{$portfolio->id}");
     }
 
     /**
@@ -131,18 +168,15 @@ class PortfolioController extends Controller
             ->latest()
             ->get();
 
-        $portfolios->each(function ($portfolio) use ($user) {
-            $totalValueCents = $portfolio->userCards->reduce(function ($carry, $userCard) {
-                // Use the estimated_value_cents from the UserCard model's accessor
-                $cardValue = $userCard->estimated_value_cents ?? 0;
-                $quantity = $userCard->pivot->quantity ?? 1; // Pivot data is available here
+        // Pre-calculate oldest portfolio ID once to avoid N+1 queries
+        $oldestPortfolioId = $this->getOldestPortfolioId($user);
 
-                return $carry + ($cardValue * $quantity);
-            }, 0);
-            $portfolio->total_value_cents = $totalValueCents;
+        $portfolios->each(function ($portfolio) use ($user, $oldestPortfolioId) {
+            // Use cached total value calculation
+            $portfolio->total_value_cents = $this->getPortfolioTotalValueCents($portfolio);
 
-            // Add lock status for free plan users
-            $portfolio->is_locked = $this->isPortfolioLocked($user, $portfolio);
+            // Add lock status for free plan users (pass pre-calculated oldest portfolio ID)
+            $portfolio->is_locked = $this->isPortfolioLocked($user, $portfolio, $oldestPortfolioId);
         });
 
         return Inertia::render('Portfolios/Index', [
@@ -186,15 +220,32 @@ class PortfolioController extends Controller
     {
         $this->authorize('view', $portfolio);
 
-        // Eager load necessary relationships for the detailed view
-        $portfolio->load([
-            'userCards.blueprint.expansion',
-            'userCards.blueprint.latestPrice',
-            'userCards.blueprint.cardPrices', // Eager load all prices to avoid N+1 in estimated_value_cents accessor
-        ])->loadCount('userCards');
-        // If you need userCards to be paginated within the show view, adjust query accordingly.
-        // For example, an alternative to loading all user_cards:
-        // $userCards = $portfolio->userCards()->with('blueprint.latestPrice')->paginate(15);
+        // Check if pagination is requested (default: paginate for performance)
+        $perPage = (int) $request->get('per_page', 50);
+        $page = (int) $request->get('page', 1);
+
+        // For web requests, paginate userCards to improve performance
+        if (! $request->expectsJson() && ! $request->is('api/*')) {
+            // Paginate userCards for web view
+            $userCardsPaginated = $portfolio->userCards()
+                ->with([
+                    'blueprint.expansion',
+                    'blueprint.latestPrice',
+                    'blueprint.cardPrices',
+                ])
+                ->paginate($perPage, ['*'], 'page', $page);
+
+            // Load portfolio with paginated userCards
+            $portfolio->setRelation('userCards', $userCardsPaginated->getCollection());
+            $portfolio->user_cards_count = $userCardsPaginated->total();
+        } else {
+            // For API requests, load all userCards (backward compatibility)
+            $portfolio->load([
+                'userCards.blueprint.expansion',
+                'userCards.blueprint.latestPrice',
+                'userCards.blueprint.cardPrices',
+            ])->loadCount('userCards');
+        }
 
         // Check if this is an API request (JSON expected)
         if ($request->expectsJson() || $request->is('api/*')) {
@@ -207,10 +258,16 @@ class PortfolioController extends Controller
         $user = $request->user();
         $isLocked = $this->isPortfolioLocked($user, $portfolio);
 
-        // For web requests, return Inertia view
+        // For web requests, return Inertia view with pagination metadata
         return Inertia::render('Portfolios/Show', [
             'portfolio' => $portfolio,
             'locked' => $isLocked,
+            'userCardsPagination' => isset($userCardsPaginated) ? [
+                'current_page' => $userCardsPaginated->currentPage(),
+                'last_page' => $userCardsPaginated->lastPage(),
+                'per_page' => $userCardsPaginated->perPage(),
+                'total' => $userCardsPaginated->total(),
+            ] : null,
         ]);
     }
 
@@ -339,6 +396,9 @@ class PortfolioController extends Controller
             $portfolio->userCards()->attach($userCard->id, ['quantity' => $validated['quantity']]);
         }
 
+        // Clear portfolio value cache after modification
+        $this->clearPortfolioValueCache($portfolio);
+
         // Record purchase in ledger (cash out)
         app(\App\Services\PortfolioTradingService::class)->recordPurchase($portfolio, $userCard, (int) $validated['quantity']);
 
@@ -397,6 +457,9 @@ class PortfolioController extends Controller
         $portfolio->userCards()->syncWithoutDetaching([
             $validated['user_card_id'] => ['quantity' => $validated['quantity']],
         ]);
+
+        // Clear portfolio value cache after modification
+        $this->clearPortfolioValueCache($portfolio);
 
         // Record purchase in ledger (cash out) - only record the actual increase, not the total quantity
         if ($quantityIncrease > 0) {
@@ -461,6 +524,9 @@ class PortfolioController extends Controller
                 'quantity' => $validated['quantity'],
                 'added_to_portfolio_at' => now(),
             ]);
+
+            // Clear portfolio value cache after modification
+            $this->clearPortfolioValueCache($portfolio);
 
             // Load all necessary relationships that the frontend expects
             $portfolio->load([
@@ -562,6 +628,9 @@ class PortfolioController extends Controller
             $remainingToRemove -= $quantityToRemoveFromThisCard;
         }
 
+        // Clear portfolio value cache after modification
+        $this->clearPortfolioValueCache($portfolio);
+
         // Load updated portfolio with relationships
         $portfolio->load([
             'userCards.blueprint.expansion',
@@ -591,6 +660,9 @@ class PortfolioController extends Controller
 
         // Remove the card from this portfolio (pivot table)
         $portfolio->userCards()->detach($userCard->id);
+
+        // Clear portfolio value cache after modification
+        $this->clearPortfolioValueCache($portfolio);
 
         // Check if the UserCard is still in other portfolios
         $otherPortfoliosCount = $userCard->portfolios()
