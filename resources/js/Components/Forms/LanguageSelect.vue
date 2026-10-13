@@ -9,13 +9,13 @@
     </label>
     <select
       :id="id"
-      :model-value="modelValue"
+      :value="modelValue"
       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
       :class="{ 'border-red-300': error }"
-      @update:model-value="$emit('update:modelValue', $event)"
+      @change="emitSelectedValue"
     >
       <option
-        v-for="language in languages"
+        v-for="language in languageOptions"
         :key="language.code || 'any'"
         :value="language.code || language.name"
       >
@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { CARD_LANGUAGES, AVAILABLE_LANGUAGES } from '@/constants/cardLanguages';
+import { CARD_LANGUAGES, AVAILABLE_LANGUAGES, type CardLanguage } from '@/constants/cardLanguages';
 
 interface Props {
   modelValue: string;
@@ -42,6 +42,11 @@ interface Props {
   error?: string;
   hint?: string;
   includeAny?: boolean;
+  /**
+   * Language codes actually available for the card (e.g. ['en', 'jp']).
+   * When provided, only these languages can be selected.
+   */
+  availableLanguageCodes?: string[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -50,13 +55,33 @@ const props = withDefaults(defineProps<Props>(), {
   error: '',
   hint: '',
   includeAny: false,
+  availableLanguageCodes: undefined,
 });
 
-defineEmits<{
+const emit = defineEmits<{
   'update:modelValue': [value: string];
 }>();
 
-const languages = computed(() => {
-  return props.includeAny ? CARD_LANGUAGES : AVAILABLE_LANGUAGES;
+const languageOptions = computed<CardLanguage[]>(() => {
+  if (props.availableLanguageCodes && props.availableLanguageCodes.length > 0) {
+    return props.availableLanguageCodes.map((languageCode) => {
+      const knownLanguage = AVAILABLE_LANGUAGES.find((language) => language.code === languageCode);
+      if (knownLanguage) {
+        return knownLanguage;
+      }
+      // Language not in our list yet: still selectable, labelled with its code
+      return { name: languageCode.toUpperCase(), code: languageCode, countryCode: 'un' };
+    });
+  }
+
+  if (props.includeAny) {
+    return CARD_LANGUAGES;
+  }
+  return AVAILABLE_LANGUAGES;
 });
+
+// A native <select> never emits "update:modelValue": forward its "change" event
+const emitSelectedValue = (event: Event) => {
+  emit('update:modelValue', (event.target as HTMLSelectElement).value);
+};
 </script>

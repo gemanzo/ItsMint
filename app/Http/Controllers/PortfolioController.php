@@ -334,18 +334,26 @@ class PortfolioController extends Controller
             'condition' => 'required|string|max:50',
             'language' => 'required|string|max:10',
             'quantity' => 'required|integer|min:1',
-            'purchase_price_cents' => 'required|integer|min:1',
-            'acquired_at' => 'required|date',
+            // 0 is a valid cost: pulled from a pack, received as a gift, ...
+            'purchase_price_cents' => 'required|integer|min:0',
+            // Optional, defaults to today; a card can't be acquired in the future
+            'acquired_at' => 'nullable|date|before_or_equal:today',
             'notes' => 'nullable|string|max:1000',
         ]);
 
         $user = $request->user();
 
+        if (empty($validated['acquired_at'])) {
+            $acquiredAt = today();
+        } else {
+            $acquiredAt = \Carbon\Carbon::parse($validated['acquired_at']);
+        }
+
         // Prepare creation data
         $createData = [
             'purchase_price_cents' => $validated['purchase_price_cents'],
             'purchase_currency' => 'EUR',
-            'acquired_at' => \Carbon\Carbon::parse($validated['acquired_at']),
+            'acquired_at' => $acquiredAt,
         ];
 
         // Add notes if provided
@@ -368,7 +376,7 @@ class PortfolioController extends Controller
             if (isset($validated['purchase_price_cents'])) {
                 $userCard->purchase_price_cents = $validated['purchase_price_cents'];
             }
-            $userCard->acquired_at = \Carbon\Carbon::parse($validated['acquired_at']);
+            $userCard->acquired_at = $acquiredAt;
             if (isset($validated['notes'])) {
                 $userCard->notes = $validated['notes'];
             }

@@ -11,6 +11,8 @@ import InputLabel from '@/Components/InputLabel.vue';
 import InputError from '@/Components/InputError.vue';
 import ConditionSelect from '@/Components/Forms/ConditionSelect.vue';
 import LanguageSelect from '@/Components/Forms/LanguageSelect.vue';
+import { todayAsLocalDateString } from '@/utils/date';
+import { toConditionCode } from '@/constants/cardConditions';
 import Checkbox from '@/Components/Checkbox.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import { useToast } from '@/composables/useToast';
@@ -58,13 +60,19 @@ const { success, error } = useToast();
 
 const form = reactive({
   portfolio_id: null,
-  condition: 'Near Mint',
+  // Condition codes (NM, LP, ...) as listed by ConditionSelect
+  condition: 'NM',
   language: 'en',
   quantity: 1,
   purchase_price_cents: props.blueprint.latest_price?.price_cents ?? 0,
+  // Required by the API: defaults to today, the user can change it
+  acquired_at: todayAsLocalDateString(),
   is_foil: false,
   errors: {},
 });
+
+// Acquisition dates in the future are not allowed
+const todayDate = todayAsLocalDateString();
 
 const purchasePriceEuros = computed({
   get: () => form.purchase_price_cents / 100,
@@ -340,8 +348,8 @@ const fetchPortfolios = async () => {
     if (portfolios.value.length > 0) {
       form.portfolio_id = portfolios.value[0].id;
     }
-  } catch (error) {
-    console.error('Failed to fetch portfolios:', error);
+  } catch (requestError) {
+    console.error('Failed to fetch portfolios:', requestError);
     // Show error toast
     error(
       'Error loading portfolios',
@@ -389,17 +397,17 @@ const addToPortfolio = async () => {
     const bestCondition = conditions[0];
     const best = langPrices[bestCondition] || {};
     form.language = lang;
-    form.condition = bestCondition;
+    form.condition = toConditionCode(bestCondition);
     form.purchase_price_cents = best.price_cents ?? 0;
     form.is_foil = best.is_foil ?? false;
   } else if (props.blueprint.latest_price) {
     form.language = lang;
-    form.condition = props.blueprint.latest_price.condition ?? 'Near Mint';
+    form.condition = toConditionCode(props.blueprint.latest_price.condition);
     form.purchase_price_cents = props.blueprint.latest_price.price_cents ?? 0;
     form.is_foil = props.blueprint.latest_price.is_foil || false;
   } else {
     form.language = lang;
-    form.condition = 'Near Mint';
+    form.condition = 'NM';
     form.purchase_price_cents = 0;
     form.is_foil = false;
   }
@@ -437,9 +445,9 @@ const submitAddToPortfolio = () => {
       
       // Optionally, redirect or update UI
     })
-    .catch((error) => {
-      if (error.response && error.response.status === 422) {
-        form.errors = error.response.data.errors;
+    .catch((requestError) => {
+      if (requestError.response && requestError.response.status === 422) {
+        form.errors = requestError.response.data.errors;
 
         // Show validation error toast
         error(
@@ -447,7 +455,7 @@ const submitAddToPortfolio = () => {
           'Please check the highlighted fields and try again.'
         );
       } else {
-        console.error('An unexpected error occurred:', error);
+        console.error('An unexpected error occurred:', requestError);
 
         // Show generic error toast
         error(
@@ -1456,6 +1464,19 @@ onMounted(() => {
               class="mt-2"
               :message="form.errors.purchase_price_cents"
             />
+          </div>
+
+          <div>
+            <InputLabel for="acquired_at" value="Acquired on" />
+            <TextInput
+              id="acquired_at"
+              v-model="form.acquired_at"
+              name="acquired_at"
+              type="date"
+              class="mt-1 block w-full"
+              :max="todayDate"
+            />
+            <InputError class="mt-2" :message="form.errors.acquired_at" />
           </div>
 
           <div class="block">

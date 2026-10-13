@@ -10,6 +10,7 @@ import InputError from '@/Components/InputError.vue';
 import ConditionSelect from '@/Components/Forms/ConditionSelect.vue';
 import LanguageSelect from '@/Components/Forms/LanguageSelect.vue';
 import { useToast } from '@/composables/useToast';
+import { todayAsLocalDateString } from '@/utils/date';
 
 interface Blueprint {
   id: number;
@@ -33,6 +34,7 @@ interface FormData {
   language: string;
   quantity: number;
   purchase_price_cents: number;
+  acquired_at: string;
   is_foil: boolean;
   errors: Record<string, string>;
 }
@@ -52,13 +54,19 @@ const isLoadingBlueprint = ref(false);
 
 const form = reactive<FormData>({
   portfolio_id: null,
-  condition: 'Near Mint', // Corrected condition
+  // Condition codes (NM, LP, ...) as listed by ConditionSelect
+  condition: 'NM',
   language: 'en',
   quantity: 1,
   purchase_price_cents: props.blueprint.latest_price?.price_cents ?? 0,
+  // Required by the API: defaults to today, the user can change it
+  acquired_at: todayAsLocalDateString(),
   is_foil: false,
   errors: {},
 });
+
+// Acquisition dates in the future are not allowed
+const todayDate = todayAsLocalDateString();
 
 const purchasePriceEuros = computed({
   get: () => (form.purchase_price_cents / 100).toString(),
@@ -183,7 +191,7 @@ onMounted(() => {
           <LanguageSelect
             id="language"
             v-model="form.language"
-            :languages="detailedBlueprint.available_languages"
+            :available-language-codes="detailedBlueprint.available_languages"
             class="mt-1 block w-full"
           />
           <InputError class="mt-2" :message="form.errors.language" />
@@ -206,6 +214,19 @@ onMounted(() => {
             step="0.01"
           />
           <InputError class="mt-2" :message="form.errors.purchase_price_cents" />
+        </div>
+
+        <div>
+          <InputLabel for="acquired_at" value="Acquired on" />
+          <TextInput
+            id="acquired_at"
+            v-model="form.acquired_at"
+            name="acquired_at"
+            type="date"
+            class="mt-1 block w-full"
+            :max="todayDate"
+          />
+          <InputError class="mt-2" :message="form.errors.acquired_at" />
         </div>
 
         <div class="flex items-center justify-end mt-6">

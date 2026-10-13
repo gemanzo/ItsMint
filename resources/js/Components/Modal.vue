@@ -18,21 +18,30 @@ const emit = defineEmits(['close']);
 const dialog = ref();
 const showSlot = ref(props.show);
 
+const openDialog = () => {
+  document.body.style.overflow = 'hidden';
+  showSlot.value = true;
+
+  dialog.value?.showModal();
+};
+
+const closeDialog = () => {
+  document.body.style.overflow = '';
+
+  // Wait for the leave transition before closing the native dialog
+  setTimeout(() => {
+    dialog.value?.close();
+    showSlot.value = false;
+  }, 200);
+};
+
 watch(
   () => props.show,
   () => {
     if (props.show) {
-      document.body.style.overflow = 'hidden';
-      showSlot.value = true;
-
-      dialog.value?.showModal();
+      openDialog();
     } else {
-      document.body.style.overflow = '';
-
-      setTimeout(() => {
-        dialog.value?.close();
-        showSlot.value = false;
-      }, 200);
+      closeDialog();
     }
   }
 );
@@ -53,7 +62,16 @@ const closeOnEscape = (e: KeyboardEvent) => {
   }
 };
 
-onMounted(() => document.addEventListener('keydown', closeOnEscape));
+onMounted(() => {
+  document.addEventListener('keydown', closeOnEscape);
+
+  // A modal mounted already open (e.g. rendered with v-if and :show="true") never
+  // triggers the watcher above: the native <dialog> must be opened here, otherwise
+  // it stays closed (display: none) and nothing appears.
+  if (props.show) {
+    openDialog();
+  }
+});
 
 onUnmounted(() => {
   document.removeEventListener('keydown', closeOnEscape);
