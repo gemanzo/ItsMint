@@ -28,10 +28,18 @@ final class PortfolioValueHistoryService
             $endDate = now();
             $startDate = $this->calculateStartDate($period, $endDate, $portfolio->created_at);
 
-            // Get user cards with minimal data needed
+            // Get user cards with minimal data needed.
+            // Columns must be qualified: the pivot table also has an "id" column.
             $userCards = $portfolio->userCards()
                 ->with(['blueprint:id'])
-                ->get(['id', 'blueprint_id', 'condition', 'language', 'purchase_price_cents', 'acquired_at']);
+                ->get([
+                    'user_cards.id',
+                    'user_cards.blueprint_id',
+                    'user_cards.condition',
+                    'user_cards.language',
+                    'user_cards.purchase_price_cents',
+                    'user_cards.acquired_at',
+                ]);
 
             if ($userCards->isEmpty()) {
                 return [];
@@ -101,44 +109,6 @@ final class PortfolioValueHistoryService
     }
 
     /**
-     * Calculate market value and cost basis for a specific date.
-     *
-     * @return array<string, int|float>
-     */
-    private function calculateValuesForDate($userCards, Portfolio $portfolio, Carbon $date): array
-    {
-        $totalMarketValue = 0;
-        $totalCostBasis = 0;
-
-        foreach ($userCards as $userCard) {
-            // Only include cards that were acquired before this date
-            $acquiredAt = $userCard->acquired_at ? Carbon::parse($userCard->acquired_at) : $portfolio->created_at;
-            if ($acquiredAt && $acquiredAt->gt($date)) {
-                continue;
-            }
-
-            $quantity = $userCard->pivot->quantity ?? 1;
-
-            // Add to cost basis (purchase price * quantity)
-            $totalCostBasis += ($userCard->purchase_price_cents ?? 0) * $quantity;
-
-            // Find the closest market price to this date
-            $priceCents = $this->findPriceForDate($userCard, $date, $quantity);
-            $totalMarketValue += $priceCents;
-        }
-
-        $performance = $totalCostBasis > 0
-            ? (($totalMarketValue - $totalCostBasis) / $totalCostBasis) * 100
-            : 0;
-
-        return [
-            'market_value' => $totalMarketValue,
-            'cost_basis' => $totalCostBasis,
-            'performance' => $performance,
-        ];
-    }
-
-    /**
      * Fetch prices for multiple blueprints optimized with single query.
      *
      * @return array<int, \Illuminate\Support\Collection>
@@ -159,7 +129,9 @@ final class PortfolioValueHistoryService
             ->get()
             ->groupBy('blueprint_id');
 
-        return $prices->toArray();
+        // Keep each blueprint's prices as a Collection (toArray() would turn them
+        // into plain arrays, breaking the Collection methods used by the callers)
+        return $prices->all();
     }
 
     /**
@@ -232,81 +204,6 @@ final class PortfolioValueHistoryService
                 return strtolower($price->language ?? '') === strtolower($userCard->language ?? '') &&
                     $price->condition === $userCard->condition;
             })
-            ->first();
-
-        if ($fallbackPrice) {
-            return $fallbackPrice->price_cents * $quantity;
-        }
-
-        // Ultimate fallback: Use the estimated value from the UserCard
-        return ($userCard->estimated_value_cents ?? 0) * $quantity;
-    }
-
-    /**
-     * Calculate market value and cost basis for a specific date.
-     *
-     * @return array<string, int|float>
-     */
-    private function calculateValuesForDate($userCards, Portfolio $portfolio, Carbon $date): array
-    {
-        $totalMarketValue = 0;
-        $totalCostBasis = 0;
-
-        foreach ($userCards as $userCard) {
-            // Only include cards that were acquired before this date
-            $acquiredAt = $userCard->acquired_at ? Carbon::parse($userCard->acquired_at) : $portfolio->created_at;
-            if ($acquiredAt && $acquiredAt->gt($date)) {
-                continue;
-            }
-
-            $quantity = $userCard->pivot->quantity ?? 1;
-
-            // Add to cost basis (purchase price * quantity)
-            $totalCostBasis += ($userCard->purchase_price_cents ?? 0) * $quantity;
-
-            // Find the closest market price to this date
-            $priceCents = $this->findPriceForDate($userCard, $date, $quantity);
-            $totalMarketValue += $priceCents;
-        }
-
-        $performance = $totalCostBasis > 0
-            ? (($totalMarketValue - $totalCostBasis) / $totalCostBasis) * 100
-            : 0;
-
-        return [
-            'market_value' => $totalMarketValue,
-            'cost_basis' => $totalCostBasis,
-            'performance' => $performance,
-        ];
-    }
-
-    /**
-     * Find the appropriate price for a user card at a specific date.
-     */
-    private function findPriceForDate($userCard, Carbon $date, int $quantity): int
-    {
-        // Find the closest market price to this date
-        $closestPrice = $userCard->blueprint->cardPrices
-            ->filter(function ($price) use ($userCard, $date) {
-                // Match language and condition
-                return $price->language === $userCard->language &&
-                    $price->condition === $userCard->condition &&
-                    Carbon::parse($price->fetched_at)->lte($date);
-            })
-            ->sortByDesc('fetched_at')
-            ->first();
-
-        if ($closestPrice) {
-            return $closestPrice->price_cents * $quantity;
-        }
-
-        // Fallback: Use the most recent price available for this card (regardless of date)
-        $fallbackPrice = $userCard->blueprint->cardPrices
-            ->filter(function ($price) use ($userCard) {
-                return $price->language === $userCard->language &&
-                    $price->condition === $userCard->condition;
-            })
-            ->sortByDesc('fetched_at')
             ->first();
 
         if ($fallbackPrice) {
