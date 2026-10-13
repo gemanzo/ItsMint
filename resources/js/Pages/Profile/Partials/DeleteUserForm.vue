@@ -82,6 +82,8 @@ const closeModal = () => {
           />
 
           <InputError :message="form.errors.password" class="mt-2" />
+          <!-- e.g. the subscription could not be cancelled, so the account was kept -->
+          <InputError :message="form.errors.account" class="mt-2" />
         </div>
 
         <div class="mt-6 flex justify-end">

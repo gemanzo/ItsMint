@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -86,19 +89,75 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        // Stop billing BEFORE deleting anything: if a subscription can't be cancelled
+        // (e.g. Stripe unreachable) the account must stay, otherwise the user would keep
+        // being charged without any way to manage the subscription.
+        try {
+            $this->cancelActiveSubscriptions($user);
+        } catch (\Throwable $exception) {
+            Log::error('Account deletion aborted: subscription cancellation failed', [
+                'user_id' => $user->id,
+                'error' => $exception->getMessage(),
+            ]);
+
+            throw ValidationException::withMessages([
+                'account' => 'We could not cancel your subscription, so your account was not deleted. Please try again later or contact support.',
+            ]);
+        }
+
         // Delete profile photo before deleting user
         if ($user->profile_photo_path) {
             $this->deleteProfilePhoto($user);
         }
 
+        $this->deleteCardScanImages($user);
+
         Auth::logout();
 
-        $user->delete();
+        DB::transaction(function () use ($user) {
+            // Cashier's tables have no foreign key to users: remove the rows explicitly
+            foreach ($user->subscriptions as $subscription) {
+                $subscription->items()->delete();
+                $subscription->delete();
+            }
+
+            $user->delete();
+        });
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
+    }
+
+    /**
+     * Cancel immediately every subscription that is still running on Stripe.
+     */
+    private function cancelActiveSubscriptions(User $user): void
+    {
+        foreach ($user->subscriptions as $subscription) {
+            if (! $subscription->ended()) {
+                $subscription->cancelNow();
+            }
+        }
+    }
+
+    /**
+     * Delete the user's card scan images (stored under card-scans/{user id}/).
+     *
+     * Best effort: a storage failure must not block the account deletion, but it is
+     * logged because those images would remain stored.
+     */
+    private function deleteCardScanImages(User $user): void
+    {
+        try {
+            Storage::disk('s3-card-scans')->deleteDirectory('card-scans/'.$user->id);
+        } catch (\Throwable $exception) {
+            Log::error('Could not delete card scan images of a deleted account', [
+                'user_id' => $user->id,
+                'error' => $exception->getMessage(),
+            ]);
+        }
     }
 
     /**
