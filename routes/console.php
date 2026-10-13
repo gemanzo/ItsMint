@@ -59,10 +59,12 @@ Schedule::command('itsmint:ingest-cardmarket --limit=0')
     ->withoutOverlapping()
     ->runInBackground();
 
-// clean the horizon.log file
-Schedule::exec(function () {
+// Clean the horizon.log file.
+// Schedule::call() runs a PHP closure; Schedule::exec() only accepts shell commands
+// and crashed both `schedule:list` and every Monday's `schedule:run`.
+Schedule::call(function () {
     $horizonLogFile = storage_path('logs/horizon.log');
     if (file_exists($horizonLogFile)) {
         file_put_contents($horizonLogFile, '');
     }
-})->weeklyOn(1, '00:00');
+})->name('truncate-horizon-log')->weeklyOn(1, '00:00');
