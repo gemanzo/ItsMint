@@ -141,17 +141,34 @@ final class PriceAggregatorService
         return max(0.05, $base * $fresh);
     }
 
-    /** @param int[] $values */
+    /**
+     * Clamp outliers to the [alpha, 1 - alpha] quantile bounds.
+     *
+     * IMPORTANT: the returned values keep the ORIGINAL order of the input, because the
+     * caller re-aligns them by index with their source weights. The bounds are computed
+     * on a sorted copy only (sorting the input itself would assign each weight to the
+     * wrong price).
+     *
+     * @param  int[]  $values
+     * @return int[]
+     */
     private function winsorize(array $values, float $alpha): array
     {
-        sort($values);
-        $n = count($values);
-        if ($n === 0) {
+        $valuesCount = count($values);
+        if ($valuesCount === 0) {
             return $values;
         }
-        $k = (int) floor($alpha * $n);
-        $low = $values[$k] ?? $values[0];
-        $high = $values[max(0, $n - $k - 1)] ?? $values[$n - 1];
-        return array_map(fn($v) => min($high, max($low, $v)), $values);
+
+        $sortedValues = array_values($values);
+        sort($sortedValues);
+
+        $trimmedPerSide = (int) floor($alpha * $valuesCount);
+        $lowerBound = $sortedValues[$trimmedPerSide];
+        $upperBound = $sortedValues[$valuesCount - $trimmedPerSide - 1];
+
+        return array_map(
+            fn (int $value) => min($upperBound, max($lowerBound, $value)),
+            array_values($values)
+        );
     }
 }
