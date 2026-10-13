@@ -36,7 +36,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Other endpoints
     Route::post('/card-scan', [CardScanController::class, 'scan']);
-    Route::get('/image-proxy', [ImageProxyController::class, 'proxy']);
     Route::apiResource('portfolios', PortfolioController::class);
 
     // Ledger & Sales endpoints
@@ -107,8 +106,12 @@ Route::prefix('blueprints')->middleware(['auth:sanctum', \App\Http\Middleware\El
 // DEPRECATED: Old database-based search (keep for backward compatibility during transition)
 // Route::get('blueprints/search', [BlueprintController::class, 'search'])->name('api.blueprints.search.legacy');
 
-// Image Proxy for CardTrader images (public route)
-Route::get('image-proxy', [App\Http\Controllers\Api\ImageProxyController::class, 'proxy'])->name('api.image-proxy');
+// Image Proxy for CardTrader images.
+// Public on purpose (images are loaded by <img> tags without API authentication),
+// so it is rate limited and the controller only accepts CardTrader upload URLs.
+Route::get('image-proxy', [ImageProxyController::class, 'proxy'])
+    ->middleware('throttle:image-proxy')
+    ->name('api.image-proxy');
 
 // Route per i dati aggregati della dashboard (valore portafoglio, ecc.)
 // Questa potrebbe anche essere parte del DashboardController servito via web, ma se i dati sono richiesti via XHR:

@@ -125,9 +125,24 @@ return [
     |--------------------------------------------------------------------------
     */
     'image_proxy' => [
-        'allowed_domains' => [
+        // The proxy is public and fetches remote content server-side: only
+        // https URLs pointing EXACTLY to one of these hosts are accepted
+        // (no substring matching, otherwise "evil.tld/?cardtrader.com" passes).
+        'allowed_hosts' => [
             'cardtrader.com',
+            'www.cardtrader.com',
         ],
+        // CardTrader card images are served under this path
+        'allowed_path_prefix' => '/uploads/',
+        // MIME types detected from the downloaded bytes (not the upstream header)
+        'allowed_content_types' => [
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'image/gif',
+        ],
+        'max_image_bytes' => 5 * 1024 * 1024, // 5 MB
+        'requests_per_minute' => 120, // per client IP
         'cache_duration' => 3600, // 1 hour in seconds
     ],
 

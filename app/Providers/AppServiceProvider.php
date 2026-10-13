@@ -11,6 +11,7 @@ use App\Services\Pricing\Providers\CardmarketGuideReader;
 use App\Services\Pricing\Providers\CardTraderPriceProvider;
 use App\Services\ElasticsearchService;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
@@ -54,6 +55,11 @@ class AppServiceProvider extends ServiceProvider
         // Configure rate limiter for CardTrader API to avoid getting blocked
         RateLimiter::for('cardtrader-api', function () {
             return Limit::perMinute(30)->by('cardtrader-api');
+        });
+
+        // The image proxy is public and downloads remote content: limit it per client IP
+        RateLimiter::for('image-proxy', function (Request $request) {
+            return Limit::perMinute(config('ocr.image_proxy.requests_per_minute'))->by($request->ip());
         });
 
         // Force HTTPS in production
