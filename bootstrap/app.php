@@ -23,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
 
+        // Rate limit every /api route ("api" limiter defined in AppServiceProvider)
+        $middleware->throttleApi();
+
         // Stripe webhooks are server-to-server calls without a CSRF token:
         // they are authenticated by the Stripe signature instead (see StripeWebhookController)
         $middleware->validateCsrfTokens(except: [

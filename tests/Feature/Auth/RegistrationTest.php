@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Invitation;
+use App\Models\User;
 
 test('registration screen can be rendered', function () {
     $response = $this->get('/register');
@@ -36,4 +37,36 @@ test('registration requires an invitation code while alpha mode is enabled', fun
 
     $response->assertSessionHasErrors('inviteCode');
     $this->assertGuest();
+});
+
+test('without a valid invitation the response does not reveal registered emails', function () {
+    config(['app.alpha_mode' => true]);
+    $existingUser = User::factory()->create(['email' => 'taken@example.com']);
+
+    $response = $this->post('/register', [
+        'name' => 'Curious Visitor',
+        'email' => $existingUser->email,
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'inviteCode' => 'NOTVALID',
+    ]);
+
+    $response->assertSessionHasErrors('inviteCode');
+    $response->assertSessionDoesntHaveErrors('email');
+});
+
+test('registration attempts are rate limited', function () {
+    $registrationAttempt = [
+        'name' => 'Test User',
+        'email' => 'test@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'inviteCode' => 'NOTVALID',
+    ];
+
+    for ($attempt = 1; $attempt <= 6; $attempt++) {
+        $this->post('/register', $registrationAttempt)->assertRedirect();
+    }
+
+    $this->post('/register', $registrationAttempt)->assertTooManyRequests();
 });

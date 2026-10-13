@@ -39,10 +39,10 @@ final class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        // Validate basic user data
+        // Validate basic user data (email uniqueness is checked later, see below)
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'email' => 'required|string|lowercase|email|max:255',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -54,6 +54,12 @@ final class RegisteredUserController extends Controller
 
             $invitation = $this->validateInvitationCode($request->inviteCode, $request->email);
         }
+
+        // Email uniqueness is checked only AFTER the invitation: otherwise anyone, without
+        // an invitation, could find out which email addresses are registered.
+        $request->validate([
+            'email' => 'unique:'.User::class,
+        ]);
 
         // Create user
         $user = User::create([

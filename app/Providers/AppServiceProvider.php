@@ -57,6 +57,14 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(30)->by('cardtrader-api');
         });
 
+        // Default limit for every /api route: per user when authenticated, per IP otherwise.
+        // Generous enough for search-as-you-type, low enough to stop scripted abuse.
+        RateLimiter::for('api', function (Request $request) {
+            $rateLimitKey = $request->user()?->id ?? $request->ip();
+
+            return Limit::perMinute(120)->by($rateLimitKey);
+        });
+
         // The image proxy is public and downloads remote content: limit it per client IP
         RateLimiter::for('image-proxy', function (Request $request) {
             return Limit::perMinute(config('ocr.image_proxy.requests_per_minute'))->by($request->ip());
