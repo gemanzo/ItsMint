@@ -7,8 +7,10 @@ services:
       dockerfile: ./docker/configs/node/Dockerfile
     container_name: "node_${APP_NAME}"
     restart: always
+    # Published ports are bound to 127.0.0.1: Docker bypasses host firewalls (ufw),
+    # so a plain "port:port" mapping is reachable from the whole internet.
     ports:
-      - "5173:5173"
+      - "127.0.0.1:5173:5173"
     volumes:
       - ".:/var/www/html/${DOCKER_PROJECT_DIR_NAME}"
       - "/var/www/html/${DOCKER_PROJECT_DIR_NAME}/node_modules"
@@ -27,8 +29,10 @@ services:
     restart: always
     container_name: "php_${APP_NAME}"
     image: wm-phpfpm:8.4
+    # An exposed FastCGI port allows remote code execution: localhost only
+    # (the host nginx connects to 127.0.0.1:${DOCKER_PHP_PORT})
     ports:
-      - "${DOCKER_PHP_PORT:-9000}:9000"
+      - "127.0.0.1:${DOCKER_PHP_PORT:-9000}:9000"
     volumes:
       - ".:/var/www/html/${DOCKER_PROJECT_DIR_NAME}"
       - "../wm-package:/var/www/html/wm-package"
@@ -47,8 +51,9 @@ services:
       POSTGRES_DB: ${DB_DATABASE:?err}
     volumes:
       - "./docker/volumes/postgresql/data:/var/lib/postgresql/data"
+    # Database reachable only from the host (use an SSH tunnel for remote access)
     ports:
-      - "${DOCKER_PSQL_PORT:-5432}:5432"
+      - "127.0.0.1:${DOCKER_PSQL_PORT:-5432}:5432"
     networks:
       - itsmint_network
       
