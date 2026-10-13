@@ -6,7 +6,7 @@ import Modal from '@/Components/Modal.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { useForm } from '@inertiajs/vue3';
-import { nextTick, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 
 const confirmingUserDeletion = ref(false);
 const passwordInput = ref<HTMLInputElement | null>(null);
@@ -14,6 +14,12 @@ const passwordInput = ref<HTMLInputElement | null>(null);
 const form = useForm({
   password: '',
 });
+
+// Server-only error (not a form field): e.g. the subscription could not be cancelled,
+// so the account was kept
+const accountDeletionError = computed(
+  () => (form.errors as Record<string, string | undefined>).account
+);
 
 const confirmUserDeletion = () => {
   confirmingUserDeletion.value = true;
@@ -82,8 +88,7 @@ const closeModal = () => {
           />
 
           <InputError :message="form.errors.password" class="mt-2" />
-          <!-- e.g. the subscription could not be cancelled, so the account was kept -->
-          <InputError :message="form.errors.account" class="mt-2" />
+          <InputError :message="accountDeletionError" class="mt-2" />
         </div>
 
         <div class="mt-6 flex justify-end">
