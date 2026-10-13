@@ -6,13 +6,24 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Laravel\Pennant\Feature;
 
 final class SubscriptionController extends Controller
 {
     public function checkout(Request $request)
     {
         $user = $request->user();
+
+        // Never open a second checkout for a user who is already premium:
+        // it would create a duplicate subscription billed twice
+        if ($user->subscribed('premium')) {
+            $alreadySubscribedMessage = 'You already have an active Premium subscription.';
+
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json(['error' => $alreadySubscribedMessage], 409);
+            }
+
+            return redirect()->route('subscription.index')->with('error', $alreadySubscribedMessage);
+        }
 
         // Create or get Stripe customer
         if (! $user->hasStripeId()) {
@@ -30,13 +41,12 @@ final class SubscriptionController extends Controller
         }
 
         try {
-            $checkout = $user->checkout([$priceId => 1], [
-                'mode' => 'subscription',
+            // newSubscription() puts the subscription type into subscription_data.metadata:
+            // that's what Cashier reads in the webhook to create a "premium" subscription.
+            // (Metadata on the Checkout Session itself never reaches the subscription.)
+            $checkout = $user->newSubscription('premium', $priceId)->checkout([
                 'success_url' => url('/subscribe?success=1'),
                 'cancel_url' => url('/subscribe?canceled=1'),
-                'metadata' => [
-                    'type' => 'premium',
-                ],
             ]);
 
             // Cashier returns a Checkout object with url property
@@ -63,10 +73,8 @@ final class SubscriptionController extends Controller
 
     public function success(Request $request)
     {
-        $user = $request->user();
-
-        // Invalidate feature cache to ensure subscription status is fresh
-        Feature::for($user)->flush();
+        // Premium features are resolved on every request from the subscription state,
+        // so there is no feature cache to invalidate here.
 
         // Redirect to subscription page with success message
         return redirect()->route('subscription.index', ['success' => '1']);

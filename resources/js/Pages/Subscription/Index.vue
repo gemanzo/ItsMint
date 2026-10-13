@@ -150,15 +150,14 @@
 
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, usePage } from '@inertiajs/vue3';
-import { ref, computed, onMounted } from 'vue';
+import { Head } from '@inertiajs/vue3';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import { useFeatures } from '@/composables/useFeatures';
 
 declare const route: any;
 
-const page = usePage<any>();
-const features = computed(() => page.props.value?.features || {});
-const isPremium = computed(() => !!features.value?.portfolio_unlimited);
+const { isPremium } = useFeatures();
 
 const isLoading = ref(false);
 const successMessage = ref<string | null>(null);

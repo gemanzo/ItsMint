@@ -60,8 +60,11 @@ Route::middleware('auth')->group(function () {
         ->name('subscription.status');
 });
 
-// Stripe webhook endpoint (CSRF exempt)
+// Stripe webhook endpoint.
+// CSRF exempt (see bootstrap/app.php): requests are authenticated by the Stripe signature,
+// verified by Cashier's WebhookController constructor. StripeWebhookController refuses to
+// process events when STRIPE_WEBHOOK_SECRET is missing, since signatures can't be verified.
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
-    ->middleware(\Laravel\Cashier\Http\Middleware\VerifyWebhookSignature::class);
+    ->name('stripe.webhook');
 
 require __DIR__ . '/auth.php';

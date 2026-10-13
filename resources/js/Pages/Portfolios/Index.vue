@@ -687,7 +687,7 @@
 
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import CreatePortfolioModal from '@/Components/CreatePortfolioModal.vue';
 import EditPortfolioModal from '@/Components/EditPortfolioModal.vue';
@@ -697,6 +697,7 @@ import PremiumBadge from '@/Components/PremiumBadge.vue';
 import { Link } from '@inertiajs/vue3';
 import { usePortfolioStore } from '@/stores/portfolioStore';
 import { useToast } from '@/composables/useToast';
+import { useFeatures } from '@/composables/useFeatures';
 
 interface PortfolioData {
   id: number;
@@ -724,9 +725,7 @@ const props = defineProps<{
 
 const portfolioStore = usePortfolioStore();
 const { success, error } = useToast();
-const page = usePage<any>();
-const features = computed(() => page.props.value?.features || {});
-const isPremium = computed(() => !!features.value?.portfolio_unlimited);
+const { isPremium } = useFeatures();
 
 // Check if user can create new portfolio
 const canCreatePortfolio = computed(() => {

@@ -15,7 +15,13 @@ return [
     |
     */
 
-    'default' => env('PENNANT_STORE', 'database'),
+    // ItsMint features are entitlements derived from the subscription state
+    // (see AppServiceProvider::defineFeatures). The "database" store would persist
+    // the FIRST resolved value forever: a free user would stay locked out after
+    // paying, a premium user would keep features after cancelling. The "array"
+    // store resolves them on every request (in-memory, per request), which is
+    // cheap and always reflects the current subscription.
+    'default' => env('PENNANT_STORE', 'array'),
 
     /*
     |--------------------------------------------------------------------------

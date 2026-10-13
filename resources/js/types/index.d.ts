@@ -94,11 +94,25 @@ export interface UserCard {
   };
 }
 
+/**
+ * Plan entitlements shared on every page by HandleInertiaRequests (null for guests).
+ */
+export interface PlanFeatures {
+  is_admin: boolean;
+  portfolio_unlimited: boolean;
+  search_advanced: boolean;
+  export_csv: boolean;
+  analytics_portfolio: boolean;
+  alerts_price: boolean;
+}
+
 export type PageProps<
   T extends Record<string, unknown> = Record<string, unknown>,
 > = T & {
   auth: {
     user: User;
   };
+  features: PlanFeatures | null;
+  oldest_portfolio_id: number | null;
   ziggy: Config & { location: string };
 };

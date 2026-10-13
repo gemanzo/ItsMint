@@ -1027,7 +1027,7 @@ import PriceHistoryChart from '@/Components/PriceHistoryChart.vue';
 import SellCardModal from '@/Components/SellCardModal.vue';
 import TooltipHelper from '@/Components/TooltipHelper.vue';
 import PremiumBadge from '@/Components/PremiumBadge.vue';
-import { Head, router, Link, usePage } from '@inertiajs/vue3';
+import { Head, router, Link } from '@inertiajs/vue3';
 // Ziggy's route helper is available globally
 declare const route: any;
 import { ref, computed, onMounted, reactive } from 'vue';
@@ -1039,6 +1039,7 @@ import {
 } from '@/stores/portfolioStore';
 import { useCurrency } from '@/composables/useCurrency';
 import { useToast } from '@/composables/useToast';
+import { useFeatures } from '@/composables/useFeatures';
 import axios from 'axios';
 
 type UserCardData = UserCardInterface;
@@ -1071,16 +1072,15 @@ const props = defineProps<{
   } | null;
 }>();
 
-// Inertia shared props (usePage)
-const page = usePage<any>();
-const features = computed(() => page.props.value?.features || {});
-const oldestPortfolioId = computed(() => Number(page.props.value?.oldest_portfolio_id || 0));
+// Plan entitlements (Inertia shared props)
+const { isPremium, canViewAnalytics, canExportCsv: canExport, oldestPortfolioId } = useFeatures();
 const isLockedPortfolio = computed(() => {
-  if (typeof props.locked === 'boolean') return props.locked;
-  return !features.value?.portfolio_unlimited && props.portfolio?.id !== oldestPortfolioId.value;
+  // The server is the source of truth for the lock state
+  if (typeof props.locked === 'boolean') {
+    return props.locked;
+  }
+  return !isPremium.value && props.portfolio?.id !== oldestPortfolioId.value;
 });
-const canViewAnalytics = computed(() => !!features.value?.analytics_portfolio);
-const canExport = computed(() => !!features.value?.export_csv);
 
 const portfolioStore = usePortfolioStore();
 const { formatCurrency } = useCurrency();

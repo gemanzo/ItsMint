@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { useFeatures } from '@/composables/useFeatures';
 
 interface Props {
   /**
@@ -70,9 +70,7 @@ const props = withDefaults(defineProps<Props>(), {
   forceShow: false,
 });
 
-const page = usePage<any>();
-const features = computed(() => page.props.value?.features || {});
-const isPremium = computed(() => !!features.value?.portfolio_unlimited);
+const { isPremium } = useFeatures();
 
 const show = computed(() => {
   if (props.forceShow) return true;

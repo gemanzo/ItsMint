@@ -23,6 +23,12 @@ return Application::configure(basePath: dirname(__DIR__))
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
 
+        // Stripe webhooks are server-to-server calls without a CSRF token:
+        // they are authenticated by the Stripe signature instead (see StripeWebhookController)
+        $middleware->validateCsrfTokens(except: [
+            'stripe/*',
+        ]);
+
         // Alias middleware feature gating
         $middleware->alias([
             'ensure.feature' => \App\Http\Middleware\EnsureFeature::class,
