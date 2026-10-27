@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services\Pricing\Providers;
 
+use App\Enums\CardLanguage;
 use App\Models\Blueprint;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -46,6 +48,27 @@ final class CardmarketGuideReader
     }
 
     /**
+     * When Cardmarket generated the loaded price guide, or null when the guide is
+     * missing or doesn't say it. Used to refuse a stale guide: its prices would
+     * otherwise be stored as current.
+     */
+    public function guideCreatedAt(): ?CarbonImmutable
+    {
+        $guideData = $this->fetchGuideJson();
+        $createdAt = $guideData['createdAt'] ?? null;
+
+        if (! is_string($createdAt) || $createdAt === '') {
+            return null;
+        }
+
+        try {
+            return CarbonImmutable::parse($createdAt);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
      * Lookup normalized rows for a blueprint from Cardmarket guide JSON.
      * Returns an array of associative arrays with normalized fields.
      *
@@ -64,7 +87,8 @@ final class CardmarketGuideReader
         }
 
         $createdAt = $data['createdAt'] ?? now()->toDateTimeString();
-        $lang = strtolower($blueprint->primary_language ?? 'en');
+        // Canonical code (e.g. CardTrader's "ja" becomes "jp"), English when unknown
+        $lang = (CardLanguage::fromProviderValue($blueprint->primary_language) ?? CardLanguage::ENGLISH)->value;
 
         // Build fast index once per process
         if (! $this->isIndexed) {
@@ -186,7 +210,8 @@ final class CardmarketGuideReader
             return $this->data;
         }
 
-        $url = $this->downloadUrl ?? (config('services.cardmarket.op_price_guide_url') ?: env('CARDMARKET_OP_PRICE_GUIDE'));
+        // Read from config only: env() returns null once the configuration is cached
+        $url = $this->downloadUrl ?? config('services.cardmarket.op_price_guide_url');
         if (! $url) {
             Log::warning('CardmarketGuideReader: op_price_guide_url not configured.');
 
@@ -332,8 +357,10 @@ final class CardmarketGuideReader
             $assoc = [];
             foreach ($pairs as $p) {
                 [$k, $v] = array_pad(array_map('trim', explode(':', $p, 2)), 2, null);
-                if ($k !== null && $v !== null && $v !== '' && is_numeric($v)) {
-                    $assoc[strtolower($k)] = (int) $v;
+                // Languages are normalized like the card's one ("ja" and "jp" are the same)
+                $configuredLanguage = CardLanguage::fromProviderValue($k);
+                if ($configuredLanguage !== null && $v !== null && $v !== '' && is_numeric($v)) {
+                    $assoc[$configuredLanguage->value] = (int) $v;
                 }
             }
             $map = $assoc;
