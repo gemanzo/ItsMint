@@ -1481,7 +1481,6 @@ import { Head, router, Link } from '@inertiajs/vue3';
 declare const route: any;
 import { ref, computed, onMounted, reactive } from 'vue';
 import {
-  usePortfolioStore,
   Portfolio as PortfolioInterface,
   UserCard as UserCardInterface,
   Blueprint as BlueprintInterface,
@@ -1536,7 +1535,6 @@ const isLockedPortfolio = computed(() => {
   return !isPremium.value && props.portfolio?.id !== oldestPortfolioId.value;
 });
 
-const portfolioStore = usePortfolioStore();
 const { formatCurrency } = useCurrency();
 const { success: showSuccessToast, error: showErrorToast } = useToast();
 
@@ -1894,15 +1892,6 @@ const totalEstimatedValue = computed(() => {
   );
 });
 
-// Total number of cards (sum of quantities)
-const totalCards = computed(() => {
-  return (
-    props.portfolio.user_cards?.reduce((sum, card) => {
-      return sum + (card.pivot?.quantity || 1);
-    }, 0) || 0
-  );
-});
-
 const totalPurchaseCost = computed(() => {
   return (
     props.portfolio.user_cards?.reduce((sum, card) => {
@@ -1912,10 +1901,6 @@ const totalPurchaseCost = computed(() => {
       return sum + cost * (card.pivot?.quantity || 1);
     }, 0) || 0
   );
-});
-
-const profitLoss = computed(() => {
-  return totalEstimatedValue.value - totalPurchaseCost.value;
 });
 
 const groupedCards = computed(() => {
@@ -1995,66 +1980,6 @@ const clearSelection = () => {
   soldFilters.sortBy = 'date';
   soldFilters.sortDir = 'desc';
 };
-
-// Portfolio value statistics
-const portfolioStatistics = computed(() => {
-  const cacheKey = `${activePeriod.value}_${activeMetric.value}`;
-  const historyData = portfolioChartData[cacheKey]?.data?.datasets[0]?.data;
-
-  if (!historyData || historyData.length < 1) {
-    // Fallback to current values based on active metric
-    if (activeMetric.value === 'performance') {
-      const gain = totalEstimatedValue.value - totalPurchaseCost.value;
-      const percentage =
-        totalPurchaseCost.value > 0
-          ? (gain / totalPurchaseCost.value) * 100
-          : 0;
-      return {
-        currentValue: `${percentage.toFixed(1)}%`,
-        change: 'N/A',
-        percentage: 'N/A',
-        positive: percentage >= 0,
-      };
-    } else if (activeMetric.value === 'cost_basis') {
-      return {
-        currentValue: formatCurrency(totalPurchaseCost.value),
-        change: 'N/A',
-        percentage: 'N/A',
-        positive: true,
-      };
-    } else {
-      return {
-        currentValue: formatCurrency(totalEstimatedValue.value),
-        change: 'N/A',
-        percentage: 'N/A',
-        positive: true,
-      };
-    }
-  }
-
-  const currentValue = historyData[historyData.length - 1];
-  const previousValue = historyData[0];
-
-  const change = currentValue - previousValue;
-  const percentage = previousValue !== 0 ? (change / previousValue) * 100 : 0;
-
-  // Format values based on metric type
-  if (activeMetric.value === 'performance') {
-    return {
-      currentValue: `${currentValue.toFixed(1)}%`,
-      change: `${Math.abs(change).toFixed(1)}%`,
-      percentage: `${percentage.toFixed(1)}%`,
-      positive: change >= 0,
-    };
-  } else {
-    return {
-      currentValue: formatCurrency(currentValue),
-      change: formatCurrency(Math.abs(change)),
-      percentage: `${percentage.toFixed(1)}%`,
-      positive: change >= 0,
-    };
-  }
-});
 
 // Overall portfolio statistics for header
 const overallStatistics = computed(() => {

@@ -72,7 +72,7 @@ interface Props {
   position?: 'top' | 'bottom' | 'left' | 'right';
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   position: 'top',
 });
 

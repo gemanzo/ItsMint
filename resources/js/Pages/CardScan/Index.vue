@@ -1,4 +1,6 @@
 <template>
+  <Head title="Card Scanner" />
+
   <AuthenticatedLayout>
     <template #header>
       <h2
@@ -287,6 +289,7 @@
       :show="showScanResults"
       :scan="currentScan"
       @close="closeScanResults"
+      @scan-updated="handleScanUpdated"
       @blueprint-selected="handleBlueprintSelected"
       @card-created="handleCardCreated"
     />
@@ -309,7 +312,6 @@ import QuickAddCardModal from '@/Components/QuickAddCardModal.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { CameraIcon, EyeIcon, PlusIcon } from '@heroicons/vue/24/outline';
-import { useToast } from '@/composables/useToast';
 
 // State
 const showScanModal = ref(false);
@@ -317,8 +319,6 @@ const showScanResults = ref(false);
 const showQuickAddModal = ref(false);
 const currentScan = ref(null);
 const selectedBlueprint = ref(null);
-
-const { success: showSuccessToast } = useToast();
 
 // Methods
 const openScanModal = () => {
@@ -334,6 +334,10 @@ const handleScanComplete = (result: any) => {
   currentScan.value = result;
   showScanModal.value = false;
   showScanResults.value = true;
+};
+
+const handleScanUpdated = (updatedScan: any) => {
+  currentScan.value = updatedScan;
 };
 
 const closeScanResults = () => {
@@ -362,7 +366,7 @@ const closeQuickAddModal = () => {
   selectedBlueprint.value = null;
 };
 
-const handleCardAdded = (data: any) => {
+const handleCardAdded = () => {
   // Handle successful card addition
   // Note: Toast is already shown by QuickAddCardModal, no need to duplicate
   closeQuickAddModal();

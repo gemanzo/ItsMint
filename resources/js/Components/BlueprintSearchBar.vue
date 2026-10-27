@@ -193,7 +193,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, ref } from 'vue';
+import { watch, ref } from 'vue';
 import {
   Listbox,
   ListboxButton,

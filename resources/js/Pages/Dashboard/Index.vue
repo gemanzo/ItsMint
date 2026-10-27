@@ -454,26 +454,6 @@ const totalEstimatedPortfolioValue = computed(() => {
   }, 0);
 });
 
-const totalPurchasePortfolioCost = computed(() => {
-  if (!Array.isArray(portfolioStore.portfolios)) {
-    return 0;
-  }
-  return portfolioStore.portfolios.reduce((total, portfolio) => {
-    const portfolioCost =
-      portfolio.user_cards?.reduce((sum, card) => {
-        const cost = card.purchase_price_cents
-          ? card.purchase_price_cents / 100
-          : 0;
-        return sum + cost * (card.pivot?.quantity || 1);
-      }, 0) || 0;
-    return total + portfolioCost;
-  }, 0);
-});
-
-const totalProfitLoss = computed(() => {
-  return totalEstimatedPortfolioValue.value - totalPurchasePortfolioCost.value;
-});
-
 // Computed properties for portfolio statistics
 const totalCards = computed(() => {
   if (!Array.isArray(portfolioStore.portfolios)) {

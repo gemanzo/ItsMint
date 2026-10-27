@@ -10,7 +10,6 @@ import TextInput from '@/Components/TextInput.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import InputError from '@/Components/InputError.vue';
 import ConditionSelect from '@/Components/Forms/ConditionSelect.vue';
-import LanguageSelect from '@/Components/Forms/LanguageSelect.vue';
 import { todayAsLocalDateString } from '@/utils/date';
 import { toConditionCode } from '@/constants/cardConditions';
 import Checkbox from '@/Components/Checkbox.vue';
@@ -109,16 +108,6 @@ const conditionOrder = [
 ];
 
 // Computed properties for price data
-const availableLanguages = computed(() => {
-  return Object.keys(props.pricesByLanguage)
-    .map((lang) => ({
-      code: lang,
-      name: languageNames[lang] || lang.toUpperCase(),
-      hasData: Object.keys(props.pricesByLanguage[lang] || {}).length > 0,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-});
-
 const selectedLanguagePrices = computed(() => {
   const langPrices = props.pricesByLanguage[activeLanguage.value] || {};
 
@@ -142,12 +131,6 @@ const selectedLanguagePrices = computed(() => {
 
 const hasAnyPriceData = computed(() => {
   return Object.keys(props.pricesByLanguage).length > 0;
-});
-
-const selectedLanguageData = computed(() => {
-  return availableLanguages.value.find(
-    (lang) => lang.code === activeLanguage.value
-  );
 });
 
 // When component mounts, set the active language to the first available one
@@ -285,16 +268,6 @@ const priceStatistics = computed(() => {
   };
 });
 
-// Helper for formatting price with explicit sign
-const formatPriceWithSign = (cents, currency = 'EUR', showSign = false) => {
-  const value = cents / 100;
-  const options = { style: 'currency', currency: currency };
-  if (showSign) {
-    options.signDisplay = 'exceptZero';
-  }
-  return value.toLocaleString('it-IT', options);
-};
-
 // Keep old formatPrice for other uses
 const formatPrice = (cents, currency = 'EUR') => {
   if (cents === null || cents === undefined) return 'N/A';
@@ -384,7 +357,7 @@ const addToPortfolio = async () => {
       );
       const allPrices = resp.data?.data || resp.data;
       langPrices = allPrices?.[lang] || null;
-    } catch (e) {
+    } catch {
       // ignore error; fallbacks below
     }
   }
@@ -436,7 +409,7 @@ const submitAddToPortfolio = () => {
         ...form,
       }
     )
-    .then((response) => {
+    .then(() => {
       showAddToPortfolioModal.value = false;
 
       // Show success toast

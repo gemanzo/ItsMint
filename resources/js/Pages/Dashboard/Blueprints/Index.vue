@@ -67,7 +67,6 @@ const isSearchMode = ref(false);
 const searchPage = ref(1);
 const hasMoreSearchResults = ref(false);
 const viewMode = ref<'grid' | 'list'>('grid');
-const searchInputRef = ref<HTMLInputElement | null>(null);
 const showAddToPortfolioModal = ref(false);
 const selectedBlueprint = ref<Blueprint | null>(null);
 // Language selection (string code; default EN)
@@ -193,12 +192,6 @@ const handleSearchInput = () => {
   }
 };
 
-const handleDirectInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  searchQuery.value = target.value;
-  handleSearchInput();
-};
-
 const openAddToPortfolioModal = (blueprint: Blueprint) => {
   selectedBlueprint.value = blueprint;
   showAddToPortfolioModal.value = true;
@@ -209,11 +202,7 @@ const closeAddToPortfolioModal = () => {
   selectedBlueprint.value = null;
 };
 
-const handleCardAdded = (event: {
-  portfolioId: number;
-  cards: unknown[];
-  totalQuantity: number;
-}) => {
+const handleCardAdded = () => {
   // Gestisci l'evento di aggiunta carta se necessario
   closeAddToPortfolioModal();
 };

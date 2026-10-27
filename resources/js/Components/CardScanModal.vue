@@ -275,7 +275,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onUnmounted } from 'vue';
 import {
   CameraIcon,
   PhotoIcon,
@@ -292,7 +292,7 @@ interface Emits {
   (e: 'scan-complete', scan: any): void;
 }
 
-const props = defineProps<Props>();
+defineProps<Props>();
 const emit = defineEmits<Emits>();
 
 // Reactive variables

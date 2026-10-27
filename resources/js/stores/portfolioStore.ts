@@ -142,6 +142,7 @@ export const usePortfolioStore = defineStore('portfolio', {
           this.portfolios = [];
         }
       } catch (error) {
+        console.error('Failed to fetch portfolios:', error);
         this.error = 'Failed to fetch portfolios';
         // Ensure portfolios remains an array even on error
         this.portfolios = [];

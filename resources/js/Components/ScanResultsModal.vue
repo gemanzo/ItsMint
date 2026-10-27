@@ -495,6 +495,9 @@ interface Props {
 interface Emits {
   (e: 'close'): void;
   (e: 'card-created', card: CardScan): void;
+  // The scan changed on the server (blueprint assigned, retry): the parent owns
+  // the scan object and must replace it (props are read-only)
+  (e: 'scan-updated', scan: CardScan): void;
 }
 
 const props = defineProps<Props>();
@@ -561,8 +564,8 @@ const assignBlueprint = async (blueprintId: number) => {
       blueprint_id: blueprintId,
     });
 
-    // Update the scan object
-    Object.assign(props.scan, response.data.scan);
+    // Let the parent replace the scan with the updated one
+    emit('scan-updated', response.data.scan);
 
     // Clear search after successful assignment
     searchQuery.value = '';
@@ -640,7 +643,7 @@ const retryScan = async () => {
 
   try {
     const response = await axios.post(`/card-scans/${props.scan.id}/retry`);
-    Object.assign(props.scan, response.data.scan);
+    emit('scan-updated', response.data.scan);
   } catch (error) {
     console.error('Retry failed:', error);
   }

@@ -402,7 +402,6 @@ import { usePortfolioStore, type Blueprint } from '@/stores/portfolioStore';
 import { useCardPricing } from '@/composables/useCardPricing';
 import { useCurrency } from '@/composables/useCurrency';
 import { useApiError } from '@/composables/useApiError';
-import { CARD_LANGUAGES } from '@/constants/cardLanguages';
 import BlueprintSearchBar from '@/Components/BlueprintSearchBar.vue';
 
 import FormModal from '@/Components/Base/FormModal.vue';

@@ -788,7 +788,7 @@ const props = defineProps<{
 }>();
 
 const portfolioStore = usePortfolioStore();
-const { success, error } = useToast();
+const { success } = useToast();
 const { isPremium } = useFeatures();
 
 // Check if user can create new portfolio
