@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\CardLanguage;
 use App\Models\Blueprint;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -18,15 +19,6 @@ class BlueprintPriceService
         'Moderately Played',
         'Played',
         'Poor',
-    ];
-
-    private const SUPPORTED_LANGUAGES = [
-        'jp' => 'Japanese',
-        'en' => 'English',
-        'fr' => 'French',
-        'zh-cn' => 'Chinese Simplified',
-        'zh-tw' => 'Chinese Traditional',
-        'ko' => 'Korean',
     ];
 
     /**
@@ -145,17 +137,20 @@ class BlueprintPriceService
     /**
      * Extracts the lowest price for each condition-language combination from the API products.
      *
+     * Only non-foil EUR listings are considered: every stored price is a non-foil price
+     * (is_foil = false), so foil listings must not be mixed in.
+     *
      * @return array<string, array<string, mixed>>
      */
     private function extractLowestPricesByConditionAndLanguage(array $apiProducts): array
     {
         $lowestPrices = [];
+        $unknownLanguagesListingsCount = [];
         // TODO: Implement a proper currency conversion system. For now, we only process EUR.
         $targetCurrency = 'EUR';
 
         foreach ($apiProducts as $product) {
-            $currency = $product['price_currency'];
-            if ($currency !== $targetCurrency) {
+            if (($product['price_currency'] ?? null) !== $targetCurrency) {
                 continue;
             }
 
@@ -165,65 +160,51 @@ class BlueprintPriceService
                 continue;
             }
 
-            $rawLanguage = $properties['onepiece_language'] ?? $properties['language'] ?? 'unknown';
-            $language = strtolower($rawLanguage);
+            $rawFoil = $properties['onepiece_foil'] ?? $properties['foil'] ?? null;
+            $isFoil = filter_var($rawFoil, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
+            if ($isFoil) {
+                continue;
+            }
 
-            // Skip unknown languages for now, but log them for future support
-            if (! isset(self::SUPPORTED_LANGUAGES[$language]) && $language !== 'unknown') {
-                Log::error('Unsupported language found in CardTrader data', [
-                    'language' => $language,
-                    'raw_language' => $rawLanguage,
-                    'product_id' => $product['id'] ?? 'unknown',
-                ]);
+            $rawLanguage = $properties['onepiece_language'] ?? $properties['language'] ?? null;
+            $language = CardLanguage::fromProviderValue($rawLanguage);
+            if ($language === null) {
+                $unknownLanguageKey = (string) ($rawLanguage ?? 'missing');
+                $unknownLanguagesListingsCount[$unknownLanguageKey] = ($unknownLanguagesListingsCount[$unknownLanguageKey] ?? 0) + 1;
 
                 continue;
             }
 
-            $foil_raw = $properties['onepiece_foil'] ?? $properties['foil'] ?? null;
-            $is_foil = filter_var($foil_raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
+            $priceCents = (int) $product['price_cents'];
+            $conditionLanguageKey = $condition.'_'.$language->value;
 
-            $priceCents = $product['price_cents'];
-
-            // Create unique key for condition-language combination
-            $key = $condition.'_'.$language;
-
-            if (! isset($lowestPrices[$key]) || $priceCents < $lowestPrices[$key]['price_cents']) {
-                $lowestPrices[$key] = [
+            if (! isset($lowestPrices[$conditionLanguageKey])) {
+                $lowestPrices[$conditionLanguageKey] = [
                     'price_cents' => $priceCents,
-                    'currency' => $currency,
+                    'currency' => $targetCurrency,
                     'condition' => $condition,
-                    'language' => $language,
-                    'language_name' => self::SUPPORTED_LANGUAGES[$language] ?? ucfirst($language),
-                    'is_foil' => $is_foil,
+                    'language' => $language->value,
+                    'language_name' => $language->displayName(),
+                    'is_foil' => false,
                     'fetched_at' => Carbon::now(),
                     'source' => 'cardtrader_service_by_condition_and_language',
-                    'product_count' => 1, // Will be updated below
+                    'product_count' => 0,
                 ];
+            }
+
+            // Number of listings for this condition-language combination
+            $lowestPrices[$conditionLanguageKey]['product_count']++;
+
+            if ($priceCents < $lowestPrices[$conditionLanguageKey]['price_cents']) {
+                $lowestPrices[$conditionLanguageKey]['price_cents'] = $priceCents;
             }
         }
 
-        // Count how many products exist for each condition-language combination
-        foreach ($apiProducts as $product) {
-            $currency = $product['price_currency'];
-            if ($currency !== $targetCurrency) {
-                continue;
-            }
-
-            $properties = $product['properties_hash'] ?? $product['properties'] ?? [];
-            $condition = $properties['condition'] ?? null;
-            if (! $condition || ! in_array($condition, self::CONDITION_HIERARCHY)) {
-                continue;
-            }
-
-            $language = strtolower($properties['onepiece_language'] ?? $properties['language'] ?? 'unknown');
-            if (! isset(self::SUPPORTED_LANGUAGES[$language]) && $language !== 'unknown') {
-                continue;
-            }
-
-            $key = $condition.'_'.$language;
-            if (isset($lowestPrices[$key])) {
-                $lowestPrices[$key]['product_count'] = ($lowestPrices[$key]['product_count'] ?? 0) + 1;
-            }
+        // Logged once per fetch (not once per listing) to keep the logs readable
+        if (! empty($unknownLanguagesListingsCount)) {
+            Log::info('CardTrader listings skipped: unsupported or missing language', [
+                'listings_count_by_raw_language' => $unknownLanguagesListingsCount,
+            ]);
         }
 
         return $lowestPrices;
@@ -342,7 +323,7 @@ class BlueprintPriceService
      */
     public static function getSupportedLanguages(): array
     {
-        return self::SUPPORTED_LANGUAGES;
+        return CardLanguage::displayNamesByCode();
     }
 
     /**
