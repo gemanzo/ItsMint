@@ -1,4 +1,8 @@
-FROM php:8.4.3-fpm
+# Exact PHP patch version: security releases must be adopted explicitly.
+# 8.4.27 (2026-10-21) fixes CVE-2026-109618 / CVE-2026-109619 (unauthenticated RCE,
+# in the CISA KEV catalog). Debian "bookworm" pinned: the plain 8.4-fpm tags moved
+# to a newer Debian release, which would change the system packages installed below.
+FROM php:8.4.27-fpm-bookworm
 
 USER root
 
