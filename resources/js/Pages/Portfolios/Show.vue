@@ -80,19 +80,34 @@
 
     <div class="py-8 relative">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="space-y-8" :class="{ 'blur-sm pointer-events-none select-none': isLockedPortfolio }">
+        <div
+          class="space-y-8"
+          :class="{
+            'blur-sm pointer-events-none select-none': isLockedPortfolio,
+          }"
+        >
           <!-- Portfolio Stats -->
           <!-- ... (intentionally omitted for brevity) ... -->
 
           <!-- Portfolio Performance Dashboard (Premium only) -->
-          <div v-if="canViewAnalytics && props.portfolio?.user_cards && props.portfolio.user_cards.length > 0"
-               class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden relative">
+          <div
+            v-if="
+              canViewAnalytics &&
+              props.portfolio?.user_cards &&
+              props.portfolio.user_cards.length > 0
+            "
+            class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden relative"
+          >
             <!-- Header Section -->
-            <div class="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-700 px-8 py-6 border-b border-gray-200 dark:border-gray-600">
+            <div
+              class="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-gray-800 dark:to-gray-700 px-8 py-6 border-b border-gray-200 dark:border-gray-600"
+            >
               <div class="flex items-center justify-between mb-6">
                 <div>
                   <div class="flex items-center space-x-2 mb-1">
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+                    <h2
+                      class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight"
+                    >
                       Portfolio Performance
                     </h2>
                     <PremiumBadge variant="subtle" size="sm" force-show />
@@ -101,7 +116,9 @@
                     Track your investment performance over time
                   </p>
                 </div>
-                <div class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                <div
+                  class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400"
+                >
                   <svg
                     class="h-4 w-4"
                     fill="none"
@@ -115,7 +132,9 @@
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <span>Last updated: {{ new Date().toLocaleDateString() }}</span>
+                  <span
+                    >Last updated: {{ new Date().toLocaleDateString() }}</span
+                  >
                 </div>
               </div>
               <!-- Key Metrics Grid -->
@@ -124,11 +143,20 @@
                   content="The current market value of your portfolio based on the latest card prices. This represents what your collection would be worth if you sold it at current market rates."
                   position="bottom"
                 >
-                  <div class="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+                  <div
+                    class="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden"
+                  >
+                    <div
+                      class="absolute top-0 left-0 w-1 h-full bg-green-500"
+                    ></div>
                     <div class="flex items-center justify-between mb-2">
-                      <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Market Value</span>
-                      <div class="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <span
+                        class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                        >Market Value</span
+                      >
+                      <div
+                        class="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg"
+                      >
                         <svg
                           class="h-4 w-4 text-green-600 dark:text-green-400"
                           fill="none"
@@ -144,7 +172,9 @@
                         </svg>
                       </div>
                     </div>
-                    <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                    <div
+                      class="text-2xl font-bold text-gray-900 dark:text-white"
+                    >
                       {{ overallStatistics.marketValue }}
                     </div>
                   </div>
@@ -153,11 +183,20 @@
                   content="The total amount of money you invested to purchase all the cards in your portfolio. This is your initial investment before any gains or losses."
                   position="bottom"
                 >
-                  <div class="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                  <div
+                    class="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden"
+                  >
+                    <div
+                      class="absolute top-0 left-0 w-1 h-full bg-blue-500"
+                    ></div>
                     <div class="flex items-center justify-between mb-2">
-                      <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cost Basis</span>
-                      <div class="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <span
+                        class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                        >Cost Basis</span
+                      >
+                      <div
+                        class="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg"
+                      >
                         <svg
                           class="h-4 w-4 text-blue-600 dark:text-blue-400"
                           fill="none"
@@ -173,7 +212,9 @@
                         </svg>
                       </div>
                     </div>
-                    <div class="text-2xl font-bold text-gray-900 dark:text-white">
+                    <div
+                      class="text-2xl font-bold text-gray-900 dark:text-white"
+                    >
                       {{ overallStatistics.costBasis }}
                     </div>
                   </div>
@@ -196,7 +237,10 @@
                       ]"
                     ></div>
                     <div class="flex items-center justify-between mb-2">
-                      <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unrealized P&L</span>
+                      <span
+                        class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                        >Unrealized P&L</span
+                      >
                       <div
                         :class="[
                           'p-1.5 rounded-lg',
@@ -241,7 +285,8 @@
                           : 'text-red-600 dark:text-red-400',
                       ]"
                     >
-                      {{ overallStatistics.unrealizedGainPositive ? '+' : '-' }}{{ overallStatistics.unrealizedGain }}
+                      {{ overallStatistics.unrealizedGainPositive ? '+' : '-'
+                      }}{{ overallStatistics.unrealizedGain }}
                     </div>
                   </div>
                 </TooltipHelper>
@@ -263,7 +308,10 @@
                       ]"
                     ></div>
                     <div class="flex items-center justify-between mb-2">
-                      <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">ROI</span>
+                      <span
+                        class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                        >ROI</span
+                      >
                       <div
                         :class="[
                           'p-1.5 rounded-lg',
@@ -300,7 +348,8 @@
                           : 'text-orange-600 dark:text-orange-400',
                       ]"
                     >
-                      {{ overallStatistics.performancePositive ? '+' : '' }}{{ overallStatistics.performance }}
+                      {{ overallStatistics.performancePositive ? '+' : ''
+                      }}{{ overallStatistics.performance }}
                     </div>
                   </div>
                 </TooltipHelper>
@@ -427,7 +476,7 @@
               'Unlimited cards per portfolio',
               'Advanced search',
               'CSV export',
-              'Portfolio analytics'
+              'Portfolio analytics',
             ]"
             :show-close="false"
           />
@@ -436,20 +485,26 @@
           <div
             class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
           >
-            <div class="px-6 pt-4 border-b border-gray-200 dark:border-gray-700">
+            <div
+              class="px-6 pt-4 border-b border-gray-200 dark:border-gray-700"
+            >
               <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h2
+                  class="text-lg font-semibold text-gray-900 dark:text-gray-100"
+                >
                   Cards
                 </h2>
               </div>
               <!-- Tabs -->
-              <div class="flex items-center border-b border-gray-200 dark:border-gray-700">
+              <div
+                class="flex items-center border-b border-gray-200 dark:border-gray-700"
+              >
                 <button
                   :class="[
                     'px-4 py-3 text-sm font-semibold -mb-px transition-colors',
                     activeTab === 'holding'
                       ? 'text-gray-900 dark:text-white border-b-2 border-indigo-600 dark:border-indigo-400'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
                   ]"
                   @click="activeTab = 'holding'"
                 >
@@ -460,7 +515,7 @@
                     'px-4 py-3 text-sm font-semibold -mb-px transition-colors',
                     activeTab === 'sold'
                       ? 'text-gray-900 dark:text-white border-b-2 border-indigo-600 dark:border-indigo-400'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white',
                   ]"
                   @click="loadSoldIfNeeded()"
                 >
@@ -469,372 +524,608 @@
               </div>
             </div>
 
-            <div v-if="activeTab === 'holding'" class="divide-y divide-gray-200 dark:divide-gray-700">
-              <template v-if="props.portfolio.user_cards && props.portfolio.user_cards.length > 0">
+            <div
+              v-if="activeTab === 'holding'"
+              class="divide-y divide-gray-200 dark:divide-gray-700"
+            >
+              <template
+                v-if="
+                  props.portfolio.user_cards &&
+                  props.portfolio.user_cards.length > 0
+                "
+              >
                 <div
                   v-for="group in groupedCards"
                   :key="group.groupKey"
                   class="card-hover hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150 animate-fade-in"
                 >
-                <div class="p-6">
-                  <div class="card-content flex items-start space-x-6">
-                    <!-- Card Image -->
-                    <div class="card-image flex-shrink-0">
-                      <Link
-                        v-if="group.blueprint?.id"
-                        :href="route('blueprints.show', group.blueprint.id)"
-                        class="block"
-                      >
-                        <img
-                          v-if="group.blueprint?.image_url"
-                          :src="group.blueprint.image_url"
-                          :alt="group.blueprint.name"
-                          class="h-36 w-auto object-contain rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md transition-shadow"
-                        />
-                        <div
-                          v-else
-                          class="h-36 w-24 bg-gray-200 dark:bg-gray-600 rounded-lg border-2 border-gray-300 dark:border-gray-500 flex items-center justify-center text-sm text-gray-500 dark:text-gray-400 font-medium"
+                  <div class="p-6">
+                    <div class="card-content flex items-start space-x-6">
+                      <!-- Card Image -->
+                      <div class="card-image flex-shrink-0">
+                        <Link
+                          v-if="group.blueprint?.id"
+                          :href="route('blueprints.show', group.blueprint.id)"
+                          class="block"
                         >
-                          No Image
-                        </div>
-                      </Link>
-                    </div>
-
-                    <!-- Card Info -->
-                    <div class="flex-1 min-w-0">
-                      <div class="flex justify-between items-start">
-                        <div class="flex-1 min-w-0 pr-4">
-                          <h3 class="text-xl font-bold mb-2">
-                            <Link
-                              v-if="group.blueprint?.id"
-                              :href="route('blueprints.show', group.blueprint.id)"
-                              class="text-gray-900 dark:text-gray-100 hover:underline hover:text-blue-600 dark:hover:text-blue-400"
-                            >
-                              {{ group.blueprint?.name || 'Unknown Card' }}
-                            </Link>
-                            <span v-else class="text-gray-900 dark:text-gray-100">{{
-                              group.blueprint?.name || 'Unknown Card'
-                            }}</span>
-                          </h3>
-
-                          <div class="space-y-2">
-                            <div class="flex flex-wrap gap-4 text-sm">
-                              <span
-                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                              >
-                                {{ group.condition }}
-                              </span>
-                              <span
-                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                              >
-                                {{ group.language }}
-                              </span>
-                              <span
-                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                              >
-                                Qty: {{ group.totalQuantity }}
-                              </span>
-                            </div>
-
-                            <p
-                              v-if="group.acquired_at"
-                              class="text-sm text-gray-600 dark:text-gray-400"
-                            >
-                              <span class="font-medium">Acquired:</span>
-                              {{
-                                new Date(group.acquired_at).toLocaleDateString()
-                              }}
-                            </p>
-
-                            <p
-                              v-if="group.blueprint?.expansion"
-                              class="text-sm text-gray-500 dark:text-gray-500"
-                            >
-                              {{ group.blueprint.expansion.name }} ({{
-                                group.blueprint.expansion.code
-                              }})
-                            </p>
-                          </div>
-                        </div>
-
-                        <!-- Right Column - Pricing Info -->
-                        <div class="flex-shrink-0 flex space-x-3">
-                          <!-- Single Card Values -->
+                          <img
+                            v-if="group.blueprint?.image_url"
+                            :src="group.blueprint.image_url"
+                            :alt="group.blueprint.name"
+                            class="h-36 w-auto object-contain rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md transition-shadow"
+                          />
                           <div
-                            class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 w-36"
+                            v-else
+                            class="h-36 w-24 bg-gray-200 dark:bg-gray-600 rounded-lg border-2 border-gray-300 dark:border-gray-500 flex items-center justify-center text-sm text-gray-500 dark:text-gray-400 font-medium"
                           >
-                            <p
-                              class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 text-center"
+                            No Image
+                          </div>
+                        </Link>
+                      </div>
+
+                      <!-- Card Info -->
+                      <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-start">
+                          <div class="flex-1 min-w-0 pr-4">
+                            <h3 class="text-xl font-bold mb-2">
+                              <Link
+                                v-if="group.blueprint?.id"
+                                :href="
+                                  route('blueprints.show', group.blueprint.id)
+                                "
+                                class="text-gray-900 dark:text-gray-100 hover:underline hover:text-blue-600 dark:hover:text-blue-400"
+                              >
+                                {{ group.blueprint?.name || 'Unknown Card' }}
+                              </Link>
+                              <span
+                                v-else
+                                class="text-gray-900 dark:text-gray-100"
+                                >{{
+                                  group.blueprint?.name || 'Unknown Card'
+                                }}</span
+                              >
+                            </h3>
+
+                            <div class="space-y-2">
+                              <div class="flex flex-wrap gap-4 text-sm">
+                                <span
+                                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                                >
+                                  {{ group.condition }}
+                                </span>
+                                <span
+                                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                >
+                                  {{ group.language }}
+                                </span>
+                                <span
+                                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                                >
+                                  Qty: {{ group.totalQuantity }}
+                                </span>
+                              </div>
+
+                              <p
+                                v-if="group.acquired_at"
+                                class="text-sm text-gray-600 dark:text-gray-400"
+                              >
+                                <span class="font-medium">Acquired:</span>
+                                {{
+                                  new Date(
+                                    group.acquired_at
+                                  ).toLocaleDateString()
+                                }}
+                              </p>
+
+                              <p
+                                v-if="group.blueprint?.expansion"
+                                class="text-sm text-gray-500 dark:text-gray-500"
+                              >
+                                {{ group.blueprint.expansion.name }} ({{
+                                  group.blueprint.expansion.code
+                                }})
+                              </p>
+                            </div>
+                          </div>
+
+                          <!-- Right Column - Pricing Info -->
+                          <div class="flex-shrink-0 flex space-x-3">
+                            <!-- Single Card Values -->
+                            <div
+                              class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 w-36"
                             >
-                              Per Card
-                            </p>
-                            <div class="text-center space-y-1">
                               <p
-                                class="text-sm font-bold text-gray-900 dark:text-gray-100"
+                                class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 text-center"
                               >
-                                {{ formatCurrency(group.singleEstimatedValue) }}
+                                Per Card
                               </p>
-                              <p
-                                class="text-xs text-gray-600 dark:text-gray-400"
-                              >
-                                Est. Value
-                              </p>
-                              <div
-                                class="border-t border-gray-200 dark:border-gray-600 pt-1 mt-1"
-                              >
+                              <div class="text-center space-y-1">
                                 <p
-                                  class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                                  class="text-sm font-bold text-gray-900 dark:text-gray-100"
                                 >
                                   {{
-                                    formatCurrency(group.singlePurchasePrice)
+                                    formatCurrency(group.singleEstimatedValue)
                                   }}
                                 </p>
                                 <p
-                                  class="text-xs text-gray-500 dark:text-gray-500"
+                                  class="text-xs text-gray-600 dark:text-gray-400"
                                 >
-                                  Purchase
+                                  Est. Value
                                 </p>
+                                <div
+                                  class="border-t border-gray-200 dark:border-gray-600 pt-1 mt-1"
+                                >
+                                  <p
+                                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                                  >
+                                    {{
+                                      formatCurrency(group.singlePurchasePrice)
+                                    }}
+                                  </p>
+                                  <p
+                                    class="text-xs text-gray-500 dark:text-gray-500"
+                                  >
+                                    Purchase
+                                  </p>
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <!-- Group Total Values -->
-                          <div
-                            class="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30 p-3 rounded-lg border border-indigo-200 dark:border-indigo-700 w-36"
-                          >
-                            <p
-                              class="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-2 text-center"
+                            <!-- Group Total Values -->
+                            <div
+                              class="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30 p-3 rounded-lg border border-indigo-200 dark:border-indigo-700 w-36"
                             >
-                              Total (×{{ group.totalQuantity }})
-                            </p>
-                            <div class="text-center space-y-1">
                               <p
-                                class="text-sm font-bold text-indigo-900 dark:text-indigo-100"
+                                class="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-2 text-center"
                               >
-                                {{
-                                  formatCurrency(
-                                    group.estimatedValueCents
-                                      ? group.estimatedValueCents / 100
-                                      : undefined
-                                  )
-                                }}
+                                Total (×{{ group.totalQuantity }})
                               </p>
-                              <p
-                                class="text-xs text-indigo-700 dark:text-indigo-300"
-                              >
-                                Est. Value
-                              </p>
-                              <div
-                                class="border-t border-indigo-200 dark:border-indigo-600 pt-1 mt-1"
-                              >
+                              <div class="text-center space-y-1">
                                 <p
-                                  class="text-sm font-bold text-indigo-800 dark:text-indigo-200"
+                                  class="text-sm font-bold text-indigo-900 dark:text-indigo-100"
                                 >
                                   {{
                                     formatCurrency(
-                                      group.purchasePriceCents
-                                        ? group.purchasePriceCents / 100
+                                      group.estimatedValueCents
+                                        ? group.estimatedValueCents / 100
                                         : undefined
                                     )
                                   }}
                                 </p>
                                 <p
-                                  class="text-xs text-indigo-600 dark:text-indigo-400"
+                                  class="text-xs text-indigo-700 dark:text-indigo-300"
                                 >
-                                  Purchase
+                                  Est. Value
                                 </p>
+                                <div
+                                  class="border-t border-indigo-200 dark:border-indigo-600 pt-1 mt-1"
+                                >
+                                  <p
+                                    class="text-sm font-bold text-indigo-800 dark:text-indigo-200"
+                                  >
+                                    {{
+                                      formatCurrency(
+                                        group.purchasePriceCents
+                                          ? group.purchasePriceCents / 100
+                                          : undefined
+                                      )
+                                    }}
+                                  </p>
+                                  <p
+                                    class="text-xs text-indigo-600 dark:text-indigo-400"
+                                  >
+                                    Purchase
+                                  </p>
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <!-- Actions -->
-                          <div class="flex flex-col gap-2 min-w-0">
-                            <button
-                              class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-150"
-                              @click="editCard(getFirstCardFromGroup(group))"
-                            >
-                              <svg
-                                class="h-4 w-4 mr-1.5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                            <!-- Actions -->
+                            <div class="flex flex-col gap-2 min-w-0">
+                              <button
+                                class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-150"
+                                @click="editCard(getFirstCardFromGroup(group))"
                               >
-                                <path
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                />
-                              </svg>
-                              Edit
-                            </button>
-                            <button
-                              class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-150"
-                              @click="openRemoveCardModal(group)"
-                            >
-                              <svg
-                                class="h-4 w-4 mr-1.5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                                <svg
+                                  class="h-4 w-4 mr-1.5"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                  />
+                                </svg>
+                                Edit
+                              </button>
+                              <button
+                                class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-150"
+                                @click="openRemoveCardModal(group)"
                               >
-                                <path
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                />
-                              </svg>
-                              Remove
-                            </button>
-                            <button
-                              class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors duration-150"
-                              @click="openSell(group)"
-                            >
-                              <svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21h6"/></svg>
-                              Sold
-                            </button>
+                                <svg
+                                  class="h-4 w-4 mr-1.5"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />
+                                </svg>
+                                Remove
+                              </button>
+                              <button
+                                class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors duration-150"
+                                @click="openSell(group)"
+                              >
+                                <svg
+                                  class="h-4 w-4 mr-1.5"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21h6"
+                                  />
+                                </svg>
+                                Sold
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
               </template>
               <div v-else class="p-12 text-center">
-              <div
-                class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full mb-4"
-              >
-                <svg
-                  class="h-8 w-8 text-gray-400 dark:text-gray-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <div
+                  class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full mb-4"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.5"
-                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                  />
-                </svg>
+                  <svg
+                    class="h-8 w-8 text-gray-400 dark:text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="1.5"
+                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                    />
+                  </svg>
+                </div>
+                <h3
+                  class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2"
+                >
+                  No cards in this portfolio yet
+                </h3>
+                <p class="text-gray-500 dark:text-gray-400 mb-6">
+                  Start building your collection by adding cards to this
+                  portfolio.
+                </p>
+                <button
+                  class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  @click="openAddCardModal"
+                >
+                  <svg
+                    class="h-5 w-5 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  Add Your First Card
+                </button>
               </div>
-              <h3
-                class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2"
-              >
-                No cards in this portfolio yet
-              </h3>
-              <p class="text-gray-500 dark:text-gray-400 mb-6">
-                Start building your collection by adding cards to this
-                portfolio.
-              </p>
-              <button
-                class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                @click="openAddCardModal"
-              >
-                <svg
-                  class="h-5 w-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                Add Your First Card
-              </button>
-            </div>
             </div>
             <div v-else-if="activeTab === 'sold'" class="px-6 py-4">
               <!-- Filters & actions -->
-              <div class="mb-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 p-3">
-                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div
+                class="mb-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 p-3"
+              >
+                <div
+                  class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3"
+                >
                   <div>
-                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">From</label>
+                    <label
+                      class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
+                      >From</label
+                    >
                     <div class="relative">
-                      <svg class="absolute left-2 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"/></svg>
-                      <input type="date" v-model="soldFilters.dateFrom" @change="loadSoldIfNeeded(true)" class="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      <svg
+                        class="absolute left-2 top-2.5 h-4 w-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <input
+                        v-model="soldFilters.dateFrom"
+                        type="date"
+                        class="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        @change="loadSoldIfNeeded(true)"
+                      />
                     </div>
                   </div>
                   <div>
-                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">To</label>
+                    <label
+                      class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
+                      >To</label
+                    >
                     <div class="relative">
-                      <svg class="absolute left-2 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"/></svg>
-                      <input type="date" v-model="soldFilters.dateTo" @change="loadSoldIfNeeded(true)" class="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      <svg
+                        class="absolute left-2 top-2.5 h-4 w-4 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <input
+                        v-model="soldFilters.dateTo"
+                        type="date"
+                        class="w-full pl-8 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        @change="loadSoldIfNeeded(true)"
+                      />
                     </div>
                   </div>
                   <div>
-                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Min sale (€)</label>
+                    <label
+                      class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
+                      >Min sale (€)</label
+                    >
                     <div class="relative">
-                      <span class="absolute left-2 top-1.5 text-gray-400">€</span>
-                      <input type="number" step="0.01" placeholder="0.00" v-model.number="soldFilters.minSalePrice" @change="loadSoldIfNeeded(true)" class="w-full pl-6 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      <span class="absolute left-2 top-1.5 text-gray-400"
+                        >€</span
+                      >
+                      <input
+                        v-model.number="soldFilters.minSalePrice"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        class="w-full pl-6 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        @change="loadSoldIfNeeded(true)"
+                      />
                     </div>
                   </div>
                   <div>
-                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Max sale (€)</label>
+                    <label
+                      class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
+                      >Max sale (€)</label
+                    >
                     <div class="relative">
-                      <span class="absolute left-2 top-1.5 text-gray-400">€</span>
-                      <input type="number" step="0.01" placeholder="9999.99" v-model.number="soldFilters.maxSalePrice" @change="loadSoldIfNeeded(true)" class="w-full pl-6 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      <span class="absolute left-2 top-1.5 text-gray-400"
+                        >€</span
+                      >
+                      <input
+                        v-model.number="soldFilters.maxSalePrice"
+                        type="number"
+                        step="0.01"
+                        placeholder="9999.99"
+                        class="w-full pl-6 pr-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        @change="loadSoldIfNeeded(true)"
+                      />
                     </div>
                   </div>
                   <div>
-                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">P&L</label>
-                    <div class="inline-flex w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
+                    <label
+                      class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
+                      >P&L</label
+                    >
+                    <div
+                      class="inline-flex w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden"
+                    >
                       <button
-                        :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.pnl==='all' ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300']"
-                        @click="soldFilters.pnl='all'; loadSoldIfNeeded(true)">All</button>
+                        :class="[
+                          'flex-1 px-2 py-1.5 text-xs',
+                          soldFilters.pnl === 'all'
+                            ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white'
+                            : 'text-gray-600 dark:text-gray-300',
+                        ]"
+                        @click="
+                          soldFilters.pnl = 'all';
+                          loadSoldIfNeeded(true);
+                        "
+                      >
+                        All
+                      </button>
                       <button
-                        :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.pnl==='gain' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' : 'text-gray-600 dark:text-gray-300']"
-                        @click="soldFilters.pnl='gain'; loadSoldIfNeeded(true)">Gain</button>
+                        :class="[
+                          'flex-1 px-2 py-1.5 text-xs',
+                          soldFilters.pnl === 'gain'
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                            : 'text-gray-600 dark:text-gray-300',
+                        ]"
+                        @click="
+                          soldFilters.pnl = 'gain';
+                          loadSoldIfNeeded(true);
+                        "
+                      >
+                        Gain
+                      </button>
                       <button
-                        :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.pnl==='loss' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-300']"
-                        @click="soldFilters.pnl='loss'; loadSoldIfNeeded(true)">Loss</button>
+                        :class="[
+                          'flex-1 px-2 py-1.5 text-xs',
+                          soldFilters.pnl === 'loss'
+                            ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                            : 'text-gray-600 dark:text-gray-300',
+                        ]"
+                        @click="
+                          soldFilters.pnl = 'loss';
+                          loadSoldIfNeeded(true);
+                        "
+                      >
+                        Loss
+                      </button>
                     </div>
                   </div>
                   <div>
-                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Sort</label>
+                    <label
+                      class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
+                      >Sort</label
+                    >
                     <div class="flex gap-2">
-                      <div class="inline-flex flex-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
-                        <button :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.sortBy==='date' ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300']" @click="soldFilters.sortBy='date'; loadSoldIfNeeded(true)">Date</button>
-                        <button :class="['flex-1 px-2 py-1.5 text-xs', soldFilters.sortBy==='price' ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-300']" @click="soldFilters.sortBy='price'; loadSoldIfNeeded(true)">Price</button>
+                      <div
+                        class="inline-flex flex-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden"
+                      >
+                        <button
+                          :class="[
+                            'flex-1 px-2 py-1.5 text-xs',
+                            soldFilters.sortBy === 'date'
+                              ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white'
+                              : 'text-gray-600 dark:text-gray-300',
+                          ]"
+                          @click="
+                            soldFilters.sortBy = 'date';
+                            loadSoldIfNeeded(true);
+                          "
+                        >
+                          Date
+                        </button>
+                        <button
+                          :class="[
+                            'flex-1 px-2 py-1.5 text-xs',
+                            soldFilters.sortBy === 'price'
+                              ? 'bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-white'
+                              : 'text-gray-600 dark:text-gray-300',
+                          ]"
+                          @click="
+                            soldFilters.sortBy = 'price';
+                            loadSoldIfNeeded(true);
+                          "
+                        >
+                          Price
+                        </button>
                       </div>
-                      <button class="px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700" @click="soldFilters.sortDir = soldFilters.sortDir==='asc' ? 'desc' : 'asc'; loadSoldIfNeeded(true)">
-                        <svg v-if="soldFilters.sortDir==='asc'" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
-                        <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                      <button
+                        class="px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
+                        @click="
+                          soldFilters.sortDir =
+                            soldFilters.sortDir === 'asc' ? 'desc' : 'asc';
+                          loadSoldIfNeeded(true);
+                        "
+                      >
+                        <svg
+                          v-if="soldFilters.sortDir === 'asc'"
+                          class="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M5 15l7-7 7 7"
+                          />
+                        </svg>
+                        <svg
+                          v-else
+                          class="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
                       </button>
                     </div>
                   </div>
                 </div>
 
-                <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">{{ soldSalesFiltered.length }} results</span>
+                <div
+                  class="mt-3 flex flex-wrap items-center justify-between gap-2"
+                >
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                    >{{ soldSalesFiltered.length }} results</span
+                  >
                   <div class="flex items-center gap-2">
-                    <button class="inline-flex items-center px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md" @click="toggleSelectAllFiltered()">
+                    <button
+                      class="inline-flex items-center px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md"
+                      @click="toggleSelectAllFiltered()"
+                    >
                       Select filtered
                     </button>
-                    <button class="inline-flex items-center px-3 py-1.5 text-xs font-medium bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md" @click="clearSelection()">
+                    <button
+                      class="inline-flex items-center px-3 py-1.5 text-xs font-medium bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md"
+                      @click="clearSelection()"
+                    >
                       Clear
                     </button>
                     <a
-                      :href="selectedSaleIds.length>0 ? (exportUrlSelected || undefined) : (soldSalesFiltered.length>0 ? (exportUrlFiltered || undefined) : undefined)"
+                      :href="
+                        selectedSaleIds.length > 0
+                          ? exportUrlSelected || undefined
+                          : soldSalesFiltered.length > 0
+                            ? exportUrlFiltered || undefined
+                            : undefined
+                      "
                       :class="[
                         'inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md border',
-                        (selectedSaleIds.length>0 || soldSalesFiltered.length>0) ? 'text-white bg-indigo-600 hover:bg-indigo-700 border-indigo-600' : 'text-gray-400 bg-gray-100 dark:bg-gray-700 border-gray-300 pointer-events-none'
+                        selectedSaleIds.length > 0 ||
+                        soldSalesFiltered.length > 0
+                          ? 'text-white bg-indigo-600 hover:bg-indigo-700 border-indigo-600'
+                          : 'text-gray-400 bg-gray-100 dark:bg-gray-700 border-gray-300 pointer-events-none',
                       ]"
                     >
-                      <svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
-                      {{ selectedSaleIds.length>0 ? 'Export selected' : 'Export filtered' }}
+                      <svg
+                        class="h-4 w-4 mr-1.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"
+                        />
+                      </svg>
+                      {{
+                        selectedSaleIds.length > 0
+                          ? 'Export selected'
+                          : 'Export filtered'
+                      }}
                     </a>
                   </div>
                 </div>
               </div>
 
-              <div v-if="soldSalesFiltered.length>0" class="space-y-0">
+              <div v-if="soldSalesFiltered.length > 0" class="space-y-0">
                 <div
                   v-for="sale in soldSalesFiltered"
                   :key="sale.id"
@@ -843,13 +1134,23 @@
                   <div class="p-6">
                     <div class="card-content flex items-start space-x-6">
                       <div class="pt-1">
-                        <input type="checkbox" :value="sale.id" v-model="selectedSaleIds" class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500" />
+                        <input
+                          v-model="selectedSaleIds"
+                          type="checkbox"
+                          :value="sale.id"
+                          class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500"
+                        />
                       </div>
                       <!-- Card Image -->
                       <div class="card-image flex-shrink-0">
                         <Link
                           v-if="sale.user_card?.blueprint?.id"
-                          :href="route('blueprints.show', sale.user_card.blueprint.id)"
+                          :href="
+                            route(
+                              'blueprints.show',
+                              sale.user_card.blueprint.id
+                            )
+                          "
                           class="block"
                         >
                           <img
@@ -874,32 +1175,62 @@
                             <h3 class="text-xl font-bold mb-2">
                               <Link
                                 v-if="sale.user_card?.blueprint?.id"
-                                :href="route('blueprints.show', sale.user_card.blueprint.id)"
+                                :href="
+                                  route(
+                                    'blueprints.show',
+                                    sale.user_card.blueprint.id
+                                  )
+                                "
                                 class="text-gray-900 dark:text-gray-100 hover:underline hover:text-blue-600 dark:hover:text-blue-400"
                               >
-                                {{ sale.user_card?.blueprint?.name || 'Unknown Card' }}
+                                {{
+                                  sale.user_card?.blueprint?.name ||
+                                  'Unknown Card'
+                                }}
                               </Link>
-                              <span v-else class="text-gray-900 dark:text-gray-100">{{ sale.user_card?.blueprint?.name || 'Unknown Card' }}</span>
+                              <span
+                                v-else
+                                class="text-gray-900 dark:text-gray-100"
+                                >{{
+                                  sale.user_card?.blueprint?.name ||
+                                  'Unknown Card'
+                                }}</span
+                              >
                             </h3>
 
                             <div class="space-y-2">
                               <div class="flex flex-wrap gap-4 text-sm">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                <span
+                                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                                >
                                   {{ sale.user_card?.condition }}
                                 </span>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                <span
+                                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                >
                                   {{ sale.user_card?.language }}
                                 </span>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                                <span
+                                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                                >
                                   Qty: {{ sale.quantity }}
                                 </span>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                                  Sold: {{ new Date(sale.sold_at).toLocaleDateString() }}
+                                <span
+                                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                                >
+                                  Sold:
+                                  {{
+                                    new Date(sale.sold_at).toLocaleDateString()
+                                  }}
                                 </span>
                               </div>
 
-                              <p v-if="sale.user_card?.blueprint?.expansion" class="text-sm text-gray-500 dark:text-gray-500">
-                                {{ sale.user_card.blueprint.expansion.name }} ({{ sale.user_card.blueprint.expansion.code }})
+                              <p
+                                v-if="sale.user_card?.blueprint?.expansion"
+                                class="text-sm text-gray-500 dark:text-gray-500"
+                              >
+                                {{ sale.user_card.blueprint.expansion.name }}
+                                ({{ sale.user_card.blueprint.expansion.code }})
                               </p>
                             </div>
                           </div>
@@ -907,45 +1238,128 @@
                           <!-- Right Column - Pricing Info -->
                           <div class="flex-shrink-0 flex space-x-3">
                             <!-- Per Card -->
-                            <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 w-36">
-                              <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 text-center">Per Card</p>
+                            <div
+                              class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 w-36"
+                            >
+                              <p
+                                class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 text-center"
+                              >
+                                Per Card
+                              </p>
                               <div class="text-center space-y-1">
-                                <p class="text-sm font-bold text-gray-900 dark:text-gray-100">
-                                  {{ formatCurrency((sale.unit_sale_price_cents||0)/100) }}
+                                <p
+                                  class="text-sm font-bold text-gray-900 dark:text-gray-100"
+                                >
+                                  {{
+                                    formatCurrency(
+                                      (sale.unit_sale_price_cents || 0) / 100
+                                    )
+                                  }}
                                 </p>
-                                <p class="text-xs text-gray-600 dark:text-gray-400">Sale Price</p>
-                                <div class="border-t border-gray-200 dark:border-gray-600 pt-1 mt-1">
-                                  <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    {{ formatCurrency((sale.unit_purchase_price_cents||0)/100) }}
+                                <p
+                                  class="text-xs text-gray-600 dark:text-gray-400"
+                                >
+                                  Sale Price
+                                </p>
+                                <div
+                                  class="border-t border-gray-200 dark:border-gray-600 pt-1 mt-1"
+                                >
+                                  <p
+                                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                                  >
+                                    {{
+                                      formatCurrency(
+                                        (sale.unit_purchase_price_cents || 0) /
+                                          100
+                                      )
+                                    }}
                                   </p>
-                                  <p class="text-xs text-gray-500 dark:text-gray-500">Purchase</p>
+                                  <p
+                                    class="text-xs text-gray-500 dark:text-gray-500"
+                                  >
+                                    Purchase
+                                  </p>
                                 </div>
                               </div>
                             </div>
 
                             <!-- Group Total Values -->
-                            <div class="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30 p-3 rounded-lg border border-indigo-200 dark:border-indigo-700 w-36">
-                              <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-2 text-center">Total (×{{ sale.quantity }})</p>
+                            <div
+                              class="bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/30 dark:to-blue-900/30 p-3 rounded-lg border border-indigo-200 dark:border-indigo-700 w-36"
+                            >
+                              <p
+                                class="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-2 text-center"
+                              >
+                                Total (×{{ sale.quantity }})
+                              </p>
                               <div class="text-center space-y-1">
-                                <p class="text-sm font-bold text-indigo-900 dark:text-indigo-100">
-                                  {{ formatCurrency(((sale.unit_sale_price_cents||0) * sale.quantity)/100) }}
+                                <p
+                                  class="text-sm font-bold text-indigo-900 dark:text-indigo-100"
+                                >
+                                  {{
+                                    formatCurrency(
+                                      ((sale.unit_sale_price_cents || 0) *
+                                        sale.quantity) /
+                                        100
+                                    )
+                                  }}
                                 </p>
-                                <p class="text-xs text-indigo-700 dark:text-indigo-300">Total Sale</p>
-                                <div class="border-t border-indigo-200 dark:border-indigo-600 pt-1 mt-1">
-                                  <p class="text-sm font-bold text-indigo-800 dark:text-indigo-200">
-                                    {{ formatCurrency(((sale.unit_purchase_price_cents||0) * sale.quantity)/100) }}
+                                <p
+                                  class="text-xs text-indigo-700 dark:text-indigo-300"
+                                >
+                                  Total Sale
+                                </p>
+                                <div
+                                  class="border-t border-indigo-200 dark:border-indigo-600 pt-1 mt-1"
+                                >
+                                  <p
+                                    class="text-sm font-bold text-indigo-800 dark:text-indigo-200"
+                                  >
+                                    {{
+                                      formatCurrency(
+                                        ((sale.unit_purchase_price_cents || 0) *
+                                          sale.quantity) /
+                                          100
+                                      )
+                                    }}
                                   </p>
-                                  <p class="text-xs text-indigo-600 dark:text-indigo-400">Total Cost</p>
+                                  <p
+                                    class="text-xs text-indigo-600 dark:text-indigo-400"
+                                  >
+                                    Total Cost
+                                  </p>
                                 </div>
                               </div>
                             </div>
 
                             <!-- P&L -->
-                            <div class="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 w-32">
-                              <p class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 text-center">P&L</p>
+                            <div
+                              class="bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600 w-32"
+                            >
+                              <p
+                                class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 text-center"
+                              >
+                                P&L
+                              </p>
                               <div class="text-center">
-                                <p :class="[((sale.unit_sale_price_cents||0) - (sale.unit_purchase_price_cents||0)) >= 0 ? 'text-emerald-600' : 'text-red-600', 'text-sm font-bold']">
-                                  {{ formatCurrency(((sale.unit_sale_price_cents||0) - (sale.unit_purchase_price_cents||0)) * sale.quantity/100) }}
+                                <p
+                                  :class="[
+                                    (sale.unit_sale_price_cents || 0) -
+                                      (sale.unit_purchase_price_cents || 0) >=
+                                    0
+                                      ? 'text-emerald-600'
+                                      : 'text-red-600',
+                                    'text-sm font-bold',
+                                  ]"
+                                >
+                                  {{
+                                    formatCurrency(
+                                      (((sale.unit_sale_price_cents || 0) -
+                                        (sale.unit_purchase_price_cents || 0)) *
+                                        sale.quantity) /
+                                        100
+                                    )
+                                  }}
                                 </p>
                               </div>
                             </div>
@@ -956,22 +1370,57 @@
                   </div>
                 </div>
               </div>
-              <div v-else class="text-sm text-gray-500 dark:text-gray-400 p-12 text-center">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full mb-4 mx-auto">
-                  <svg class="h-8 w-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21h6"/>
+              <div
+                v-else
+                class="text-sm text-gray-500 dark:text-gray-400 p-12 text-center"
+              >
+                <div
+                  class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full mb-4 mx-auto"
+                >
+                  <svg
+                    class="h-8 w-8 text-gray-400 dark:text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 21h6"
+                    />
                   </svg>
                 </div>
-                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No sales yet</h3>
-                <p class="text-gray-500 dark:text-gray-400">Start selling cards to see your sales history here.</p>
+                <h3
+                  class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2"
+                >
+                  No sales yet
+                </h3>
+                <p class="text-gray-500 dark:text-gray-400">
+                  Start selling cards to see your sales history here.
+                </p>
               </div>
               <div v-if="canExport" class="mt-4 flex justify-end">
                 <a
-                  :href="route('api.portfolios.sales.export',{portfolio: props.portfolio.id})"
+                  :href="
+                    route('api.portfolios.sales.export', {
+                      portfolio: props.portfolio.id,
+                    })
+                  "
                   class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
-                  <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                  <svg
+                    class="h-4 w-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"
+                    />
                   </svg>
                   Export All History (CSV)
                   <PremiumBadge variant="subtle" size="sm" class="ml-2" />
@@ -1073,7 +1522,12 @@ const props = defineProps<{
 }>();
 
 // Plan entitlements (Inertia shared props)
-const { isPremium, canViewAnalytics, canExportCsv: canExport, oldestPortfolioId } = useFeatures();
+const {
+  isPremium,
+  canViewAnalytics,
+  canExportCsv: canExport,
+  oldestPortfolioId,
+} = useFeatures();
 const isLockedPortfolio = computed(() => {
   // The server is the source of truth for the lock state
   if (typeof props.locked === 'boolean') {
@@ -1092,7 +1546,7 @@ const showRemoveCardModal = ref(false);
 const cardToEdit = ref<UserCardData | null>(null);
 const cardGroupToRemove = ref<CardGroup | null>(null);
 const isLoading = ref(false);
-const activeTab = ref<'holding'|'sold'>('holding');
+const activeTab = ref<'holding' | 'sold'>('holding');
 const soldSales = ref<any[]>([]);
 const selectedSaleIds = ref<number[]>([]);
 const soldFilters = reactive({
@@ -1105,7 +1559,7 @@ const soldFilters = reactive({
   sortDir: 'desc' as 'asc' | 'desc',
 });
 const showSellModal = ref(false);
-const sellingUserCardId = ref<number|null>(null);
+const sellingUserCardId = ref<number | null>(null);
 const sellingMaxQty = ref<number>(1);
 
 // Portfolio value chart state
@@ -1146,7 +1600,10 @@ const closeAddCardModal = () => {
 const handleCardAddedToCurrentPortfolio = () => {
   // Quando una carta è aggiunta al portfolio corrente, la prop `portfolio` non si aggiorna automaticamente.
   // Dobbiamo ricaricare i dati per questa pagina.
-  showSuccessToast('Card added!', 'The card has been successfully added to your portfolio.');
+  showSuccessToast(
+    'Card added!',
+    'The card has been successfully added to your portfolio.'
+  );
   isLoading.value = true;
   router.reload({
     only: ['portfolio', 'userCardsPagination'],
@@ -1202,27 +1659,36 @@ const closeSell = () => {
 const handleSold = () => {
   closeSell();
   isLoading.value = true;
-  router.reload({ only: ['portfolio', 'userCardsPagination'], onFinish: async () => {
-    isLoading.value = false;
-    if (activeTab.value === 'sold') await loadSoldIfNeeded(true);
-  }});
+  router.reload({
+    only: ['portfolio', 'userCardsPagination'],
+    onFinish: async () => {
+      isLoading.value = false;
+      if (activeTab.value === 'sold') await loadSoldIfNeeded(true);
+    },
+  });
 };
 
 const loadSoldIfNeeded = async (force = false) => {
-  if (!force && activeTab.value === 'sold' && soldSales.value.length>0) return;
+  if (!force && activeTab.value === 'sold' && soldSales.value.length > 0)
+    return;
   activeTab.value = 'sold';
-  
+
   // Build query params for backend filtering
   const params: Record<string, any> = {};
   if (soldFilters.dateFrom) params.date_from = soldFilters.dateFrom;
   if (soldFilters.dateTo) params.date_to = soldFilters.dateTo;
-  if (soldFilters.minSalePrice != null) params.min_sale_price = soldFilters.minSalePrice;
-  if (soldFilters.maxSalePrice != null) params.max_sale_price = soldFilters.maxSalePrice;
+  if (soldFilters.minSalePrice != null)
+    params.min_sale_price = soldFilters.minSalePrice;
+  if (soldFilters.maxSalePrice != null)
+    params.max_sale_price = soldFilters.maxSalePrice;
   if (soldFilters.pnl !== 'all') params.pnl = soldFilters.pnl;
   params.sort_by = soldFilters.sortBy;
   params.sort_dir = soldFilters.sortDir;
-  
-  const res = await axios.get(route('api.portfolios.sales.index',{ portfolio: props.portfolio.id }), { params });
+
+  const res = await axios.get(
+    route('api.portfolios.sales.index', { portfolio: props.portfolio.id }),
+    { params }
+  );
   // Handle paginated response
   if (res.data.data) {
     soldSales.value = res.data.data || [];
@@ -1240,17 +1706,14 @@ const confirmRemoveCards = async (quantityToRemove: number) => {
 
   try {
     // Use removeBlueprint endpoint which handles quantity removal in a single API call
-    await axios.delete(
-      `/portfolios/${props.portfolio.id}/blueprints`,
-      {
-        data: {
-          blueprint_id: cardGroupToRemove.value.blueprint.id,
-          condition: cardGroupToRemove.value.condition,
-          language: cardGroupToRemove.value.language,
-          quantity: quantityToRemove,
-        },
-      }
-    );
+    await axios.delete(`/portfolios/${props.portfolio.id}/blueprints`, {
+      data: {
+        blueprint_id: cardGroupToRemove.value.blueprint.id,
+        condition: cardGroupToRemove.value.condition,
+        language: cardGroupToRemove.value.language,
+        quantity: quantityToRemove,
+      },
+    });
 
     showSuccessToast(
       'Cards removed successfully!',
@@ -1268,11 +1731,10 @@ const confirmRemoveCards = async (quantityToRemove: number) => {
   } catch (error) {
     console.error('Error removing cards from portfolio:', error);
     const axiosError = error as { response?: { data?: { message?: string } } };
-    const errorMessage = axiosError.response?.data?.message || 'Failed to remove cards from portfolio. Please try again.';
-    showErrorToast(
-      'Error removing cards',
-      errorMessage
-    );
+    const errorMessage =
+      axiosError.response?.data?.message ||
+      'Failed to remove cards from portfolio. Please try again.';
+    showErrorToast('Error removing cards', errorMessage);
     closeRemoveCardModal();
   }
 };
@@ -1502,20 +1964,24 @@ const soldSalesFiltered = computed(() => {
 });
 
 const exportUrlSelected = computed(() => {
-  const base = route('api.portfolios.sales.export',{ portfolio: props.portfolio.id });
+  const base = route('api.portfolios.sales.export', {
+    portfolio: props.portfolio.id,
+  });
   if (selectedSaleIds.value.length === 0) return '';
   return `${base}?ids=${selectedSaleIds.value.join(',')}`;
 });
 
 const exportUrlFiltered = computed(() => {
-  const base = route('api.portfolios.sales.export',{ portfolio: props.portfolio.id });
-  const ids = soldSalesFiltered.value.map((s:any) => s.id);
+  const base = route('api.portfolios.sales.export', {
+    portfolio: props.portfolio.id,
+  });
+  const ids = soldSalesFiltered.value.map((s: any) => s.id);
   if (ids.length === 0) return '';
   return `${base}?ids=${ids.join(',')}`;
 });
 
 const toggleSelectAllFiltered = () => {
-  const ids = soldSalesFiltered.value.map((s:any) => s.id);
+  const ids = soldSalesFiltered.value.map((s: any) => s.id);
   selectedSaleIds.value = ids;
 };
 
@@ -1609,7 +2075,11 @@ const overallStatistics = computed(() => {
 
 // Initialize chart on mount
 onMounted(() => {
-  if (canViewAnalytics.value && props.portfolio.user_cards && props.portfolio.user_cards.length > 0) {
+  if (
+    canViewAnalytics.value &&
+    props.portfolio.user_cards &&
+    props.portfolio.user_cards.length > 0
+  ) {
     fetchPortfolioValueHistory(activePeriod.value, activeMetric.value);
   }
 });

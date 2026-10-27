@@ -2,6 +2,7 @@ import globals from 'globals';
 import pluginVue from 'eslint-plugin-vue';
 import tseslint from 'typescript-eslint';
 import js from '@eslint/js';
+import eslintConfigPrettier from 'eslint-config-prettier/flat';
 
 export default tseslint.config(
   {
@@ -45,5 +46,8 @@ export default tseslint.config(
       ],
       '@typescript-eslint/no-explicit-any': 'warn',
     },
-  }
+  },
+  // Must stay LAST: turns off every formatting rule (indentation, attributes per
+  // line, ...) that conflicts with Prettier, which owns code formatting
+  eslintConfigPrettier
 );

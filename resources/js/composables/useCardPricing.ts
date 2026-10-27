@@ -13,7 +13,8 @@ export function useCardPricing(
     const bp = blueprint.value;
     if (!bp?.latest_price) return null;
     if (language && bp.latest_price.language && language.value) {
-      const sameLang = bp.latest_price.language.toUpperCase() === language.value.toUpperCase();
+      const sameLang =
+        bp.latest_price.language.toUpperCase() === language.value.toUpperCase();
       if (!sameLang) return null; // force caller to fetch language-specific blueprint price
     }
     return bp.latest_price.price_cents || null;

@@ -111,7 +111,9 @@ const fetchPortfolios = async () => {
 const fetchBlueprintDetails = async () => {
   isLoadingBlueprint.value = true;
   try {
-    const response = await axios.get(route('api.blueprints.show', { blueprint: props.blueprint.id }));
+    const response = await axios.get(
+      route('api.blueprints.show', { blueprint: props.blueprint.id })
+    );
     detailedBlueprint.value = response.data.data;
     if (detailedBlueprint.value?.available_languages?.length) {
       form.language = detailedBlueprint.value.available_languages.includes('en')
@@ -129,10 +131,13 @@ const fetchBlueprintDetails = async () => {
 const submit = () => {
   form.errors = {};
   axios
-    .post(route('api.portfolios.addBlueprint', { portfolio: form.portfolio_id }), {
-      blueprint_id: props.blueprint.id,
-      ...form,
-    })
+    .post(
+      route('api.portfolios.addBlueprint', { portfolio: form.portfolio_id }),
+      {
+        blueprint_id: props.blueprint.id,
+        ...form,
+      }
+    )
     .then((response) => {
       success('Card added!', `"${props.blueprint.name}" added to portfolio.`);
       emit('card-added', response.data);
@@ -172,10 +177,18 @@ onMounted(() => {
             class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
             :disabled="isLoadingPortfolios"
           >
-            <option v-if="isLoadingPortfolios" value="" disabled>Loading portfolios...</option>
-            <option v-else-if="portfolios.length === 0" value="" disabled>No portfolios found</option>
+            <option v-if="isLoadingPortfolios" value="" disabled>
+              Loading portfolios...
+            </option>
+            <option v-else-if="portfolios.length === 0" value="" disabled>
+              No portfolios found
+            </option>
             <option v-else value="" disabled>Select a portfolio</option>
-            <option v-for="portfolio in portfolios" :key="portfolio.id" :value="portfolio.id">
+            <option
+              v-for="portfolio in portfolios"
+              :key="portfolio.id"
+              :value="portfolio.id"
+            >
               {{ portfolio.name }}
             </option>
           </select>
@@ -183,7 +196,11 @@ onMounted(() => {
         </div>
 
         <div>
-          <ConditionSelect id="condition" v-model="form.condition" class="mt-1 block w-full" />
+          <ConditionSelect
+            id="condition"
+            v-model="form.condition"
+            class="mt-1 block w-full"
+          />
           <InputError class="mt-2" :message="form.errors.condition" />
         </div>
 
@@ -199,7 +216,13 @@ onMounted(() => {
 
         <div>
           <InputLabel for="quantity" value="Quantity" />
-          <TextInput id="quantity" v-model="quantityString" type="number" class="mt-1 block w-full" min="1" />
+          <TextInput
+            id="quantity"
+            v-model="quantityString"
+            type="number"
+            class="mt-1 block w-full"
+            min="1"
+          />
           <InputError class="mt-2" :message="form.errors.quantity" />
         </div>
 
@@ -213,7 +236,10 @@ onMounted(() => {
             min="0"
             step="0.01"
           />
-          <InputError class="mt-2" :message="form.errors.purchase_price_cents" />
+          <InputError
+            class="mt-2"
+            :message="form.errors.purchase_price_cents"
+          />
         </div>
 
         <div>

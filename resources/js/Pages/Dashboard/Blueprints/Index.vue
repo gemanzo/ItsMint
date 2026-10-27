@@ -72,7 +72,9 @@ const showAddToPortfolioModal = ref(false);
 const selectedBlueprint = ref<Blueprint | null>(null);
 // Language selection (string code; default EN)
 // Default EN; server may not provide language in filters yet
-const searchLanguageCode = ref<'en' | ''>((props as any).filters?.language || 'en');
+const searchLanguageCode = ref<'en' | ''>(
+  (props as any).filters?.language || 'en'
+);
 
 // --- Constants ---
 const sortOptions = [
@@ -487,11 +489,11 @@ watch(searchLanguageCode, () => {
                 </svg>
               </div>
               <BlueprintSearchBar
-                v-model:modelValue="searchQuery"
+                v-model:model-value="searchQuery"
                 v-model:language="searchLanguageCode"
                 :loading="isSearching"
                 placeholder="Search cards..."
-                @update:modelValue="handleSearchInput()"
+                @update:model-value="handleSearchInput()"
                 @clear="clearSearch"
               />
             </div>

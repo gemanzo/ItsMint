@@ -86,10 +86,16 @@
                   'px-3 sm:px-4 py-2 font-medium rounded-button transition-colors flex items-center justify-center space-x-2 text-sm',
                   canCreatePortfolio
                     ? 'bg-gray-600 hover:bg-gray-700 text-white cursor-pointer'
-                    : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                    : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed',
                 ]"
-                :title="canCreatePortfolio ? 'Create new portfolio' : 'Upgrade to Premium to create multiple portfolios'"
-                @click="canCreatePortfolio ? showCreatePortfolioModal = true : null"
+                :title="
+                  canCreatePortfolio
+                    ? 'Create new portfolio'
+                    : 'Upgrade to Premium to create multiple portfolios'
+                "
+                @click="
+                  canCreatePortfolio ? (showCreatePortfolioModal = true) : null
+                "
               >
                 <svg
                   class="h-4 w-4"
@@ -120,8 +126,11 @@
                 v-if="!canCreatePortfolio"
                 class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded-lg shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10"
               >
-                Free plan allows only 1 portfolio. Upgrade to Premium for unlimited portfolios.
-                <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+                Free plan allows only 1 portfolio. Upgrade to Premium for
+                unlimited portfolios.
+                <div
+                  class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700"
+                ></div>
               </div>
             </div>
           </div>
@@ -282,11 +291,19 @@
                       'p-2 rounded-lg transition-colors',
                       portfolio.is_locked && !isPremium
                         ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700',
                     ]"
                     aria-label="Edit portfolio"
-                    :title="portfolio.is_locked && !isPremium ? 'Premium feature - upgrade to unlock' : 'Edit portfolio'"
-                    @click="portfolio.is_locked && !isPremium ? null : editPortfolio(portfolio)"
+                    :title="
+                      portfolio.is_locked && !isPremium
+                        ? 'Premium feature - upgrade to unlock'
+                        : 'Edit portfolio'
+                    "
+                    @click="
+                      portfolio.is_locked && !isPremium
+                        ? null
+                        : editPortfolio(portfolio)
+                    "
                   >
                     <svg
                       class="w-4 h-4"
@@ -308,11 +325,19 @@
                       'p-2 rounded-lg transition-colors',
                       portfolio.is_locked && !isPremium
                         ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                        : 'text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
+                        : 'text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20',
                     ]"
                     aria-label="Delete portfolio"
-                    :title="portfolio.is_locked && !isPremium ? 'Premium feature - upgrade to unlock' : 'Delete portfolio'"
-                    @click="portfolio.is_locked && !isPremium ? null : deletePortfolio(portfolio)"
+                    :title="
+                      portfolio.is_locked && !isPremium
+                        ? 'Premium feature - upgrade to unlock'
+                        : 'Delete portfolio'
+                    "
+                    @click="
+                      portfolio.is_locked && !isPremium
+                        ? null
+                        : deletePortfolio(portfolio)
+                    "
                   >
                     <svg
                       class="w-4 h-4"
@@ -379,10 +404,18 @@
                     'px-3 py-2 text-sm font-medium rounded-button transition-colors',
                     portfolio.is_locked && !isPremium
                       ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-600 cursor-not-allowed'
-                      : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200'
+                      : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200',
                   ]"
-                  :title="portfolio.is_locked && !isPremium ? 'Premium feature - upgrade to unlock' : 'Add Cards'"
-                  @click="portfolio.is_locked && !isPremium ? null : openAddCardModal(portfolio)"
+                  :title="
+                    portfolio.is_locked && !isPremium
+                      ? 'Premium feature - upgrade to unlock'
+                      : 'Add Cards'
+                  "
+                  @click="
+                    portfolio.is_locked && !isPremium
+                      ? null
+                      : openAddCardModal(portfolio)
+                  "
                 >
                   Add Cards
                 </button>
@@ -432,7 +465,9 @@
                       <div
                         class="flex flex-wrap items-center space-x-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1"
                       >
-                        <span>{{ getPortfolioTotalCards(portfolio) }} cards</span>
+                        <span
+                          >{{ getPortfolioTotalCards(portfolio) }} cards</span
+                        >
                         <span>{{
                           formatCurrency(portfolio.total_value || 0)
                         }}</span>
@@ -456,10 +491,18 @@
                         'px-3 py-2 text-sm font-medium rounded-button transition-colors',
                         portfolio.is_locked && !isPremium
                           ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-600 cursor-not-allowed'
-                          : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200'
+                          : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200',
                       ]"
-                      :title="portfolio.is_locked && !isPremium ? 'Premium feature - upgrade to unlock' : 'Add Cards'"
-                      @click="portfolio.is_locked && !isPremium ? null : openAddCardModal(portfolio)"
+                      :title="
+                        portfolio.is_locked && !isPremium
+                          ? 'Premium feature - upgrade to unlock'
+                          : 'Add Cards'
+                      "
+                      @click="
+                        portfolio.is_locked && !isPremium
+                          ? null
+                          : openAddCardModal(portfolio)
+                      "
                     >
                       Add Cards
                     </button>
@@ -469,11 +512,19 @@
                         'p-2 rounded-lg transition-colors',
                         portfolio.is_locked && !isPremium
                           ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                          : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+                          : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700',
                       ]"
                       aria-label="Edit portfolio"
-                      :title="portfolio.is_locked && !isPremium ? 'Premium feature - upgrade to unlock' : 'Edit portfolio'"
-                      @click="portfolio.is_locked && !isPremium ? null : editPortfolio(portfolio)"
+                      :title="
+                        portfolio.is_locked && !isPremium
+                          ? 'Premium feature - upgrade to unlock'
+                          : 'Edit portfolio'
+                      "
+                      @click="
+                        portfolio.is_locked && !isPremium
+                          ? null
+                          : editPortfolio(portfolio)
+                      "
                     >
                       <svg
                         class="w-4 h-4"
@@ -495,11 +546,19 @@
                         'p-2 rounded-lg transition-colors',
                         portfolio.is_locked && !isPremium
                           ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                          : 'text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
+                          : 'text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20',
                       ]"
                       aria-label="Delete portfolio"
-                      :title="portfolio.is_locked && !isPremium ? 'Premium feature - upgrade to unlock' : 'Delete portfolio'"
-                      @click="portfolio.is_locked && !isPremium ? null : deletePortfolio(portfolio)"
+                      :title="
+                        portfolio.is_locked && !isPremium
+                          ? 'Premium feature - upgrade to unlock'
+                          : 'Delete portfolio'
+                      "
+                      @click="
+                        portfolio.is_locked && !isPremium
+                          ? null
+                          : deletePortfolio(portfolio)
+                      "
                     >
                       <svg
                         class="w-4 h-4"
@@ -516,139 +575,144 @@
                       </svg>
                     </button>
                   </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Empty State -->
-        <div
-          v-if="portfolios.length === 0"
-          class="text-center py-8 sm:py-12"
-        >
-          <div
-            class="bg-white dark:bg-gray-800 rounded-card p-6 sm:p-8 border border-gray-200 dark:border-gray-700"
-          >
-            <svg
-              class="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <!-- Empty State -->
+          <div v-if="portfolios.length === 0" class="text-center py-8 sm:py-12">
+            <div
+              class="bg-white dark:bg-gray-800 rounded-card p-6 sm:p-8 border border-gray-200 dark:border-gray-700"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-              />
-            </svg>
-            <h3
-              class="mt-2 text-lg sm:text-xl font-medium text-gray-900 dark:text-white"
-            >
-              No portfolios yet
-            </h3>
-            <p
-              class="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-400"
-            >
-              Get started by creating your first portfolio to organize your card
-              collection.
-            </p>
-            <div class="mt-6">
-              <button
-                type="button"
-                :disabled="!canCreatePortfolio"
-                :class="[
-                  'inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors',
-                  canCreatePortfolio
-                    ? 'text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
-                    : 'text-gray-400 bg-gray-300 dark:bg-gray-600 cursor-not-allowed'
-                ]"
-                :title="canCreatePortfolio ? 'Create your first portfolio' : 'Upgrade to Premium to create multiple portfolios'"
-                @click="canCreatePortfolio ? showCreatePortfolioModal = true : null"
+              <svg
+                class="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                <svg
-                  class="-ml-1 mr-2 h-5 w-5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                Create Portfolio
-                <PremiumBadge
-                  v-if="!canCreatePortfolio"
-                  variant="subtle"
-                  size="sm"
-                  :show-icon="false"
-                  text="Premium"
-                  class="ml-2"
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
                 />
-              </button>
-              <!-- Info message for free plan users -->
-              <p
-                v-if="!canCreatePortfolio"
-                class="mt-3 text-xs text-gray-500 dark:text-gray-400"
+              </svg>
+              <h3
+                class="mt-2 text-lg sm:text-xl font-medium text-gray-900 dark:text-white"
               >
-                Free plan allows only 1 portfolio.
-                <a
-                  href="/subscribe"
-                  class="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium underline"
-                >
-                  Upgrade to Premium
-                </a>
-                for unlimited portfolios.
+                No portfolios yet
+              </h3>
+              <p
+                class="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-400"
+              >
+                Get started by creating your first portfolio to organize your
+                card collection.
               </p>
+              <div class="mt-6">
+                <button
+                  type="button"
+                  :disabled="!canCreatePortfolio"
+                  :class="[
+                    'inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors',
+                    canCreatePortfolio
+                      ? 'text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                      : 'text-gray-400 bg-gray-300 dark:bg-gray-600 cursor-not-allowed',
+                  ]"
+                  :title="
+                    canCreatePortfolio
+                      ? 'Create your first portfolio'
+                      : 'Upgrade to Premium to create multiple portfolios'
+                  "
+                  @click="
+                    canCreatePortfolio
+                      ? (showCreatePortfolioModal = true)
+                      : null
+                  "
+                >
+                  <svg
+                    class="-ml-1 mr-2 h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  Create Portfolio
+                  <PremiumBadge
+                    v-if="!canCreatePortfolio"
+                    variant="subtle"
+                    size="sm"
+                    :show-icon="false"
+                    text="Premium"
+                    class="ml-2"
+                  />
+                </button>
+                <!-- Info message for free plan users -->
+                <p
+                  v-if="!canCreatePortfolio"
+                  class="mt-3 text-xs text-gray-500 dark:text-gray-400"
+                >
+                  Free plan allows only 1 portfolio.
+                  <a
+                    href="/subscribe"
+                    class="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium underline"
+                  >
+                    Upgrade to Premium
+                  </a>
+                  for unlimited portfolios.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- No Search Results -->
-        <div v-else class="text-center py-8 sm:py-12">
-          <div
-            class="bg-white dark:bg-gray-800 rounded-card p-6 sm:p-8 border border-gray-200 dark:border-gray-700"
-          >
-            <svg
-              class="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <!-- No Search Results -->
+          <div v-else class="text-center py-8 sm:py-12">
+            <div
+              class="bg-white dark:bg-gray-800 rounded-card p-6 sm:p-8 border border-gray-200 dark:border-gray-700"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <h3
-              class="mt-2 text-base sm:text-lg font-medium text-gray-900 dark:text-white"
-            >
-              No portfolios found
-            </h3>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Try adjusting your search or filters to find what you're looking
-              for.
-            </p>
-            <div class="mt-4">
-              <button
-                type="button"
-                class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium"
-                @click="searchQuery = ''"
+              <svg
+                class="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                Clear search
-              </button>
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <h3
+                class="mt-2 text-base sm:text-lg font-medium text-gray-900 dark:text-white"
+              >
+                No portfolios found
+              </h3>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Try adjusting your search or filters to find what you're looking
+                for.
+              </p>
+              <div class="mt-4">
+                <button
+                  type="button"
+                  class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium"
+                  @click="searchQuery = ''"
+                >
+                  Clear search
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    </div>  
     <!-- End main content wrapper -->
 
     <!-- Modals -->
@@ -892,7 +956,10 @@ const handleCardAdded = () => {
   showAddCardModal.value = false;
   targetPortfolio.value = null;
   // Show success message
-  success('Card added!', 'The card has been successfully added to your portfolio.');
+  success(
+    'Card added!',
+    'The card has been successfully added to your portfolio.'
+  );
   // Force a reload to ensure portfolios are updated with new cards
   router.reload({
     only: ['portfolios'],

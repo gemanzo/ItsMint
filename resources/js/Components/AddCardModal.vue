@@ -12,378 +12,383 @@
     @submit="submitAddCard"
   >
     <div class="relative">
-    <!-- Portfolio Selection -->
-    <div>
-      <label
-        for="portfolio"
-        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-      >
-        Select Portfolio *
-      </label>
-      <input
-        v-if="props.portfolioId"
-        id="portfolio"
-        type="text"
-        :value="selectedPortfolioName"
-        readonly
-        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm sm:text-sm cursor-not-allowed"
-      />
-      <select
-        v-else
-        id="portfolio"
-        v-model="selectedPortfolioId"
-        required
-        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
-        :class="{
-          'border-red-500 focus:border-red-500 focus:ring-red-500':
-            formErrors.portfolio,
-        }"
-      >
-        <option disabled value="">Please select one</option>
-        <option
-          v-for="p in portfolioStore.portfolios"
-          :key="p.id"
-          :value="p.id"
-        >
-          {{ p.name }}
-        </option>
-      </select>
-      <p
-        v-if="formErrors.portfolio"
-        class="mt-1 text-sm text-red-600 dark:text-red-400"
-      >
-        {{ formErrors.portfolio }}
-      </p>
-    </div>
-
-    <!-- Blueprint Search -->
-    <div>
-      <div class="flex items-center justify-between mb-2">
+      <!-- Portfolio Selection -->
+      <div>
         <label
-          for="searchBlueprint"
+          for="portfolio"
           class="block text-sm font-medium text-gray-700 dark:text-gray-300"
         >
-          Search Card (Blueprint) *
+          Select Portfolio *
         </label>
-        <button
-          type="button"
-          class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-indigo-600 bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900 dark:text-indigo-200 dark:hover:bg-indigo-800"
-          @click="openScanModal"
-        >
-          <svg
-            class="h-4 w-4 mr-1"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"
-            />
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"
-            />
-          </svg>
-          Scan Card
-        </button>
-      </div>
-
-      <div class="relative mt-1 rounded-md shadow-sm">
-        <BlueprintSearchBar
-          v-model:modelValue="blueprintSearchQuery"
-          v-model:language="searchLanguageCode"
-          :loading="isSearching"
-          placeholder="Type to search... e.g., Luffy OP01-001"
-          @update:modelValue="handleSearchInput()"
+        <input
+          v-if="props.portfolioId"
+          id="portfolio"
+          type="text"
+          :value="selectedPortfolioName"
+          readonly
+          class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-900 dark:text-gray-100 shadow-sm sm:text-sm cursor-not-allowed"
         />
+        <select
+          v-else
+          id="portfolio"
+          v-model="selectedPortfolioId"
+          required
+          class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+          :class="{
+            'border-red-500 focus:border-red-500 focus:ring-red-500':
+              formErrors.portfolio,
+          }"
+        >
+          <option disabled value="">Please select one</option>
+          <option
+            v-for="p in portfolioStore.portfolios"
+            :key="p.id"
+            :value="p.id"
+          >
+            {{ p.name }}
+          </option>
+        </select>
+        <p
+          v-if="formErrors.portfolio"
+          class="mt-1 text-sm text-red-600 dark:text-red-400"
+        >
+          {{ formErrors.portfolio }}
+        </p>
       </div>
 
-      <!-- Search Results -->
-      <div
-        v-if="blueprintSearchResults.length > 0"
-        class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
-      >
-        <ul>
-          <li
-            v-for="bp in blueprintSearchResults"
-            :key="bp.id"
-            class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white group"
-            @click="selectBlueprint(bp)"
+      <!-- Blueprint Search -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label
+            for="searchBlueprint"
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
-            <div class="flex items-center justify-between">
-              <div class="flex items-center space-x-3 flex-1 min-w-0">
-                <img
-                  v-if="bp.image_url"
-                  :src="bp.image_url"
-                  alt="Card image"
-                  class="h-12 w-auto object-contain rounded-md flex-shrink-0"
-                />
-                <span
-                  v-else
-                  class="h-12 w-8 flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded-md text-xs text-gray-500 dark:text-gray-400 flex-shrink-0"
-                >
-                  No Img
-                </span>
-                <div class="flex-1 min-w-0">
-                  <p
-                    class="text-sm font-medium truncate group-hover:text-white"
+            Search Card (Blueprint) *
+          </label>
+          <button
+            type="button"
+            class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-indigo-600 bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900 dark:text-indigo-200 dark:hover:bg-indigo-800"
+            @click="openScanModal"
+          >
+            <svg
+              class="h-4 w-4 mr-1"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"
+              />
+            </svg>
+            Scan Card
+          </button>
+        </div>
+
+        <div class="relative mt-1 rounded-md shadow-sm">
+          <BlueprintSearchBar
+            v-model:model-value="blueprintSearchQuery"
+            v-model:language="searchLanguageCode"
+            :loading="isSearching"
+            placeholder="Type to search... e.g., Luffy OP01-001"
+            @update:model-value="handleSearchInput()"
+          />
+        </div>
+
+        <!-- Search Results -->
+        <div
+          v-if="blueprintSearchResults.length > 0"
+          class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+        >
+          <ul>
+            <li
+              v-for="bp in blueprintSearchResults"
+              :key="bp.id"
+              class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-600 hover:text-white group"
+              @click="selectBlueprint(bp)"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3 flex-1 min-w-0">
+                  <img
+                    v-if="bp.image_url"
+                    :src="bp.image_url"
+                    alt="Card image"
+                    class="h-12 w-auto object-contain rounded-md flex-shrink-0"
+                  />
+                  <span
+                    v-else
+                    class="h-12 w-8 flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded-md text-xs text-gray-500 dark:text-gray-400 flex-shrink-0"
                   >
-                    {{ bp.name }}
+                    No Img
+                  </span>
+                  <div class="flex-1 min-w-0">
+                    <p
+                      class="text-sm font-medium truncate group-hover:text-white"
+                    >
+                      {{ bp.name }}
+                    </p>
+                    <p
+                      class="text-xs text-gray-500 dark:text-gray-400 group-hover:text-indigo-200 truncate"
+                    >
+                      {{ bp.expansion?.name }} ({{ bp.expansion?.code }})
+                      <span v-if="bp.collector_number">
+                        - #{{ bp.collector_number }}</span
+                      >
+                      <span
+                        v-if="bp.latest_price?.language"
+                        class="ml-1 opacity-80"
+                      >
+                        • {{ (bp.latest_price.language || '').toUpperCase() }}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  v-if="bp.latest_price?.price_cents"
+                  class="text-right flex-shrink-0 pl-2"
+                >
+                  <p
+                    class="font-semibold text-sm text-green-600 dark:text-green-400"
+                  >
+                    {{ formatCurrency(bp.latest_price.price_cents / 100) }}
                   </p>
                   <p
-                    class="text-xs text-gray-500 dark:text-gray-400 group-hover:text-indigo-200 truncate"
+                    class="text-xs text-gray-500 dark:text-gray-400 group-hover:text-indigo-200"
                   >
-                    {{ bp.expansion?.name }} ({{ bp.expansion?.code }})
-                    <span v-if="bp.collector_number">
-                      - #{{ bp.collector_number }}</span
-                    >
-                    <span v-if="bp.latest_price?.language" class="ml-1 opacity-80">
-                      • {{ (bp.latest_price.language || '').toUpperCase() }}
-                    </span>
+                    Market
+                  </p>
+                </div>
+                <div v-else class="text-right flex-shrink-0 pl-2">
+                  <p class="text-xs text-gray-400 dark:text-gray-500">
+                    No price
                   </p>
                 </div>
               </div>
-
-              <div
-                v-if="bp.latest_price?.price_cents"
-                class="text-right flex-shrink-0 pl-2"
-              >
-                <p
-                  class="font-semibold text-sm text-green-600 dark:text-green-400"
-                >
-                  {{ formatCurrency(bp.latest_price.price_cents / 100) }}
-                </p>
-                <p
-                  class="text-xs text-gray-500 dark:text-gray-400 group-hover:text-indigo-200"
-                >
-                  Market
-                </p>
-              </div>
-              <div v-else class="text-right flex-shrink-0 pl-2">
-                <p class="text-xs text-gray-400 dark:text-gray-500">No price</p>
-              </div>
-            </div>
-          </li>
-          <li
-            v-if="hasMoreResults"
-            class="p-2 text-center sticky bottom-0 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm"
-          >
-            <button
-              :disabled="isSearching"
-              class="w-full text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50 py-2"
-              @click="loadMoreBlueprints"
+            </li>
+            <li
+              v-if="hasMoreResults"
+              class="p-2 text-center sticky bottom-0 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm"
             >
-              {{ isSearching ? 'Loading...' : 'Load More' }}
-            </button>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Selected Blueprint Preview -->
-      <div
-        v-if="selectedBlueprint"
-        class="mt-2 p-3 border rounded-md dark:border-gray-600 flex items-center space-x-4"
-      >
-        <img
-          v-if="selectedBlueprint.image_url"
-          :src="selectedBlueprint.image_url"
-          alt="Selected card image"
-          class="h-24 w-auto object-contain rounded-md"
-        />
-        <span
-          v-else
-          class="h-24 w-auto flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded-md text-sm text-gray-500 dark:text-gray-400"
-        >
-          No Img
-        </span>
-        <div>
-          <p class="text-sm font-semibold dark:text-gray-100">
-            Selected: {{ selectedBlueprint.name }}
-          </p>
-          <p class="text-xs dark:text-gray-300">
-            {{ selectedBlueprint.expansion?.name }} ({{
-              selectedBlueprint.expansion?.code
-            }})
-          </p>
+              <button
+                :disabled="isSearching"
+                class="w-full text-indigo-600 dark:text-indigo-400 hover:underline disabled:opacity-50 py-2"
+                @click="loadMoreBlueprints"
+              >
+                {{ isSearching ? 'Loading...' : 'Load More' }}
+              </button>
+            </li>
+          </ul>
         </div>
+
+        <!-- Selected Blueprint Preview -->
+        <div
+          v-if="selectedBlueprint"
+          class="mt-2 p-3 border rounded-md dark:border-gray-600 flex items-center space-x-4"
+        >
+          <img
+            v-if="selectedBlueprint.image_url"
+            :src="selectedBlueprint.image_url"
+            alt="Selected card image"
+            class="h-24 w-auto object-contain rounded-md"
+          />
+          <span
+            v-else
+            class="h-24 w-auto flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded-md text-sm text-gray-500 dark:text-gray-400"
+          >
+            No Img
+          </span>
+          <div>
+            <p class="text-sm font-semibold dark:text-gray-100">
+              Selected: {{ selectedBlueprint.name }}
+            </p>
+            <p class="text-xs dark:text-gray-300">
+              {{ selectedBlueprint.expansion?.name }} ({{
+                selectedBlueprint.expansion?.code
+              }})
+            </p>
+          </div>
+        </div>
+
+        <p
+          v-if="formErrors.blueprint"
+          class="mt-1 text-sm text-red-600 dark:text-red-400"
+        >
+          {{ formErrors.blueprint }}
+        </p>
       </div>
 
-      <p
-        v-if="formErrors.blueprint"
-        class="mt-1 text-sm text-red-600 dark:text-red-400"
-      >
-        {{ formErrors.blueprint }}
-      </p>
-    </div>
+      <!-- Condition -->
+      <div>
+        <label
+          for="condition"
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          Condition *
+        </label>
+        <select
+          id="condition"
+          v-model="cardDetails.condition"
+          required
+          class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+          :class="{
+            'border-red-500 focus:border-red-500 focus:ring-red-500':
+              formErrors.condition,
+          }"
+        >
+          <option value="NM">Near Mint (NM)</option>
+          <option value="LP">Lightly Played (LP)</option>
+          <option value="MP">Moderately Played (MP)</option>
+          <option value="HP">Heavily Played (HP)</option>
+          <option value="DMG">Damaged (DMG)</option>
+        </select>
+        <p
+          v-if="formErrors.condition"
+          class="mt-1 text-sm text-red-600 dark:text-red-400"
+        >
+          {{ formErrors.condition }}
+        </p>
+      </div>
 
-    <!-- Condition -->
-    <div>
-      <label
-        for="condition"
-        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-      >
-        Condition *
-      </label>
-      <select
-        id="condition"
-        v-model="cardDetails.condition"
-        required
-        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
-        :class="{
-          'border-red-500 focus:border-red-500 focus:ring-red-500':
-            formErrors.condition,
-        }"
-      >
-        <option value="NM">Near Mint (NM)</option>
-        <option value="LP">Lightly Played (LP)</option>
-        <option value="MP">Moderately Played (MP)</option>
-        <option value="HP">Heavily Played (HP)</option>
-        <option value="DMG">Damaged (DMG)</option>
-      </select>
-      <p
-        v-if="formErrors.condition"
-        class="mt-1 text-sm text-red-600 dark:text-red-400"
-      >
-        {{ formErrors.condition }}
-      </p>
-    </div>
+      <!-- Quantity -->
+      <div>
+        <label
+          for="quantity"
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          Quantity *
+        </label>
+        <input
+          id="quantity"
+          v-model.number="cardDetails.quantity"
+          type="number"
+          min="1"
+          max="999"
+          required
+          class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+          :class="{
+            'border-red-500 focus:border-red-500 focus:ring-red-500':
+              formErrors.quantity,
+          }"
+        />
+        <p
+          v-if="formErrors.quantity"
+          class="mt-1 text-sm text-red-600 dark:text-red-400"
+        >
+          {{ formErrors.quantity }}
+        </p>
+      </div>
 
-    <!-- Quantity -->
-    <div>
-      <label
-        for="quantity"
-        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-      >
-        Quantity *
-      </label>
-      <input
-        id="quantity"
-        v-model.number="cardDetails.quantity"
-        type="number"
-        min="1"
-        max="999"
-        required
-        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
-        :class="{
-          'border-red-500 focus:border-red-500 focus:ring-red-500':
-            formErrors.quantity,
-        }"
+      <!-- Purchase Price -->
+      <PriceInput
+        v-model="cardDetails.purchase_price"
+        label="Purchase Price"
+        :estimated-price="estimatedPrice"
+        :required="true"
+        :error="formErrors.purchase_price"
       />
-      <p
-        v-if="formErrors.quantity"
-        class="mt-1 text-sm text-red-600 dark:text-red-400"
-      >
-        {{ formErrors.quantity }}
-      </p>
-    </div>
 
-    <!-- Purchase Price -->
-    <PriceInput
-      v-model="cardDetails.purchase_price"
-      label="Purchase Price"
-      :estimated-price="estimatedPrice"
-      :required="true"
-      :error="formErrors.purchase_price"
-    />
+      <!-- Acquired Date -->
+      <div>
+        <label
+          for="acquiredAt"
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          Acquired Date *
+        </label>
+        <input
+          id="acquiredAt"
+          v-model="cardDetails.acquired_at"
+          type="date"
+          required
+          class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+          :class="{
+            'border-red-500 focus:border-red-500 focus:ring-red-500':
+              formErrors.acquired_at,
+          }"
+        />
+        <p
+          v-if="formErrors.acquired_at"
+          class="mt-1 text-sm text-red-600 dark:text-red-400"
+        >
+          {{ formErrors.acquired_at }}
+        </p>
+      </div>
 
-    <!-- Acquired Date -->
-    <div>
-      <label
-        for="acquiredAt"
-        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+      <!-- Notes -->
+      <div>
+        <label
+          for="notes"
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          Notes (Optional)
+        </label>
+        <textarea
+          id="notes"
+          v-model="cardDetails.notes"
+          rows="3"
+          maxlength="1000"
+          placeholder="Add any notes about this card..."
+          class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400 sm:text-sm"
+          :class="{
+            'border-red-500 focus:border-red-500 focus:ring-red-500':
+              formErrors.notes,
+          }"
+        />
+        <p
+          v-if="formErrors.notes"
+          class="mt-1 text-sm text-red-600 dark:text-red-400"
+        >
+          {{ formErrors.notes }}
+        </p>
+        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          {{ cardDetails.notes.length }}/1000 characters
+        </p>
+      </div>
+
+      <!-- Error Display -->
+      <div
+        v-if="formErrors.general"
+        class="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md"
       >
-        Acquired Date *
-      </label>
-      <input
-        id="acquiredAt"
-        v-model="cardDetails.acquired_at"
-        type="date"
-        required
-        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
-        :class="{
-          'border-red-500 focus:border-red-500 focus:ring-red-500':
-            formErrors.acquired_at,
-        }"
+        <p class="text-sm text-red-600 dark:text-red-400">
+          {{ formErrors.general }}
+        </p>
+      </div>
+
+      <!-- Scan Modal Integration -->
+      <CardScanModal
+        v-if="showScanModal"
+        :show="showScanModal"
+        @close="closeScanModal"
+        @scan-complete="handleScanComplete"
       />
-      <p
-        v-if="formErrors.acquired_at"
-        class="mt-1 text-sm text-red-600 dark:text-red-400"
-      >
-        {{ formErrors.acquired_at }}
-      </p>
-    </div>
 
-    <!-- Notes -->
-    <div>
-      <label
-        for="notes"
-        class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-      >
-        Notes (Optional)
-      </label>
-      <textarea
-        id="notes"
-        v-model="cardDetails.notes"
-        rows="3"
-        maxlength="1000"
-        placeholder="Add any notes about this card..."
-        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400 sm:text-sm"
-        :class="{
-          'border-red-500 focus:border-red-500 focus:ring-red-500':
-            formErrors.notes,
-        }"
+      <ScanResultsModal
+        v-if="showScanResults && currentScan"
+        :show="showScanResults"
+        :scan="currentScan"
+        @close="closeScanResults"
+        @blueprint-selected="handleBlueprintSelected"
       />
-      <p
-        v-if="formErrors.notes"
-        class="mt-1 text-sm text-red-600 dark:text-red-400"
-      >
-        {{ formErrors.notes }}
-      </p>
-      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-        {{ cardDetails.notes.length }}/1000 characters
-      </p>
-    </div>
 
-    <!-- Error Display -->
-    <div
-      v-if="formErrors.general"
-      class="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md"
-    >
-      <p class="text-sm text-red-600 dark:text-red-400">
-        {{ formErrors.general }}
-      </p>
-    </div>
-
-    <!-- Scan Modal Integration -->
-    <CardScanModal
-      v-if="showScanModal"
-      :show="showScanModal"
-      @close="closeScanModal"
-      @scan-complete="handleScanComplete"
-    />
-
-    <ScanResultsModal
-      v-if="showScanResults && currentScan"
-      :show="showScanResults"
-      :scan="currentScan"
-      @close="closeScanResults"
-      @blueprint-selected="handleBlueprintSelected"
-    />
-
-    <!-- Paywall Overlay for card limit -->
-    <PaywallOverlay
-      v-if="showPaywall"
-      :upgrade-url="'/subscribe'"
-      :message="paywallMessage"
-      :features="paywallFeatures"
-      :show-close="true"
-      @close="showPaywall = false"
-    />
+      <!-- Paywall Overlay for card limit -->
+      <PaywallOverlay
+        v-if="showPaywall"
+        :upgrade-url="'/subscribe'"
+        :message="paywallMessage"
+        :features="paywallFeatures"
+        :show-close="true"
+        @close="showPaywall = false"
+      />
     </div>
   </FormModal>
 </template>
@@ -603,7 +608,8 @@ const validateForm = (): boolean => {
     isValid = false;
   }
   if (!cardDetails.purchase_price || cardDetails.purchase_price <= 0) {
-    formErrors.purchase_price = 'Purchase price is required and must be greater than 0.';
+    formErrors.purchase_price =
+      'Purchase price is required and must be greater than 0.';
     isValid = false;
   }
   if (!cardDetails.acquired_at) {
@@ -626,7 +632,9 @@ const submitAddCard = async () => {
       return;
     }
 
-    const limitResponse = await axios.get(`/portfolios/${selectedPortfolioId.value}/card-limit`);
+    const limitResponse = await axios.get(
+      `/portfolios/${selectedPortfolioId.value}/card-limit`
+    );
     const limitData = limitResponse.data;
 
     // If user has a limit and requested quantity exceeds available slots
@@ -638,15 +646,15 @@ const submitAddCard = async () => {
         } else {
           paywallMessage.value = `You're trying to add ${cardDetails.quantity} cards, but this portfolio only has ${limitData.available} slot${limitData.available === 1 ? '' : 's'} available (${limitData.current_total}/${limitData.limit} used). Upgrade to Premium to add unlimited cards.`;
         }
-        
+
         paywallFeatures.value = [
           'Unlimited cards per portfolio',
           'Unlimited portfolios',
           'Advanced search',
           'CSV export',
-          'Portfolio analytics'
+          'Portfolio analytics',
         ];
-        
+
         showPaywall.value = true;
         isSubmitting.value = false;
         return;

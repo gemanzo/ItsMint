@@ -688,7 +688,6 @@ watch(
   () => props.scan,
   (newScan) => {
     if (newScan && props.show) {
-      
       selectedCard.value = null; // Reset selection when new scan arrives
       searchQuery.value = ''; // Reset search
       searchResults.value = []; // Reset search results

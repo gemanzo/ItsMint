@@ -70,7 +70,9 @@ export function toConditionCode(condition: string | null | undefined): string {
     return 'NM';
   }
 
-  const isAlreadyACode = CARD_CONDITIONS.some((cardCondition) => cardCondition.value === condition);
+  const isAlreadyACode = CARD_CONDITIONS.some(
+    (cardCondition) => cardCondition.value === condition
+  );
   if (isAlreadyACode) {
     return condition;
   }

@@ -12,14 +12,22 @@ import type { PageProps, PlanFeatures } from '@/types';
 export function useFeatures() {
   const page = usePage<PageProps>();
 
-  const features = computed<PlanFeatures | null>(() => page.props.features ?? null);
+  const features = computed<PlanFeatures | null>(
+    () => page.props.features ?? null
+  );
 
-  const isPremium = computed(() => features.value?.portfolio_unlimited === true);
-  const canViewAnalytics = computed(() => features.value?.analytics_portfolio === true);
+  const isPremium = computed(
+    () => features.value?.portfolio_unlimited === true
+  );
+  const canViewAnalytics = computed(
+    () => features.value?.analytics_portfolio === true
+  );
   const canExportCsv = computed(() => features.value?.export_csv === true);
 
   // Free users can only use their oldest portfolio
-  const oldestPortfolioId = computed<number | null>(() => page.props.oldest_portfolio_id ?? null);
+  const oldestPortfolioId = computed<number | null>(
+    () => page.props.oldest_portfolio_id ?? null
+  );
 
   return {
     features,

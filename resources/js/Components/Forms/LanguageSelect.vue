@@ -33,7 +33,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { CARD_LANGUAGES, AVAILABLE_LANGUAGES, type CardLanguage } from '@/constants/cardLanguages';
+import {
+  CARD_LANGUAGES,
+  AVAILABLE_LANGUAGES,
+  type CardLanguage,
+} from '@/constants/cardLanguages';
 
 interface Props {
   modelValue: string;
@@ -65,12 +69,18 @@ const emit = defineEmits<{
 const languageOptions = computed<CardLanguage[]>(() => {
   if (props.availableLanguageCodes && props.availableLanguageCodes.length > 0) {
     return props.availableLanguageCodes.map((languageCode) => {
-      const knownLanguage = AVAILABLE_LANGUAGES.find((language) => language.code === languageCode);
+      const knownLanguage = AVAILABLE_LANGUAGES.find(
+        (language) => language.code === languageCode
+      );
       if (knownLanguage) {
         return knownLanguage;
       }
       // Language not in our list yet: still selectable, labelled with its code
-      return { name: languageCode.toUpperCase(), code: languageCode, countryCode: 'un' };
+      return {
+        name: languageCode.toUpperCase(),
+        code: languageCode,
+        countryCode: 'un',
+      };
     });
   }
 

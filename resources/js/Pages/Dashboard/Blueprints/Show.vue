@@ -368,16 +368,19 @@ const addToPortfolio = async () => {
   // Resolve intended language (prefer current selection)
   const lang =
     (activeLanguage.value &&
-      props.blueprint.available_languages?.includes(activeLanguage.value)
+    props.blueprint.available_languages?.includes(activeLanguage.value)
       ? activeLanguage.value
       : props.blueprint.available_languages?.[0]) || 'en';
 
   // Use prices from props if present, otherwise fetch via API
-  let langPrices = (props.pricesByLanguage && props.pricesByLanguage[lang]) || null;
+  let langPrices =
+    (props.pricesByLanguage && props.pricesByLanguage[lang]) || null;
   if (!langPrices || Object.keys(langPrices).length === 0) {
     try {
       const resp = await axios.get(
-        route('api.blueprints.prices.by-language', { blueprint: props.blueprint.id })
+        route('api.blueprints.prices.by-language', {
+          blueprint: props.blueprint.id,
+        })
       );
       const allPrices = resp.data?.data || resp.data;
       langPrices = allPrices?.[lang] || null;
@@ -442,7 +445,6 @@ const submitAddToPortfolio = () => {
         `"${props.blueprint.name}" has been successfully added to "${portfolioName}".`
       );
 
-      
       // Optionally, redirect or update UI
     })
     .catch((requestError) => {

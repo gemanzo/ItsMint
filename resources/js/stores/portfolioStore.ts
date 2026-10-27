@@ -124,10 +124,15 @@ export const usePortfolioStore = defineStore('portfolio', {
 
         // Ensure we always set an array, even if the response is unexpected
         if (Array.isArray(data)) {
-          
-          this.portfolios = data.map(portfolio => ({
+          this.portfolios = data.map((portfolio) => ({
             ...portfolio,
-            user_cards_count: portfolio.user_cards_count ?? (portfolio.user_cards?.reduce((sum, card) => sum + (card.pivot?.quantity || 1), 0) || 0),
+            user_cards_count:
+              portfolio.user_cards_count ??
+              (portfolio.user_cards?.reduce(
+                (sum, card) => sum + (card.pivot?.quantity || 1),
+                0
+              ) ||
+                0),
           }));
         } else {
           console.warn(

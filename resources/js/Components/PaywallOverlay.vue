@@ -1,10 +1,14 @@
 <template>
   <div class="absolute inset-0 z-20 flex items-center justify-center">
     <!-- Backdrop with blur -->
-    <div class="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md pointer-events-none" />
-    
+    <div
+      class="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md pointer-events-none"
+    />
+
     <!-- Paywall Card -->
-    <div class="relative z-10 max-w-md mx-4 p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-center transform transition-all">
+    <div
+      class="relative z-10 max-w-md mx-4 p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-center transform transition-all"
+    >
       <!-- Premium Badge -->
       <div class="mb-4 flex justify-center">
         <PremiumBadge variant="default" size="lg" force-show />
@@ -12,7 +16,9 @@
 
       <!-- Icon -->
       <div class="mb-4 flex justify-center">
-        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 via-yellow-400 to-amber-500 flex items-center justify-center shadow-lg">
+        <div
+          class="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 via-yellow-400 to-amber-500 flex items-center justify-center shadow-lg"
+        >
           <svg
             class="w-8 h-8 text-amber-900 dark:text-amber-50"
             fill="none"
@@ -30,18 +36,27 @@
       </div>
 
       <!-- Title -->
-      <h3 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3">
+      <h3
+        class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-3"
+      >
         Premium Feature Locked
       </h3>
 
       <!-- Description -->
-      <p class="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-        {{ message || 'Upgrade to Premium to unlock this feature and access all premium capabilities.' }}
+      <p
+        class="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-6 leading-relaxed"
+      >
+        {{
+          message ||
+          'Upgrade to Premium to unlock this feature and access all premium capabilities.'
+        }}
       </p>
 
       <!-- Features List (optional) -->
       <div v-if="features && features.length > 0" class="mb-6 text-left">
-        <p class="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide">
+        <p
+          class="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 uppercase tracking-wide"
+        >
           Premium includes:
         </p>
         <ul class="space-y-2">
@@ -90,8 +105,8 @@
       <!-- Optional: Cancel/Close button -->
       <button
         v-if="showClose"
-        @click="$emit('close')"
         class="mt-4 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+        @click="$emit('close')"
       >
         Maybe later
       </button>
@@ -132,5 +147,3 @@ defineEmits<{
   close: [];
 }>();
 </script>
-
-
