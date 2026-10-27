@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Exceptions\CardTraderApiException;
 use App\Jobs\UpdateBlueprintPriceJob;
 use App\Models\Blueprint;
 use App\Services\BlueprintPriceService;
@@ -69,17 +70,29 @@ class QueuePriceUpdatesCommand extends Command
         if ($blueprintCtIdOpt) {
             $blueprint = Blueprint::where('ct_id', $blueprintCtIdOpt)->first();
             if ($blueprint) {
-                UpdateBlueprintPriceJob::dispatch($blueprint, $this->blueprintPriceService)->onQueue('price-updates');
+                UpdateBlueprintPriceJob::dispatch($blueprint);
             } else {
                 $this->error("Blueprint with CardTrader ID: {$blueprintCtIdOpt} not found.");
 
                 return Command::FAILURE;
             }
         } else {
-            $query = Blueprint::query();
+            // Cards fetched recently are skipped: each queued job uses a slot of the
+            // CardTrader rate limiter even when it has nothing to do
+            $query = Blueprint::query()
+                ->whereNotExists(function ($recentCardTraderPointsQuery) {
+                    $recentCardTraderPointsQuery->selectRaw('1')
+                        ->from('card_price_points')
+                        ->whereColumn('card_price_points.blueprint_id', 'blueprints.id')
+                        ->where('card_price_points.source', 'cardtrader')
+                        ->where('card_price_points.fetched_at', '>=', now()->subHours(UpdateBlueprintPriceJob::REFETCH_AFTER_HOURS));
+                });
 
+            // Blueprints have no game_id column: filter through their expansion
             if ($gameIdOpt) {
-                $query->where('game_id', $gameIdOpt);
+                $query->whereHas('expansion', function ($expansionQuery) use ($gameIdOpt) {
+                    $expansionQuery->where('game_id', $gameIdOpt);
+                });
             }
 
             if ($expansionIdOpt) {
@@ -92,7 +105,7 @@ class QueuePriceUpdatesCommand extends Command
 
             $query->orderBy('id')->chunkById($configuredBatchSize, function ($blueprintsChunk) use (&$jobsForCurrentBatch, &$totalBlueprintsProcessed, &$dispatchedBatchCount, $configuredBatchSize) {
                 foreach ($blueprintsChunk as $blueprint) {
-                    $jobsForCurrentBatch[] = new UpdateBlueprintPriceJob($blueprint, $this->blueprintPriceService);
+                    $jobsForCurrentBatch[] = new UpdateBlueprintPriceJob($blueprint);
                     $totalBlueprintsProcessed++;
 
                     if (count($jobsForCurrentBatch) >= $configuredBatchSize) {
@@ -126,14 +139,26 @@ class QueuePriceUpdatesCommand extends Command
         }
 
         Bus::batch($jobs)
+            // One card failing (e.g. a CardTrader error) must not cancel the other cards
+            ->allowFailures()
             ->catch(function (Batch $batch, Throwable $e) {
-                Log::error('Blueprint price update SUB-BATCH failed one or more jobs.', [
+                Log::error('Blueprint price update batch: first job failure', [
                     'batch_id' => $batch->id,
                     'error' => $e->getMessage(),
-                    'failed_jobs_count' => $batch->failedJobs,
-                    'first_failed_job_id' => $batch->failedJobIds[0] ?? 'N/A',
                 ]);
-                echo "Sub-Batch [{$batch->id}] FAILED. Error: {$e->getMessage()}. Failed jobs: {$batch->failedJobs}".PHP_EOL;
+            })
+            ->finally(function (Batch $batch) {
+                $batchSummary = [
+                    'batch_id' => $batch->id,
+                    'total_jobs' => $batch->totalJobs,
+                    'failed_jobs' => $batch->failedJobs,
+                ];
+
+                if ($batch->failedJobs > 0) {
+                    Log::warning('Blueprint price update batch finished with failures', $batchSummary);
+                } else {
+                    Log::info('Blueprint price update batch finished', $batchSummary);
+                }
             })
             ->name('Update Blueprint Prices Batch - Part - '.now()->toDateTimeString().'-'.Str::random(4))
             ->onQueue($queueName)
@@ -187,13 +212,19 @@ class QueuePriceUpdatesCommand extends Command
 
         // Test the service
         $startTime = microtime(true);
-        $prices = $this->blueprintPriceService->calculatePrices($testBlueprint);
-        $executionTime = round((microtime(true) - $startTime) * 1000, 2);
-
-        if (! $prices) {
-            $this->error('❌ Service returned null - check logs for details');
+        try {
+            $prices = $this->blueprintPriceService->calculatePrices($testBlueprint);
+        } catch (CardTraderApiException $exception) {
+            $this->error('❌ CardTrader request failed: '.$exception->getMessage());
 
             return Command::FAILURE;
+        }
+        $executionTime = round((microtime(true) - $startTime) * 1000, 2);
+
+        if (empty($prices)) {
+            $this->warn('⚠️  No usable CardTrader listing for this card');
+
+            return Command::SUCCESS;
         }
 
         $this->info("⚡ Service execution time: {$executionTime}ms");

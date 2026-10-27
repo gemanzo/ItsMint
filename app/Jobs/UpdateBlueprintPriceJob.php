@@ -3,9 +3,9 @@
 namespace App\Jobs;
 
 use App\Models\Blueprint;
-use App\Models\CardPrice;
-use App\Services\BlueprintPriceService;
 use App\Services\Pricing\PriceAggregatorService;
+use App\Services\Pricing\Providers\CardTraderPriceProvider;
+use DateTimeInterface;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,11 +13,41 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Fetch the CardTrader listings of a card, store them as price points and
+ * recompute the card's prices of the day.
+ */
 class UpdateBlueprintPriceJob implements ShouldQueue
 {
     use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    /**
+     * Cards whose CardTrader listings were fetched more recently than this are
+     * not fetched again (e.g. nightly batch followed by the CardTrader mirror).
+     */
+    public const REFETCH_AFTER_HOURS = 12;
+
+    /**
+     * Seconds before the job is killed. It must stay below the queue "retry_after"
+     * (180s, config/queue.php), otherwise a slow job is picked up a second time
+     * while it is still running.
+     */
+    public int $timeout = 120;
+
+    /**
+     * Real failures (CardTrader errors) allowed before the job is marked as failed.
+     * Releases caused by the rate limiter are not counted.
+     */
+    public int $maxExceptions = 3;
+
+    public function __construct(
+        public Blueprint $blueprint,
+    ) {
+        $this->onQueue('price-updates');
+    }
 
     /**
      * Get the middleware the job should pass through.
@@ -28,166 +58,68 @@ class UpdateBlueprintPriceJob implements ShouldQueue
     }
 
     /**
-     * The queue this job should be sent to.
-     *
-     * @var string
+     * The rate limiter releases jobs back on the queue until there is room for them.
+     * With a deadline instead of a number of tries, those releases don't make the job
+     * fail (before, with "tries = 1", every rate limited job ended in failed_jobs).
      */
-    protected Blueprint $localBlueprint;
-
-    protected BlueprintPriceService $blueprintPriceService;
-
-    protected ?PriceAggregatorService $priceAggregator = null;
+    public function retryUntil(): DateTimeInterface
+    {
+        return now()->addHours(12);
+    }
 
     /**
-     * Create a new job instance.
+     * Seconds to wait before retrying after a real failure.
+     *
+     * @return array<int, int>
      */
-    public function __construct(Blueprint $localBlueprint, BlueprintPriceService $blueprintPriceService)
+    public function backoff(): array
     {
-        $this->localBlueprint = $localBlueprint;
-        $this->blueprintPriceService = $blueprintPriceService;
-        $this->priceAggregator = app()->has(PriceAggregatorService::class)
-            ? app(PriceAggregatorService::class)
-            : null;
+        return [60, 300];
     }
 
     /**
      * Execute the job.
+     *
+     * Services are resolved here and not in the constructor: the queue payload only
+     * contains the card, never a serialized copy of the services.
      */
-    public function handle(): void
+    public function handle(CardTraderPriceProvider $cardTraderPriceProvider, PriceAggregatorService $priceAggregator): void
     {
-        // It's good practice to ensure the model is correctly hydrated,
-        // especially if SerializesModels might sometimes pass an ID.
-        $blueprint = $this->localBlueprint;
-        if (! $blueprint instanceof Blueprint && (is_int($blueprint) || is_string($blueprint))) {
-            Log::warning('UpdateBlueprintPriceJob: localBlueprint was an ID, attempting to rehydrate.', ['id' => $blueprint]);
-            $blueprint = Blueprint::find($this->localBlueprint);
-        }
-
-        if (! $blueprint instanceof Blueprint) {
-            Log::error('UpdateBlueprintPriceJob: Invalid or non-existent Blueprint model.', [
-                'data_type' => gettype($this->localBlueprint),
-                'data_passed' => $this->localBlueprint,
-            ]);
-
-            // Optionally, fail the job if the blueprint is critical and not found
-            // $this->fail('Blueprint not found or invalid.');
+        if ($this->batch()?->cancelled()) {
             return;
         }
 
-        $blueprintCtId = $blueprint->ct_id;
-
-        try {
-            $adjustedPrices = $this->priceAggregator
-                ? $this->priceAggregator->estimate($blueprint)
-                : $this->blueprintPriceService->calculatePrices($blueprint);
-
-            Log::debug('UpdateBlueprintPriceJob: Data received from BlueprintPriceService', [
-                'blueprint_id' => $blueprint->id,
-                'ct_id' => $blueprintCtId,
-                'service_response_is_null' => is_null($adjustedPrices),
-                'service_response_count' => is_array($adjustedPrices) ? count($adjustedPrices) : 'N/A (not an array)',
-                'response_keys' => is_array($adjustedPrices) ? array_keys($adjustedPrices) : null,
+        if (self::wasFetchedRecently($this->blueprint)) {
+            Log::debug('UpdateBlueprintPriceJob: CardTrader listings fetched recently, skipped', [
+                'blueprint_id' => $this->blueprint->id,
             ]);
 
-            if (is_null($adjustedPrices)) {
-                Log::warning('BlueprintPriceService returned null, skipping price updates for blueprint.', ['blueprint_id' => $blueprint->id, 'ct_id' => $blueprintCtId]);
-
-                return;
-            }
-
-            if (empty($adjustedPrices)) {
-                Log::warning('No prices to save after service calculation for blueprint.', ['blueprint_id' => $blueprint->id, 'ct_id' => $blueprintCtId]);
-
-                return;
-            }
-
-            $pricesProcessed = 0;
-            $pricesSkipped = 0;
-
-            foreach ($adjustedPrices as $priceKey => $priceData) {
-                // Skip metadata entry
-                if ($priceKey === '_metadata') {
-                    continue;
-                }
-
-                // Validate that priceData has required fields for the new structure
-                if (! isset($priceData['condition']) || ! isset($priceData['language'])) {
-                    Log::warning('UpdateBlueprintPriceJob: Price data missing required fields', [
-                        'blueprint_id' => $blueprint->id,
-                        'price_key' => $priceKey,
-                        'missing_fields' => [
-                            'condition' => ! isset($priceData['condition']),
-                            'language' => ! isset($priceData['language']),
-                        ],
-                    ]);
-                    $pricesSkipped++;
-
-                    continue;
-                }
-
-                // Custom logic to update or create based on the current date
-                $priceEntry = CardPrice::where('blueprint_id', $blueprint->id)
-                    ->where('condition', $priceData['condition'])
-                    ->where('language', $priceData['language'])
-                    ->whereDate('fetched_at', today())
-                    ->first();
-
-                $logData = [
-                    'blueprint_id' => $blueprint->id,
-                    'condition' => $priceData['condition'],
-                    'language' => $priceData['language'],
-                    'price_cents' => $priceData['price_cents'],
-                    'source' => $priceData['source'],
-                    'is_foil' => $priceData['is_foil'] ?? false,
-                    'was_adjusted' => isset($priceData['original_price_cents']),
-                    'original_price_cents' => $priceData['original_price_cents'] ?? null,
-                ];
-
-                if ($priceEntry) {
-                    // Update the existing entry for today
-                    $priceEntry->update([
-                        'price_cents' => $priceData['price_cents'],
-                        'currency' => $priceData['currency'] ?? 'EUR',
-                        'is_foil' => $priceData['is_foil'] ?? false,
-                        'source' => $priceData['source'] ?? 'Default Source',
-                        'fetched_at' => $priceData['fetched_at'], // Keep updating timestamp
-                    ]);
-                    Log::warning('Updated daily price for blueprint.', array_merge($logData, ['action' => 'updated']));
-                } else {
-                    // Create a new entry for today
-                    CardPrice::create([
-                        'blueprint_id' => $blueprint->id,
-                        'condition' => $priceData['condition'],
-                        'language' => $priceData['language'],
-                        'price_cents' => $priceData['price_cents'],
-                        'currency' => $priceData['currency'] ?? 'EUR',
-                        'is_foil' => $priceData['is_foil'] ?? false,
-                        'source' => $priceData['source'] ?? 'Default Source',
-                        'fetched_at' => $priceData['fetched_at'],
-                    ]);
-                    Log::warning('Created new daily price for blueprint.', array_merge($logData, ['action' => 'created']));
-                }
-
-                $pricesProcessed++;
-            }
-
-            Log::warning('UpdateBlueprintPriceJob completed successfully', [
-                'blueprint_id' => $blueprint->id,
-                'ct_id' => $blueprintCtId,
-                'prices_processed' => $pricesProcessed,
-                'prices_skipped' => $pricesSkipped,
-                'total_entries_in_response' => count($adjustedPrices),
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Exception in UpdateBlueprintPriceJob (after service call)', [
-                'blueprint_id' => $blueprint->id ?? 'N/A',
-                'ct_id' => $blueprintCtId ?? 'N/A',
-                'error' => $e->getMessage(),
-                'trace_small' => substr($e->getTraceAsString(), 0, 500),
-            ]);
-            // Optionally rethrow to let the batch know this job failed, or handle failure here.
-            // It's good practice to rethrow if the job cannot complete its task.
-            throw $e;
+            return;
         }
+
+        // Throws CardTraderApiException when CardTrader can't provide the data: the job is
+        // retried and, after $maxExceptions failures, marked as failed (Horizon, failed_jobs)
+        $cardTraderPricePoints = $cardTraderPriceProvider->fetch($this->blueprint);
+
+        $storedPointsCount = $priceAggregator->recordPricePoints($cardTraderPricePoints);
+        $estimates = $priceAggregator->aggregate($this->blueprint);
+
+        Log::debug('UpdateBlueprintPriceJob: prices updated', [
+            'blueprint_id' => $this->blueprint->id,
+            'stored_points_count' => $storedPointsCount,
+            'prices_count' => count($estimates),
+        ]);
+    }
+
+    /**
+     * Whether the CardTrader listings of the card were fetched recently enough.
+     */
+    public static function wasFetchedRecently(Blueprint $blueprint): bool
+    {
+        return DB::table('card_price_points')
+            ->where('blueprint_id', $blueprint->id)
+            ->where('source', 'cardtrader')
+            ->where('fetched_at', '>=', now()->subHours(self::REFETCH_AFTER_HOURS))
+            ->exists();
     }
 }

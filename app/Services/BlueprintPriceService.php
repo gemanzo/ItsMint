@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\CardLanguage;
+use App\Exceptions\CardTraderApiException;
 use App\Models\Blueprint;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class BlueprintPriceService
 {
@@ -22,116 +25,120 @@ class BlueprintPriceService
     ];
 
     /**
-     * Calculate and adjust blueprint prices based on CardTrader marketplace data.
-     * Now returns prices organized by condition and language.
-     *
-     * @return array<string, array<string, mixed>>|null
+     * Total attempts of a marketplace request (first try included).
      */
-    public function calculatePrices(Blueprint $blueprint): ?array
+    private const MAX_REQUEST_ATTEMPTS = 3;
+
+    /**
+     * Longest wait between two attempts: the whole request must stay well within
+     * the timeout of the price update job.
+     */
+    private const MAX_RETRY_DELAY_MILLISECONDS = 10_000;
+
+    /**
+     * Calculate and adjust blueprint prices based on CardTrader marketplace data,
+     * organized by condition and language.
+     *
+     * Returns an empty array when the card has no usable listing.
+     *
+     * @return array<string, array<string, mixed>>
+     *
+     * @throws CardTraderApiException when CardTrader can't provide the data: the caller
+     *                                must not mistake an API failure for "no prices"
+     */
+    public function calculatePrices(Blueprint $blueprint): array
     {
-        $cacheKey = "blueprint_price_v2_{$blueprint->id}";
-        $cachedPrices = Cache::get($cacheKey);
-
-        if ($cachedPrices !== null) {
-            return $cachedPrices;
-        }
-
         $token = config('services.cardtrader.api_token');
         $baseApiUrl = config('services.cardtrader.api_base_url');
         $blueprintCtId = $blueprint->ct_id;
 
         if (empty($token) || empty($baseApiUrl)) {
-            Log::error('CardTrader API service not configured for BlueprintPriceService.', ['blueprint_id' => $blueprint->id]);
-
-            return null;
+            throw CardTraderApiException::notConfigured();
         }
-
-        $marketplaceUrl = $baseApiUrl.'/marketplace/products';
 
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer '.$token,
-                'Accept' => 'application/json',
-            ])->retry(5, function (int $attempt, \Throwable $exception) use ($blueprintCtId) {
-                // Handle HTTP 429 rate limit
-                if ($exception instanceof \Illuminate\Http\Client\RequestException) {
-                    $response = $exception->response;
-                    if ($response && $response->status() === 429) {
-                        // Exponential backoff: ~0.75s, 2.25s, 6.75s, ...
-                        $delay = (int) (pow(3, $attempt) * 750);
-                        Log::warning('CardTrader API rate limit hit. Retrying.', [
-                            'attempt' => $attempt,
-                            'blueprint_id' => $blueprintCtId,
-                            'status' => $response->status(),
-                        ]);
-
-                        return $delay;
-                    }
-                }
-
-                // Handle transient connection issues
-                if ($exception instanceof \Illuminate\Http\Client\ConnectionException) {
-                    $delay = (int) (pow(2, $attempt) * 500);
-                    Log::warning('CardTrader API connection issue. Retrying.', [
-                        'attempt' => $attempt,
-                        'blueprint_id' => $blueprintCtId,
-                        'error' => $exception->getMessage(),
-                    ]);
-
-                    return $delay;
-                }
-
-                // No retry for other errors
-                return 0;
-            })->get($marketplaceUrl, [
-                'blueprint_id' => $blueprintCtId,
-            ]);
-
-            if (! $response->successful()) {
-                Log::error('CardTrader API Error - Fetching Marketplace Products in Service', [
-                    'blueprint_id' => $blueprint->id,
-                    'ct_id' => $blueprintCtId,
-                    'status' => $response->status(),
-                    'body' => $response->body(),
+            $response = Http::withToken($token)
+                ->acceptJson()
+                ->connectTimeout(5)
+                ->timeout(20)
+                ->retry(
+                    self::MAX_REQUEST_ATTEMPTS,
+                    fn (int $attempt, Throwable $exception) => $this->retryDelayMilliseconds($attempt, $exception),
+                    // Only transient failures are retried: an authentication or a "not found"
+                    // error would fail again
+                    fn (Throwable $exception) => $this->isTransientFailure($exception),
+                )
+                ->get($baseApiUrl.'/marketplace/products', [
+                    'blueprint_id' => $blueprintCtId,
                 ]);
-
-                return null; // Don't cache failures to allow for retries
-            }
-
-            $apiProducts = $response->json()[$blueprintCtId] ?? [];
-
-            if (empty($apiProducts)) {
-                Cache::put($cacheKey, null, now()->addMinutes(60)); // Cache null result
-
-                return null;
-            }
-
-            $lowestPricesByConditionAndLanguage = $this->extractLowestPricesByConditionAndLanguage($apiProducts);
-
-            if (empty($lowestPricesByConditionAndLanguage)) {
-                Cache::put($cacheKey, null, now()->addMinutes(60)); // Cache null result
-
-                return null;
-            }
-
-            $calculatedPrices = $this->applyHierarchyLogicByLanguage($lowestPricesByConditionAndLanguage);
-
-            // Add summary statistics
-            $calculatedPrices['_metadata'] = $this->generatePricingMetadata($apiProducts, $calculatedPrices);
-
-            Cache::put($cacheKey, $calculatedPrices, now()->addMinutes(60));
-
-            return $calculatedPrices;
-        } catch (\Exception $e) {
-            Log::error('Exception in BlueprintPriceService', [
-                'blueprint_id' => $blueprint->id,
-                'ct_id' => $blueprintCtId,
-                'error' => $e->getMessage(),
-                'trace_small' => substr($e->getTraceAsString(), 0, 500),
-            ]);
-
-            return null;
+        } catch (RequestException|ConnectionException $exception) {
+            throw CardTraderApiException::requestFailed($blueprint, $exception);
         }
+
+        $apiProducts = $response->json()[$blueprintCtId] ?? [];
+
+        if (empty($apiProducts)) {
+            return [];
+        }
+
+        $lowestPricesByConditionAndLanguage = $this->extractLowestPricesByConditionAndLanguage($apiProducts);
+
+        if (empty($lowestPricesByConditionAndLanguage)) {
+            return [];
+        }
+
+        $calculatedPrices = $this->applyHierarchyLogicByLanguage($lowestPricesByConditionAndLanguage);
+
+        // Add summary statistics
+        $calculatedPrices['_metadata'] = $this->generatePricingMetadata($apiProducts, $calculatedPrices);
+
+        return $calculatedPrices;
+    }
+
+    /**
+     * Whether a failed marketplace request is worth retrying.
+     */
+    private function isTransientFailure(Throwable $exception): bool
+    {
+        if ($exception instanceof ConnectionException) {
+            return true;
+        }
+
+        if ($exception instanceof RequestException) {
+            $statusCode = $exception->response->status();
+
+            return $statusCode === 429 || $statusCode >= 500;
+        }
+
+        return false;
+    }
+
+    /**
+     * Wait before the next attempt: what CardTrader asks for when rate limited
+     * (Retry-After header), otherwise an exponential backoff.
+     */
+    private function retryDelayMilliseconds(int $attempt, Throwable $exception): int
+    {
+        $retryAfterSeconds = null;
+        if ($exception instanceof RequestException) {
+            $retryAfterSeconds = $exception->response->header('Retry-After');
+        }
+
+        if (is_numeric($retryAfterSeconds)) {
+            $requestedDelayMilliseconds = (int) $retryAfterSeconds * 1000;
+        } else {
+            $requestedDelayMilliseconds = (2 ** $attempt) * 500;
+        }
+
+        $delayMilliseconds = min($requestedDelayMilliseconds, self::MAX_RETRY_DELAY_MILLISECONDS);
+
+        Log::warning('CardTrader API request failed, retrying', [
+            'attempt' => $attempt,
+            'delay_milliseconds' => $delayMilliseconds,
+            'error' => $exception->getMessage(),
+        ]);
+
+        return $delayMilliseconds;
     }
 
     /**

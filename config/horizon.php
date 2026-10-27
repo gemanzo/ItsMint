@@ -222,9 +222,12 @@ return [
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
                 'memory' => 256,      // Higher memory for batch jobs
-                'tries' => 1,         // Worker tries job once
-                'timeout' => 1300,    // Job timeout (slightly > job's own timeout)
-                // ProcessBlueprintPriceBatchJob has timeout = 1200
+                // UpdateBlueprintPriceJob defines retryUntil(), which takes precedence:
+                // rate limited releases don't count as failed tries
+                'tries' => 1,
+                // Above UpdateBlueprintPriceJob::$timeout (120s) and below the redis
+                // queue retry_after (180s): a running job is never picked up twice
+                'timeout' => 150,
                 'nice' => 5,          // Lower priority if needed, adjust
             ],
             'supervisor-emails' => [
@@ -261,7 +264,8 @@ return [
                 'maxProcesses' => 5,    // Can run a couple locally for testing batches
                 'memory' => 256,
                 'tries' => 1,
-                'timeout' => 1300,
+                // Same as production: between the job timeout (120s) and retry_after (180s)
+                'timeout' => 150,
                 'nice' => 0,
             ],
             'supervisor-emails' => [

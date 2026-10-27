@@ -6,7 +6,6 @@ use App\Jobs\UpdateBlueprintPriceJob;
 use App\Models\Blueprint;
 use App\Models\Expansion;
 use App\Models\Game;
-use App\Services\BlueprintPriceService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -138,8 +137,12 @@ class MirrorCTDatabaseCommand extends Command
                     'image_url' => $bpData['image_url'] ?? null,
                 ]);
 
-                // Dispatch the job to update the price for this blueprint
-                UpdateBlueprintPriceJob::dispatch($localBlueprint, new BlueprintPriceService);
+                // New cards get their prices right away; the others are updated by the
+                // nightly price batch (itsmint:queue-price-updates). Queuing every card
+                // here too would waste the CardTrader rate limit on duplicate jobs.
+                if ($localBlueprint->wasRecentlyCreated) {
+                    UpdateBlueprintPriceJob::dispatch($localBlueprint);
+                }
             }
         }
 
