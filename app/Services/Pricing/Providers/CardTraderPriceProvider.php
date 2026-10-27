@@ -24,7 +24,7 @@ final class CardTraderPriceProvider implements PriceProvider
     public function fetch(Blueprint $blueprint): Collection
     {
         $result = $this->service->calculatePrices($blueprint);
-        if (!$result) {
+        if (! $result) {
             return collect();
         }
 

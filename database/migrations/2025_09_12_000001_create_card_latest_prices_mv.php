@@ -5,11 +5,12 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         // Create materialized view with best/latest price per (blueprint_id, language, is_foil)
-        DB::statement(<<<SQL
+        DB::statement(<<<'SQL'
             CREATE MATERIALIZED VIEW IF NOT EXISTS card_latest_prices_mv AS
             WITH ranked AS (
                 SELECT
@@ -40,7 +41,7 @@ return new class extends Migration {
         SQL);
 
         // Unique index required for CONCURRENTLY refresh and fast lookups
-        DB::statement(<<<SQL
+        DB::statement(<<<'SQL'
             CREATE UNIQUE INDEX IF NOT EXISTS idx_card_latest_prices_mv_unique
             ON card_latest_prices_mv (blueprint_id, language, is_foil)
         SQL);

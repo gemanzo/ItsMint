@@ -19,22 +19,24 @@ final class DownloadCardmarketGuide extends Command
         $url = config('services.cardmarket.op_price_guide_url') ?: env('CARDMARKET_OP_PRICE_GUIDE');
         $path = config('services.cardmarket.op_price_guide_path') ?: storage_path('app/public/cardmarket/price_guide_18.json');
 
-        if (!$url) {
+        if (! $url) {
             $this->error('Missing Cardmarket guide URL.');
+
             return self::FAILURE;
         }
 
         File::ensureDirectoryExists(dirname($path));
 
-        $this->info('Downloading: ' . $url);
+        $this->info('Downloading: '.$url);
         $resp = Http::timeout(60)->get($url);
-        if (!$resp->successful()) {
-            $this->error('Download failed. Status: ' . $resp->status());
+        if (! $resp->successful()) {
+            $this->error('Download failed. Status: '.$resp->status());
+
             return self::FAILURE;
         }
 
         File::put($path, $resp->body());
-        $this->info('Saved to: ' . $path);
+        $this->info('Saved to: '.$path);
 
         return self::SUCCESS;
     }

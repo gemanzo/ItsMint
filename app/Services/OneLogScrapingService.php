@@ -147,6 +147,7 @@ final class OneLogScrapingService
                 Log::warning("Blueprint not found for collector number: {$cardData['collector_number']}");
             }
         }
+
         return $updatedCount;
     }
 
@@ -530,7 +531,7 @@ final class OneLogScrapingService
         // Try with common promo suffixes (p, pr, promo, etc.)
         $promoSuffixes = ['p', 'pr', 'promo', 'alt', 'parallel'];
         foreach ($promoSuffixes as $suffix) {
-            $modifiedNumber = $collectorNumber . $suffix;
+            $modifiedNumber = $collectorNumber.$suffix;
 
             $result = Blueprint::whereJsonContains(
                 'properties->fixed_properties->collector_number',
@@ -603,7 +604,7 @@ final class OneLogScrapingService
                 // Try with promo suffixes
                 $promoSuffixes = ['p', 'pr', 'promo'];
                 foreach ($promoSuffixes as $suffix) {
-                    $modifiedNumber = $collectorNumber . $suffix;
+                    $modifiedNumber = $collectorNumber.$suffix;
 
                     $result = Blueprint::where('version', 'LIKE', "%{$versionValue}%")
                         ->whereJsonContains('properties->fixed_properties->collector_number', $modifiedNumber)

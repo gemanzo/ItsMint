@@ -179,6 +179,6 @@ class UserCard extends Model
         }
 
         // Assuming EUR, adapt if currency can vary and needs to be dynamic
-        return number_format($valueCents / 100, 2, ',', '.') . ' €';
+        return number_format($valueCents / 100, 2, ',', '.').' €';
     }
 }

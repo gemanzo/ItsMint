@@ -7,7 +7,6 @@ namespace App\Services;
 use App\Models\Portfolio;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 final class PortfolioValueHistoryService
 {
@@ -47,7 +46,7 @@ final class PortfolioValueHistoryService
 
             // Calculate data points based on period (limit to reasonable number)
             $dataPoints = $this->generateDataPoints($startDate, $endDate, $period);
-            
+
             // Limit data points to prevent excessive calculations
             if (count($dataPoints) > 200) {
                 $dataPoints = array_slice($dataPoints, 0, 200);

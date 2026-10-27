@@ -42,6 +42,7 @@ class PortfolioController extends Controller
         }
 
         $oldestId = $oldestPortfolioId ?? $this->getOldestPortfolioId($user);
+
         return $portfolio->id !== $oldestId;
     }
 
@@ -96,6 +97,7 @@ class PortfolioController extends Controller
         }
 
         $currentTotal = $this->getTotalCardCount($portfolio);
+
         return ($currentTotal + $quantityToAdd) <= 50;
     }
 
@@ -461,6 +463,7 @@ class PortfolioController extends Controller
             // Check card limit for free plan users (50 cards per portfolio)
             if (! $this->canAddCards($user, $portfolio, $quantityIncrease)) {
                 $currentTotal = $this->getTotalCardCount($portfolio);
+
                 return response()->json([
                     'message' => 'Card limit reached for Free plan. Maximum 50 cards per portfolio allowed.',
                     'current_total' => $currentTotal,
@@ -511,6 +514,7 @@ class PortfolioController extends Controller
 
                 if ($quantityDifference > 0 && ! $this->canAddCards($user, $portfolio, $quantityDifference)) {
                     $currentTotal = $this->getTotalCardCount($portfolio);
+
                     return response()->json([
                         'message' => 'Card limit reached for Free plan. Maximum 50 cards per portfolio allowed.',
                         'current_total' => $currentTotal,
@@ -605,7 +609,7 @@ class PortfolioController extends Controller
 
         if ($validated['quantity'] > $totalAvailable) {
             return response()->json([
-                'message' => 'Insufficient quantity. Only ' . $totalAvailable . ' card(s) available.',
+                'message' => 'Insufficient quantity. Only '.$totalAvailable.' card(s) available.',
                 'available' => $totalAvailable,
             ], 400);
         }

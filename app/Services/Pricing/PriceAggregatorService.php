@@ -21,18 +21,18 @@ final class PriceAggregatorService
     public function estimate(Blueprint $blueprint): array
     {
         $points = collect($this->providers)
-            ->flatMap(fn(PriceProvider $p) => $p->fetch($blueprint))
+            ->flatMap(fn (PriceProvider $p) => $p->fetch($blueprint))
             ->filter();
 
         $this->storeRawPoints($points);
 
-        $byKey = $points->groupBy(fn(PricePoint $pp) => strtolower($pp->language) . '|' . $pp->condition);
+        $byKey = $points->groupBy(fn (PricePoint $pp) => strtolower($pp->language).'|'.$pp->condition);
 
         $estimates = [];
         foreach ($byKey as $key => $group) {
             [$lang, $cond] = explode('|', $key, 2);
 
-            $values = $group->map(fn(PricePoint $pp) => [
+            $values = $group->map(fn (PricePoint $pp) => [
                 'value' => $pp->priceCents,
                 'weight' => $this->weightFor($pp),
             ]);
@@ -42,7 +42,7 @@ final class PriceAggregatorService
             }
 
             $trimmed = $this->winsorize($values->pluck('value')->all(), 0.15);
-            $values = $values->values()->map(fn($v, $i) => array_merge($v, ['value' => $trimmed[$i]]));
+            $values = $values->values()->map(fn ($v, $i) => array_merge($v, ['value' => $trimmed[$i]]));
 
             $num = 0.0;
             $den = 0.0;
@@ -56,7 +56,7 @@ final class PriceAggregatorService
 
             $priceCents = (int) round($num / $den);
 
-            $estimates[$cond . '_' . $lang] = [
+            $estimates[$cond.'_'.$lang] = [
                 'price_cents' => $priceCents,
                 'currency' => 'EUR',
                 'condition' => $cond,
@@ -77,7 +77,7 @@ final class PriceAggregatorService
         if ($points->isEmpty()) {
             return;
         }
-        $rows = $points->map(fn(PricePoint $pp) => [
+        $rows = $points->map(fn (PricePoint $pp) => [
             'blueprint_id' => $pp->blueprintId,
             'price_cents' => $pp->priceCents,
             'currency' => $pp->currency,

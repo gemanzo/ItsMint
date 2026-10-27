@@ -38,7 +38,7 @@ final class CardScanController extends Controller
                             ->minHeight($ocrConfig['upload']['min_height'])
                     ),
             ],
-            'source' => 'sometimes|string|in:' . implode(',', $ocrConfig['upload']['allowed_sources']),
+            'source' => 'sometimes|string|in:'.implode(',', $ocrConfig['upload']['allowed_sources']),
         ]);
 
         try {
@@ -73,7 +73,7 @@ final class CardScanController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to process image: ' . $e->getMessage(),
+                'message' => 'Failed to process image: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -87,7 +87,7 @@ final class CardScanController extends Controller
 
         $validated = $request->validate([
             'status' => 'sometimes|string|in:pending,processing,completed,failed',
-            'per_page' => 'sometimes|integer|min:1|max:' . $ocrConfig['pagination']['max_per_page'],
+            'per_page' => 'sometimes|integer|min:1|max:'.$ocrConfig['pagination']['max_per_page'],
         ]);
 
         $query = CardScan::with(['blueprint.expansion', 'blueprint.latestPrice'])
@@ -157,7 +157,7 @@ final class CardScanController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retry scan: ' . $e->getMessage(),
+                'message' => 'Failed to retry scan: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -306,7 +306,7 @@ final class CardScanController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create user card: ' . $e->getMessage(),
+                'message' => 'Failed to create user card: '.$e->getMessage(),
             ], 500);
         }
     }

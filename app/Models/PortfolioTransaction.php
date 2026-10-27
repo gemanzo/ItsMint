@@ -29,9 +29,13 @@ final class PortfolioTransaction extends Model
     ];
 
     public const TYPE_PURCHASE = 'purchase';
+
     public const TYPE_SALE = 'sale';
+
     public const TYPE_DEPOSIT = 'deposit';
+
     public const TYPE_WITHDRAW = 'withdraw';
+
     public const TYPE_ADJUSTMENT = 'adjustment';
 
     public function portfolio(): BelongsTo

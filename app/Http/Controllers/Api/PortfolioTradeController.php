@@ -147,9 +147,15 @@ final class PortfolioTradeController extends Controller
             $tx = PortfolioTransaction::find($sale->portfolio_transaction_id);
             if ($tx) {
                 $tx->amount_cents = $sale->unit_sale_price_cents * $sale->quantity;
-                if (isset($validated['platform'])) $tx->platform = $sale->platform;
-                if (array_key_exists('notes', $validated)) $tx->notes = $sale->notes;
-                if (isset($validated['sold_at'])) $tx->occurred_at = $sale->sold_at;
+                if (isset($validated['platform'])) {
+                    $tx->platform = $sale->platform;
+                }
+                if (array_key_exists('notes', $validated)) {
+                    $tx->notes = $sale->notes;
+                }
+                if (isset($validated['sold_at'])) {
+                    $tx->occurred_at = $sale->sold_at;
+                }
                 $tx->save();
             }
         }
@@ -196,6 +202,7 @@ final class PortfolioTradeController extends Controller
         $balance = 0;
         $timeline = $tx->map(function ($t) use (&$balance) {
             $balance += $t->amount_cents;
+
             return [
                 'occurred_at' => $t->occurred_at->toISOString(),
                 'balance_cents' => $balance,
@@ -245,8 +252,8 @@ final class PortfolioTradeController extends Controller
         // Optional selection by IDs (comma-separated)
         if ($ids = $request->query('ids')) {
             $idsArray = collect(explode(',', (string) $ids))
-                ->map(fn($v) => (int) trim((string) $v))
-                ->filter(fn($v) => $v > 0)
+                ->map(fn ($v) => (int) trim((string) $v))
+                ->filter(fn ($v) => $v > 0)
                 ->values()
                 ->all();
             if (! empty($idsArray)) {
@@ -320,7 +327,7 @@ final class PortfolioTradeController extends Controller
         $sales12 = PortfolioSale::where('portfolio_id', $portfolio->id)
             ->where('sold_at', '>=', $twelveMonthsAgo)
             ->get(['quantity', 'unit_sale_price_cents']);
-        $sales12ValueCents = $sales12->reduce(fn($c, $s) => $c + ($s->unit_sale_price_cents * $s->quantity), 0);
+        $sales12ValueCents = $sales12->reduce(fn ($c, $s) => $c + ($s->unit_sale_price_cents * $s->quantity), 0);
 
         // Approximate avg inventory value: mean of monthly snapshots of cost basis of current holdings (fallback: current cost basis)
         // For simplicity now: use current holdings cost basis as proxy

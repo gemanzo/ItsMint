@@ -19,8 +19,9 @@ final class DebugPrices extends Command
     {
         $bpId = (int) $this->argument('blueprintId');
         $bp = Blueprint::find($bpId);
-        if (!$bp) {
-            $this->error('Blueprint not found: ' . $bpId);
+        if (! $bp) {
+            $this->error('Blueprint not found: '.$bpId);
+
             return self::FAILURE;
         }
 
@@ -32,15 +33,16 @@ final class DebugPrices extends Command
         $providers = $prop->getValue($aggregator);
 
         foreach ($providers as $provider) {
-            $this->info('Provider: ' . $provider->sourceName());
+            $this->info('Provider: '.$provider->sourceName());
             $points = $provider->fetch($bp);
             if ($points->isEmpty()) {
                 $this->line('  (no points)');
+
                 continue;
             }
             $this->table(
                 ['price_cents', 'currency', 'condition', 'language', 'is_foil', 'fetched_at', 'meta'],
-                $points->take(20)->map(fn($p) => [
+                $points->take(20)->map(fn ($p) => [
                     $p->priceCents,
                     $p->currency,
                     $p->condition,
@@ -55,8 +57,8 @@ final class DebugPrices extends Command
         $this->info('Aggregated estimate:');
         $est = $aggregator->estimate($bp);
         $rows = collect($est)
-            ->reject(fn($v, $k) => $k === '_metadata')
-            ->map(fn($v) => [
+            ->reject(fn ($v, $k) => $k === '_metadata')
+            ->map(fn ($v) => [
                 $v['condition'],
                 $v['language'],
                 $v['price_cents'],

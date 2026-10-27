@@ -331,11 +331,11 @@ final class BlueprintController extends Controller
                 'market_cap_cents' => $marketCapCents,
                 'market_cap_formatted' => $this->formatMarketCap($marketCapCents),
                 'avg_price_30d_cents' => $avgPrice30d,
-                'avg_price_30d_formatted' => '€' . number_format($avgPrice30d / 100, 2),
+                'avg_price_30d_formatted' => '€'.number_format($avgPrice30d / 100, 2),
                 'popularity_rank' => $popularityRank,
                 'price_change_7d_percentage' => $priceChangePercentage,
                 'price_change_7d_formatted' => $priceChangePercentage !== null ?
-                    ($priceChangePercentage >= 0 ? '+' : '') . number_format($priceChangePercentage, 1) . '%' : 'N/A',
+                    ($priceChangePercentage >= 0 ? '+' : '').number_format($priceChangePercentage, 1).'%' : 'N/A',
             ],
             'meta' => [
                 'blueprint_id' => $blueprint->id,
@@ -356,11 +356,11 @@ final class BlueprintController extends Controller
         $value = $cents / 100; // Convert to euros
 
         if ($value >= 1000000) {
-            return '€' . number_format($value / 1000000, 1) . 'M';
+            return '€'.number_format($value / 1000000, 1).'M';
         } elseif ($value >= 1000) {
-            return '€' . number_format($value / 1000, 1) . 'K';
+            return '€'.number_format($value / 1000, 1).'K';
         } else {
-            return '€' . number_format($value, 2);
+            return '€'.number_format($value, 2);
         }
     }
 

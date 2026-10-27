@@ -150,7 +150,7 @@ final class MatchBlueprintsCommand extends Command
         $filtered = $query->get();
 
         // For any blueprints without product_type, do runtime classification
-        $withoutClassification = $filtered->filter(fn($bp) => is_null($bp->product_type));
+        $withoutClassification = $filtered->filter(fn ($bp) => is_null($bp->product_type));
 
         if ($withoutClassification->isNotEmpty()) {
             $this->warn("⚠️  Found {$withoutClassification->count()} blueprints without classification. Consider running: php artisan itsmint:classify-blueprints --save");
@@ -259,7 +259,7 @@ final class MatchBlueprintsCommand extends Command
             $topScore = $matches[0]['confidence'];
 
             // Riduco la varianza accettabile per essere più selettivi
-            return array_filter($matches, fn($match) => $match['confidence'] >= $topScore - 0.02);
+            return array_filter($matches, fn ($match) => $match['confidence'] >= $topScore - 0.02);
         }
 
         return [];
@@ -1191,7 +1191,7 @@ final class MatchBlueprintsCommand extends Command
             }
 
             if ($excludedBlueprints->count() > 5) {
-                $this->line('  ... and ' . ($excludedBlueprints->count() - 5) . ' more');
+                $this->line('  ... and '.($excludedBlueprints->count() - 5).' more');
             }
         }
 
@@ -1256,11 +1256,11 @@ final class MatchBlueprintsCommand extends Command
                 $examples = array_slice($stats[$type], 0, 5);
                 foreach ($examples as $example) {
                     $score = $example['analysis']['analysis_score'];
-                    $this->line("  - {$example['name']} (score: " . number_format($score, 2) . ')');
+                    $this->line("  - {$example['name']} (score: ".number_format($score, 2).')');
                 }
 
                 if ($count > 5) {
-                    $this->line('  ... and ' . ($count - 5) . ' more');
+                    $this->line('  ... and '.($count - 5).' more');
                 }
                 $this->newLine();
             }
@@ -1283,7 +1283,7 @@ final class MatchBlueprintsCommand extends Command
 
         $this->newLine();
         $this->info('📊 Runtime Classification Summary:');
-        $this->info('  Total blueprints: ' . count($results));
+        $this->info('  Total blueprints: '.count($results));
         $this->info("  Single cards (will be matched): {$totalIncluded}");
         $this->info("  Products (excluded): {$totalExcluded}");
         $this->info("  Unknown/unclear: {$unknownCount}");
@@ -1340,7 +1340,7 @@ final class MatchBlueprintsCommand extends Command
 
         $this->info("📋 Found {$blueprints->count()} blueprint(s):");
         foreach ($blueprints as $blueprint) {
-            $this->line("  - ID: {$blueprint->id}, Name: {$blueprint->name}, Rarity: {$blueprint->rarity}, Version: '{$blueprint->version}', Promo: " . ($blueprint->is_promo_card ? 'Yes' : 'No'));
+            $this->line("  - ID: {$blueprint->id}, Name: {$blueprint->name}, Rarity: {$blueprint->rarity}, Version: '{$blueprint->version}', Promo: ".($blueprint->is_promo_card ? 'Yes' : 'No'));
 
             // NUOVO: Mostra info variant se applicabile
             if ($this->hasVariantSuffix($blueprint->collector_number)) {
@@ -1370,7 +1370,7 @@ final class MatchBlueprintsCommand extends Command
                 if ($baseCards->isNotEmpty()) {
                     $this->info("🃏 Found {$baseCards->count()} OneLog card(s) for base serial:");
                     foreach ($baseCards as $card) {
-                        $this->line("  - ID: {$card->id}, Name: {$card->name}, Serial: {$card->serial}, Base: {$card->base_serial}, Rarity: {$card->rarity}, Variant: " . ($card->is_variant ? 'Yes' : 'No') . ', Promo: ' . ($card->is_promo ? 'Yes' : 'No') . ", Sets: '{$card->card_sets}'");
+                        $this->line("  - ID: {$card->id}, Name: {$card->name}, Serial: {$card->serial}, Base: {$card->base_serial}, Rarity: {$card->rarity}, Variant: ".($card->is_variant ? 'Yes' : 'No').', Promo: '.($card->is_promo ? 'Yes' : 'No').", Sets: '{$card->card_sets}'");
                     }
                 }
             }
@@ -1380,7 +1380,7 @@ final class MatchBlueprintsCommand extends Command
 
         $this->info("🃏 Found {$oneLogCards->count()} OneLog card(s):");
         foreach ($oneLogCards as $card) {
-            $this->line("  - ID: {$card->id}, Name: {$card->name}, Rarity: {$card->rarity}, Variant: " . ($card->is_variant ? 'Yes' : 'No') . ', Promo: ' . ($card->is_promo ? 'Yes' : 'No') . ", IMG_ID: {$card->img_id}, Sets: '{$card->card_sets}'");
+            $this->line("  - ID: {$card->id}, Name: {$card->name}, Rarity: {$card->rarity}, Variant: ".($card->is_variant ? 'Yes' : 'No').', Promo: '.($card->is_promo ? 'Yes' : 'No').", IMG_ID: {$card->img_id}, Sets: '{$card->card_sets}'");
         }
 
         $this->newLine();
@@ -1400,7 +1400,7 @@ final class MatchBlueprintsCommand extends Command
                     $variantMatches = $this->findVariantMatches($blueprint, $blueprint->collector_number, $blueprint->rarity);
 
                     if (! empty($variantMatches)) {
-                        $this->line('  ✅ Found ' . count($variantMatches) . ' variant match(es):');
+                        $this->line('  ✅ Found '.count($variantMatches).' variant match(es):');
                         foreach ($variantMatches as $match) {
                             $card = $match['card'];
                             $confidence = number_format($match['confidence'], 3);
@@ -1410,14 +1410,14 @@ final class MatchBlueprintsCommand extends Command
                             $this->line("      Type: {$match['type']}");
                             $this->line("      Base Serial: {$metadata['base_serial']}");
                             $this->line("      Variant Suffix: {$metadata['variant_suffix']}");
-                            $this->line('      Variant Match Score: ' . number_format($metadata['variant_match_score'], 3));
+                            $this->line('      Variant Match Score: '.number_format($metadata['variant_match_score'], 3));
                         }
                     } else {
                         $this->line('  ❌ No variant matches found');
                     }
                 }
             } else {
-                $this->line('  ✅ Found ' . count($matches) . ' match(es):');
+                $this->line('  ✅ Found '.count($matches).' match(es):');
 
                 foreach ($matches as $match) {
                     $card = $match['card'];
@@ -1427,13 +1427,13 @@ final class MatchBlueprintsCommand extends Command
                     $this->line("    - OneLog Card #{$card->id}: {$card->name} (confidence: {$confidence})");
                     $this->line("      Type: {$match['type']}");
                     $this->line("      Rarities: Blueprint='{$metadata['blueprint_rarity']}' vs Card='{$metadata['card_rarity']}'");
-                    $this->line('      Promo: Blueprint=' . ($metadata['blueprint_is_promo'] ? 'Yes' : 'No') . ' vs Card=' . ($metadata['card_is_promo'] ? 'Yes' : 'No'));
-                    $this->line('      Variant: Card=' . ($metadata['card_is_variant'] ? 'Yes' : 'No'));
+                    $this->line('      Promo: Blueprint='.($metadata['blueprint_is_promo'] ? 'Yes' : 'No').' vs Card='.($metadata['card_is_promo'] ? 'Yes' : 'No'));
+                    $this->line('      Variant: Card='.($metadata['card_is_variant'] ? 'Yes' : 'No'));
                     $this->line("      Version: Blueprint='{$metadata['blueprint_version']}' vs CardSets='{$metadata['card_sets']}'");
 
                     // NUOVO: Mostra info variant se presente
                     if (isset($metadata['variant_suffix'])) {
-                        $this->line("      Variant Info: Base='{$metadata['base_serial']}', Suffix='{$metadata['variant_suffix']}', Score=" . number_format($metadata['variant_match_score'], 3));
+                        $this->line("      Variant Info: Base='{$metadata['base_serial']}', Suffix='{$metadata['variant_suffix']}', Score=".number_format($metadata['variant_match_score'], 3));
                     }
 
                     $this->line('      Score breakdown:');

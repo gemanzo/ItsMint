@@ -48,9 +48,9 @@ final class CardOcrService
 
         try {
             // Store the image using s3-card-scans disk
-            $filename = time() . '_' . $scan->id . '.jpg';
+            $filename = time().'_'.$scan->id.'.jpg';
 
-            $path = $file->storeAs('card-scans/' . $userId, $filename, 's3-card-scans');
+            $path = $file->storeAs('card-scans/'.$userId, $filename, 's3-card-scans');
 
             $scan->update(['file_path' => $path]);
 
@@ -296,7 +296,7 @@ final class CardOcrService
 
         // If it's a CardTrader image, use our proxy
         if (str_starts_with($originalUrl, 'https://cardtrader.com/uploads/')) {
-            return url('/api/image-proxy?url=' . urlencode($originalUrl));
+            return url('/api/image-proxy?url='.urlencode($originalUrl));
         }
 
         // For other images, return as-is

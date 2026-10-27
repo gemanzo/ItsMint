@@ -49,7 +49,7 @@ class BlueprintController extends Controller
                 case 'price_asc':
                     $blueprints->leftJoin('card_latest_prices_mv as mv', function ($join) use ($language) {
                         $join->on('blueprints.id', '=', 'mv.blueprint_id');
-                        if (!empty($language)) {
+                        if (! empty($language)) {
                             $join->where('mv.language', $language);
                         }
                     })->orderByRaw('COALESCE(mv.price_cents, 999999999) ASC')
@@ -58,7 +58,7 @@ class BlueprintController extends Controller
                 case 'price_desc':
                     $blueprints->leftJoin('card_latest_prices_mv as mv', function ($join) use ($language) {
                         $join->on('blueprints.id', '=', 'mv.blueprint_id');
-                        if (!empty($language)) {
+                        if (! empty($language)) {
                             $join->where('mv.language', $language);
                         }
                     })->orderByRaw('COALESCE(mv.price_cents, 0) DESC')
@@ -82,7 +82,7 @@ class BlueprintController extends Controller
         // Override latestPrice using MV when language is provided (default EN)
         if (! empty($language)) {
             $ids = $blueprints->getCollection()->pluck('id')->all();
-            if (!empty($ids)) {
+            if (! empty($ids)) {
                 $mv = \DB::table('card_latest_prices_mv')
                     ->whereIn('blueprint_id', $ids)
                     ->where('language', $language)
@@ -102,6 +102,7 @@ class BlueprintController extends Controller
                             'fetched_at' => $row->fetched_at,
                         ]));
                     }
+
                     return $bp;
                 });
             }
@@ -189,7 +190,7 @@ class BlueprintController extends Controller
         }
 
         if (! empty($searchQuery)) {
-            $query->where('name', 'ILIKE', '%' . $searchQuery . '%');
+            $query->where('name', 'ILIKE', '%'.$searchQuery.'%');
         }
 
         // Use the normalized expansion code for querying the relationship
@@ -208,13 +209,15 @@ class BlueprintController extends Controller
         // If language filter is provided, set the language-specific price as latestPrice relation
         if (! empty($validated['language'])) {
             $language = strtolower($validated['language']);
-            $blueprints = $blueprints->filter(function (Blueprint $bp) use ($language) {
+            $blueprints = $blueprints->filter(function (Blueprint $bp) {
                 // Use the eagerly loaded cardPrices relationship
                 $lp = $bp->cardPrices->first();
                 if ($lp) {
                     $bp->setRelation('latestPrice', $lp);
+
                     return true; // keep only if price exists for requested language
                 }
+
                 return false;
             })->values();
         }

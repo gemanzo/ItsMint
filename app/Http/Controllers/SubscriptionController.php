@@ -32,9 +32,10 @@ final class SubscriptionController extends Controller
 
         // Create a Checkout Session for the single premium price
         $priceId = (string) config('services.stripe.price_id_premium');
-        
+
         if (! $priceId) {
             Log::error('STRIPE_PRICE_ID_PREMIUM not configured');
+
             return response()->json([
                 'error' => 'Checkout configuration error. Please contact support.',
             ], 500);
@@ -109,7 +110,7 @@ final class SubscriptionController extends Controller
     public function portal(Request $request)
     {
         $user = $request->user();
-        
+
         if (! $user->hasStripeId()) {
             return redirect()->route('subscription.index')
                 ->with('error', 'No billing account found. Please subscribe first.');
@@ -117,6 +118,7 @@ final class SubscriptionController extends Controller
 
         try {
             $url = $user->billingPortalUrl(route('subscription.index'));
+
             return redirect()->away($url);
         } catch (\Exception $e) {
             Log::error('Failed to create billing portal URL', [

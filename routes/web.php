@@ -67,4 +67,4 @@ Route::middleware('auth')->group(function () {
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
     ->name('stripe.webhook');
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

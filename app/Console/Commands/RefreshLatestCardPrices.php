@@ -17,6 +17,7 @@ final class RefreshLatestCardPrices extends Command
     {
         DB::statement('REFRESH MATERIALIZED VIEW CONCURRENTLY card_latest_prices_mv');
         $this->info('card_latest_prices_mv refreshed.');
+
         return self::SUCCESS;
     }
 }

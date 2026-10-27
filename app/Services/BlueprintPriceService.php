@@ -54,11 +54,11 @@ class BlueprintPriceService
             return null;
         }
 
-        $marketplaceUrl = $baseApiUrl . '/marketplace/products';
+        $marketplaceUrl = $baseApiUrl.'/marketplace/products';
 
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $token,
+                'Authorization' => 'Bearer '.$token,
                 'Accept' => 'application/json',
             ])->retry(5, function (int $attempt, \Throwable $exception) use ($blueprintCtId) {
                 // Handle HTTP 429 rate limit
@@ -185,7 +185,7 @@ class BlueprintPriceService
             $priceCents = $product['price_cents'];
 
             // Create unique key for condition-language combination
-            $key = $condition . '_' . $language;
+            $key = $condition.'_'.$language;
 
             if (! isset($lowestPrices[$key]) || $priceCents < $lowestPrices[$key]['price_cents']) {
                 $lowestPrices[$key] = [
@@ -220,7 +220,7 @@ class BlueprintPriceService
                 continue;
             }
 
-            $key = $condition . '_' . $language;
+            $key = $condition.'_'.$language;
             if (isset($lowestPrices[$key])) {
                 $lowestPrices[$key]['product_count'] = ($lowestPrices[$key]['product_count'] ?? 0) + 1;
             }
@@ -269,7 +269,7 @@ class BlueprintPriceService
                         $source = 'cardtrader_service_adjusted_hierarchy_by_language';
                     }
 
-                    $key = $hierarchicalCondition . '_' . $language;
+                    $key = $hierarchicalCondition.'_'.$language;
                     $adjustedPrices[$key] = $currentEntry;
                     $adjustedPrices[$key]['price_cents'] = $adjustedPriceCents;
                     $adjustedPrices[$key]['source'] = $source;

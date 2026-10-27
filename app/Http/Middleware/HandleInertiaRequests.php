@@ -34,6 +34,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => function () use ($request) {
                     $user = $request->user();
+
                     // Only load roles if user exists and we need them for hasRole check
                     // Spatie Permission can work without eager loading, but loading here avoids N+1
                     return $user ? $user->load('roles') : null;
@@ -55,6 +56,7 @@ class HandleInertiaRequests extends Middleware
                 }
 
                 $feature = \Laravel\Pennant\Feature::for($user);
+
                 return [
                     'is_admin' => $user->hasRole('admin'),
                     'portfolio_unlimited' => $feature->active('portfolio.unlimited'),
@@ -64,7 +66,7 @@ class HandleInertiaRequests extends Middleware
                     'alerts_price' => $feature->active('alerts.price'),
                 ];
             },
-            'ziggy' => fn() => [
+            'ziggy' => fn () => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],

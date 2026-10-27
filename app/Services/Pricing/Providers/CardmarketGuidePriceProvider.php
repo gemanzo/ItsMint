@@ -30,7 +30,7 @@ final class CardmarketGuidePriceProvider implements PriceProvider
         $points = [];
         foreach ($rows as $r) {
             $eur = $r['avg_price_eur'] ?? $r['trend_price_eur'] ?? null;
-            if (!is_numeric($eur)) {
+            if (! is_numeric($eur)) {
                 continue;
             }
             $points[] = new PricePoint(

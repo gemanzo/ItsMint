@@ -13,7 +13,9 @@ use Illuminate\Support\Str;
 final class CardmarketGuideReader
 {
     private ?array $data = null;
+
     private array $byIdProduct = [];
+
     private bool $isIndexed = false;
 
     public function __construct(
@@ -26,14 +28,14 @@ final class CardmarketGuideReader
     public function preload(): void
     {
         $data = $this->fetchGuideJson();
-        if (!is_array($data)) {
+        if (! is_array($data)) {
             return;
         }
         $rows = $data['priceGuides'] ?? [];
-        if (!is_array($rows)) {
+        if (! is_array($rows)) {
             return;
         }
-        if (!$this->isIndexed) {
+        if (! $this->isIndexed) {
             foreach ($rows as $row) {
                 if (isset($row['idProduct']) && is_numeric($row['idProduct'])) {
                     $this->byIdProduct[(int) $row['idProduct']] = $row;
@@ -57,7 +59,7 @@ final class CardmarketGuideReader
         }
 
         $rows = $data['priceGuides'] ?? [];
-        if (!is_array($rows)) {
+        if (! is_array($rows)) {
             return [];
         }
 
@@ -65,7 +67,7 @@ final class CardmarketGuideReader
         $lang = strtolower($blueprint->primary_language ?? 'en');
 
         // Build fast index once per process
-        if (!$this->isIndexed) {
+        if (! $this->isIndexed) {
             foreach ($rows as $row) {
                 if (isset($row['idProduct']) && is_numeric($row['idProduct'])) {
                     $this->byIdProduct[(int) $row['idProduct']] = $row;
@@ -117,7 +119,7 @@ final class CardmarketGuideReader
             : $candidateRows[0];
 
         if (count($candidateRows) > 1) {
-            $cands = array_map(fn($r) => [
+            $cands = array_map(fn ($r) => [
                 'idProduct' => $r['idProduct'] ?? null,
                 'avg' => $r['avg'] ?? null,
                 'trend' => $r['trend'] ?? null,
@@ -169,6 +171,7 @@ final class CardmarketGuideReader
                 $json = json_decode($raw, true);
                 if (is_array($json)) {
                     $this->data = $json;
+
                     return $this->data;
                 }
             } catch (\Throwable) {
@@ -179,30 +182,35 @@ final class CardmarketGuideReader
         $cached = Cache::get($cacheKey);
         if ($cached !== null) {
             $this->data = $cached;
+
             return $this->data;
         }
 
         $url = $this->downloadUrl ?? (config('services.cardmarket.op_price_guide_url') ?: env('CARDMARKET_OP_PRICE_GUIDE'));
-        if (!$url) {
+        if (! $url) {
             Log::warning('CardmarketGuideReader: op_price_guide_url not configured.');
+
             return null;
         }
 
         try {
             $resp = Http::timeout(30)->get($url);
-            if (!$resp->successful()) {
+            if (! $resp->successful()) {
                 Log::warning('CardmarketGuideReader: failed to download JSON', ['status' => $resp->status()]);
+
                 return null;
             }
             $data = $resp->json();
-            if (!is_array($data)) {
+            if (! is_array($data)) {
                 return null;
             }
             $this->data = $data;
             Cache::put($cacheKey, $data, now()->addHours(24));
+
             return $this->data;
         } catch (\Throwable $e) {
             Log::error('CardmarketGuideReader exception', ['error' => $e->getMessage()]);
+
             return null;
         }
     }
@@ -262,8 +270,8 @@ final class CardmarketGuideReader
     /**
      * Choose best row by trend/avg among candidates; tie-break using original order.
      *
-     * @param array<int,int> $originalOrderIds
-     * @param array<int,array<string,mixed>> $candidateRows
+     * @param  array<int,int>  $originalOrderIds
+     * @param  array<int,array<string,mixed>>  $candidateRows
      */
     private function selectBestRowByPrice(array $originalOrderIds, array $candidateRows): ?array
     {
@@ -280,6 +288,7 @@ final class CardmarketGuideReader
             if ($idx !== false) {
                 $orderRank = (int) $idx;
             }
+
             return [
                 'row' => $r,
                 'price' => $price,
@@ -303,6 +312,7 @@ final class CardmarketGuideReader
             if ($a['orderRank'] !== $b['orderRank']) {
                 return $a['orderRank'] < $b['orderRank'] ? -1 : 1;
             }
+
             return $a['idProduct'] <=> $b['idProduct'];
         });
 
@@ -318,7 +328,7 @@ final class CardmarketGuideReader
         $map = config('services.cardmarket.preferred_id_index_by_language');
         if (is_string($map)) {
             // Parse format like "en:0,ja:1,de:0"
-            $pairs = array_filter(array_map('trim', explode(',', $map)), fn($v) => $v !== '');
+            $pairs = array_filter(array_map('trim', explode(',', $map)), fn ($v) => $v !== '');
             $assoc = [];
             foreach ($pairs as $p) {
                 [$k, $v] = array_pad(array_map('trim', explode(':', $p, 2)), 2, null);
@@ -332,9 +342,11 @@ final class CardmarketGuideReader
             $key = strtolower(trim($lang));
             if (array_key_exists($key, $map) && is_numeric($map[$key])) {
                 $idx = (int) $map[$key];
+
                 return $idx >= 0 ? $idx : null;
             }
         }
+
         return null;
     }
 }

@@ -437,11 +437,11 @@ final class MirrorOneLogDataCommand extends Command
                 ]);
 
                 // Also write directly to Laravel log
-                error_log("ONELOG CARD ERROR [{$cardId}]: " . $e->getMessage());
+                error_log("ONELOG CARD ERROR [{$cardId}]: ".$e->getMessage());
 
                 // Also log to console for immediate visibility
                 if ($this->getOutput()->isVerbose()) {
-                    $this->line('Full error details: ' . $e->getTraceAsString());
+                    $this->line('Full error details: '.$e->getTraceAsString());
                 }
             }
         }
@@ -451,7 +451,7 @@ final class MirrorOneLogDataCommand extends Command
             Log::channel('single')->error('Storage completed with errors', [
                 'total_errors' => $errors,
                 'total_processed' => count($cards),
-                'success_rate' => round((($stored / count($cards)) * 100), 2) . '%',
+                'success_rate' => round((($stored / count($cards)) * 100), 2).'%',
             ]);
         }
 
@@ -655,7 +655,7 @@ final class MirrorOneLogDataCommand extends Command
         $this->table($headers, $rows);
 
         if (count($cards) > 10) {
-            $this->info('... and ' . (count($cards) - 10) . ' more cards');
+            $this->info('... and '.(count($cards) - 10).' more cards');
         }
     }
 
@@ -695,13 +695,13 @@ final class MirrorOneLogDataCommand extends Command
 
             if ($result['success']) {
                 $this->info('✅ API connection successful!');
-                $this->info('Cards found: ' . $result['cards_found']);
+                $this->info('Cards found: '.$result['cards_found']);
 
                 if (! empty($result['sample_card'])) {
-                    $this->info('Sample card: ' . ($result['sample_card']['name'] ?? 'N/A'));
+                    $this->info('Sample card: '.($result['sample_card']['name'] ?? 'N/A'));
                 }
             } else {
-                $this->error('❌ API connection failed: ' . ($result['error'] ?? 'Unknown error'));
+                $this->error('❌ API connection failed: '.($result['error'] ?? 'Unknown error'));
 
                 return Command::FAILURE;
             }

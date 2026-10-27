@@ -82,7 +82,7 @@ final class BlueprintSearchController extends Controller
             }
 
             // Post-process: if language requested, enforce DB truth for latest price per language
-            if ($language && !empty($response['data'])) {
+            if ($language && ! empty($response['data'])) {
                 $lang = strtolower($language);
                 $ids = collect($results['hits'])->pluck('id')->unique()->values();
                 if ($ids->isNotEmpty()) {
@@ -101,9 +101,11 @@ final class BlueprintSearchController extends Controller
                                         'is_foil' => (bool) ($lp->is_foil ?? false),
                                         'fetched_at' => $lp->fetched_at,
                                     ];
+
                                     return $hit;
                                 }
                             }
+
                             // If no price for requested language, drop the hit from the results
                             return null;
                         })
