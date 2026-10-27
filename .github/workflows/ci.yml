@@ -1,0 +1,122 @@
+name: CI
+
+# Quality gate: runs on every push and pull request.
+# The production deploy (deploy.yml) only starts when this workflow succeeds on master.
+
+on:
+  push:
+  pull_request:
+
+# A new push on the same branch cancels the run still in progress
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (style + tests)
+    runs-on: ubuntu-latest
+
+    # Migrations use PostgreSQL-only features (pg_trgm, materialized views):
+    # tests run on the same PostgreSQL version as compose.yml
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: itsmint
+          POSTGRES_PASSWORD: itsmint
+          POSTGRES_DB: itsmint_testing
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U itsmint -d itsmint_testing"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # phpunit.xml selects the pgsql connection and the itsmint_testing database
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USERNAME: itsmint
+      DB_PASSWORD: itsmint
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, pgsql, bcmath, intl, zip, gd, exif, pcntl
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare the environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Check PHP code style (Pint)
+        run: composer lint
+
+      - name: Run tests
+        run: php artisan test
+
+  frontend:
+    name: Frontend (style + lint + types + build)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # The frontend imports Ziggy from vendor/tightenco/ziggy
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install PHP dependencies (needed for Ziggy only)
+        run: composer install --no-interaction --prefer-dist --no-progress --no-scripts
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Check frontend code style (Prettier)
+        run: npm run format:check
+
+      # Fails on errors only: the remaining warnings are tracked debt (explicit any)
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      # Type-check (vue-tsc) + client and SSR builds
+      - name: Build
+        run: npm run build

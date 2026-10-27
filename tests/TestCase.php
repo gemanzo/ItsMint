@@ -13,5 +13,9 @@ abstract class TestCase extends BaseTestCase
 
         // Never reach the real S3 bucket of card scans from tests
         Storage::fake('s3-card-scans');
+
+        // Pages render without the compiled frontend assets (public/build),
+        // which don't exist in CI or in a fresh checkout
+        $this->withoutVite();
     }
 }

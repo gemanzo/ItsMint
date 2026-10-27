@@ -3,7 +3,11 @@
   "type": "module",
   "scripts": {
     "build": "vue-tsc && vite build && vite build --ssr",
-    "dev": "vite"
+    "dev": "vite",
+    "lint": "eslint resources/js",
+    "format": "prettier --write resources/js resources/css",
+    "format:check": "prettier --check resources/js resources/css",
+    "typecheck": "vue-tsc --noEmit"
   },
   "devDependencies": {
     "@inertiajs/vue3": "^2.0.0",

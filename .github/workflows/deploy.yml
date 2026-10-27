@@ -1,13 +1,25 @@
 name: CD - Continuous Deployment
 
+# Deploys only master commits that passed the CI workflow (ci.yml):
+# a push on master no longer goes to production without tests and build checks.
 on:
-  push:
-    branches:
-      - master
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [master]
+
+# Never run two deploys at the same time; a new one waits for the running one
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
 
 jobs:
   deploy:
     name: Deploy to Production
+    # Only when CI succeeded for a push (not for a pull request targeting master)
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Deploy via SSH
@@ -22,4 +34,4 @@ jobs:
             cd /var/www/html/ItsMint
             git pull origin master
             chmod +x scripts/deploy.sh
-            bash scripts/deploy.sh 
+            bash scripts/deploy.sh
