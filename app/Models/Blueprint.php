@@ -66,15 +66,15 @@ class Blueprint extends Model
     }
 
     /**
-     * Get the latest price for the Blueprint.
-     * Now returns the best condition price (Near Mint first, then highest price within condition).
+     * Get the current market price for the Blueprint: most recent day first, then the
+     * best condition of that day. Prices older than CardPrice::CURRENT_PRICE_MAX_AGE_DAYS
+     * are not current anymore.
      */
     public function latestPrice()
     {
         return $this->hasOne(CardPrice::class)
-            ->orderBy('condition_priority', 'asc')
-            ->orderBy('fetched_at', 'desc')
-            ->orderBy('price_cents', 'desc');
+            ->current()
+            ->latestFirst();
     }
 
     /**
@@ -95,9 +95,8 @@ class Blueprint extends Model
     {
         return $this->hasOne(CardPrice::class)
             ->where('language', strtolower($language))
-            ->orderBy('condition_priority', 'asc')
-            ->orderBy('fetched_at', 'desc')
-            ->orderBy('price_cents', 'desc');
+            ->current()
+            ->latestFirst();
     }
 
     /**

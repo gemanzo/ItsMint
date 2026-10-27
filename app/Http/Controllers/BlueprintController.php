@@ -39,7 +39,8 @@ class BlueprintController extends Controller
                     $sub->selectRaw('1')
                         ->from('card_latest_prices_mv as mv')
                         ->whereColumn('mv.blueprint_id', 'blueprints.id')
-                        ->where('mv.language', $language);
+                        ->where('mv.language', $language)
+                        ->where('mv.is_foil', false);
                 });
             });
 
@@ -47,8 +48,11 @@ class BlueprintController extends Controller
         if ($sort) {
             switch ($sort) {
                 case 'price_asc':
+                    // The view has one row per language AND foil: join non-foil prices only,
+                    // otherwise a card with both would appear twice
                     $blueprints->leftJoin('card_latest_prices_mv as mv', function ($join) use ($language) {
-                        $join->on('blueprints.id', '=', 'mv.blueprint_id');
+                        $join->on('blueprints.id', '=', 'mv.blueprint_id')
+                            ->where('mv.is_foil', false);
                         if (! empty($language)) {
                             $join->where('mv.language', $language);
                         }
@@ -57,7 +61,8 @@ class BlueprintController extends Controller
                     break;
                 case 'price_desc':
                     $blueprints->leftJoin('card_latest_prices_mv as mv', function ($join) use ($language) {
-                        $join->on('blueprints.id', '=', 'mv.blueprint_id');
+                        $join->on('blueprints.id', '=', 'mv.blueprint_id')
+                            ->where('mv.is_foil', false);
                         if (! empty($language)) {
                             $join->where('mv.language', $language);
                         }
@@ -86,6 +91,7 @@ class BlueprintController extends Controller
                 $mv = \DB::table('card_latest_prices_mv')
                     ->whereIn('blueprint_id', $ids)
                     ->where('language', $language)
+                    ->where('is_foil', false)
                     ->get()
                     ->keyBy('blueprint_id');
 
@@ -180,9 +186,8 @@ class BlueprintController extends Controller
             $language = strtolower($validated['language']);
             $query->with(['cardPrices' => function ($q) use ($language) {
                 $q->where('language', $language)
-                    ->orderBy('condition_priority', 'asc')
-                    ->orderBy('fetched_at', 'desc')
-                    ->orderBy('price_cents', 'desc');
+                    ->current()
+                    ->latestFirst();
             }]);
         } else {
             // Otherwise, load the generic latestPrice

@@ -136,13 +136,19 @@ class UserCard extends Model
 
         // Try to use eagerly loaded cardPrices relationship if available
         if ($this->blueprint->relationLoaded('cardPrices')) {
-            // Filter the already loaded collection for language-specific price
+            // Filter the already loaded collection for language-specific price, with the
+            // same rules as Blueprint::latestPriceForLanguage(): current prices only,
+            // most recent day first, then the best condition of that day
+            $oldestCurrentPriceDate = CardPrice::oldestCurrentPriceDate();
             $priceModel = $this->blueprint->cardPrices
                 ->where('language', strtolower($this->language))
+                ->filter(function (CardPrice $cardPrice) use ($oldestCurrentPriceDate) {
+                    return ! $cardPrice->is_foil
+                        && $cardPrice->price_date->toDateString() >= $oldestCurrentPriceDate;
+                })
                 ->sortBy([
+                    fn (CardPrice $first, CardPrice $second) => $second->price_date <=> $first->price_date,
                     ['condition_priority', 'asc'],
-                    ['fetched_at', 'desc'],
-                    ['price_cents', 'desc'],
                 ])
                 ->first();
         }
