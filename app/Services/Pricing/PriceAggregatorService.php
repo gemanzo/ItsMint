@@ -4,127 +4,260 @@ declare(strict_types=1);
 
 namespace App\Services\Pricing;
 
+use App\Enums\CardLanguage;
 use App\Models\Blueprint;
 use App\Models\CardPrice;
-use Illuminate\Support\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Builds the daily market price of a card from the raw price points of every source.
+ *
+ * The work is split in two independent steps:
+ * 1. recordPricePoints(): each source (Cardmarket guide, CardTrader listings) stores
+ *    its raw observations in card_price_points, whenever it is fetched;
+ * 2. aggregate(): reads only the database (no network call) and combines the most
+ *    recent point of each source into one price per language, condition and foil,
+ *    stored in card_prices for the current day.
+ *
+ * Both steps are idempotent: running them again the same day doesn't create duplicates.
+ */
 final class PriceAggregatorService
 {
+    /**
+     * Points older than this are not used: a price based only on stale
+     * observations would look current while it is not.
+     */
+    private const FRESHNESS_WINDOW_DAYS = 7;
+
+    /**
+     * Share of values clamped on each side before averaging (outlier protection).
+     */
+    private const WINSORIZE_ALPHA = 0.15;
+
     /** @param PriceProvider[] $providers */
     public function __construct(
         private readonly array $providers,
     ) {}
 
-    /** @return array<string, array<string, mixed>> */
+    /**
+     * Fetch every provider, store the points and aggregate them.
+     *
+     * Meant for on-demand runs (e.g. itsmint:prices-debug): scheduled runs fetch each
+     * source separately and then call aggregate().
+     *
+     * @return array<string, array<string, mixed>>
+     */
     public function estimate(Blueprint $blueprint): array
     {
-        $points = collect($this->providers)
-            ->flatMap(fn (PriceProvider $p) => $p->fetch($blueprint))
-            ->filter();
+        foreach ($this->providers as $provider) {
+            $this->recordPricePoints($provider->fetch($blueprint));
+        }
 
-        $this->storeRawPoints($points);
+        return $this->aggregate($blueprint);
+    }
 
-        $byKey = $points->groupBy(fn (PricePoint $pp) => strtolower($pp->language).'|'.$pp->condition);
+    /**
+     * Store raw price points.
+     *
+     * Points with a non-positive price or an unknown language are discarded.
+     * Recording the same observation twice is a no-op (unique snapshot index).
+     *
+     * @param  Collection<int, PricePoint>  $pricePoints
+     * @return int Number of points actually stored
+     */
+    public function recordPricePoints(Collection $pricePoints): int
+    {
+        $pointRows = [];
 
-        $estimates = [];
-        foreach ($byKey as $key => $group) {
-            [$lang, $cond] = explode('|', $key, 2);
-
-            $values = $group->map(fn (PricePoint $pp) => [
-                'value' => $pp->priceCents,
-                'weight' => $this->weightFor($pp),
-            ]);
-
-            if ($values->isEmpty()) {
+        foreach ($pricePoints as $pricePoint) {
+            if ($pricePoint->priceCents <= 0) {
                 continue;
             }
 
-            $trimmed = $this->winsorize($values->pluck('value')->all(), 0.15);
-            $values = $values->values()->map(fn ($v, $i) => array_merge($v, ['value' => $trimmed[$i]]));
-
-            $num = 0.0;
-            $den = 0.0;
-            foreach ($values as $v) {
-                $num += $v['value'] * $v['weight'];
-                $den += $v['weight'];
-            }
-            if ($den <= 0) {
+            $language = CardLanguage::fromProviderValue($pricePoint->language);
+            if ($language === null) {
                 continue;
             }
 
-            $priceCents = (int) round($num / $den);
-
-            $estimates[$cond.'_'.$lang] = [
-                'price_cents' => $priceCents,
-                'currency' => 'EUR',
-                'condition' => $cond,
-                'language' => $lang,
-                'is_foil' => false,
-                'fetched_at' => Carbon::now(),
-                'source' => 'aggregate_v1',
+            $pointRows[] = [
+                'blueprint_id' => $pricePoint->blueprintId,
+                'price_cents' => $pricePoint->priceCents,
+                'currency' => $pricePoint->currency,
+                'condition' => $pricePoint->condition,
+                'language' => $language->value,
+                'is_foil' => $pricePoint->isFoil,
+                'source' => $pricePoint->source,
+                // With the timezone offset: the column is a timestamptz
+                'fetched_at' => $pricePoint->fetchedAt->utc()->toIso8601String(),
+                'meta' => json_encode($pricePoint->meta),
+                'created_at' => now(),
+                'updated_at' => now(),
             ];
         }
 
-        $this->upsertDailyAggregates($blueprint, $estimates);
+        if (empty($pointRows)) {
+            return 0;
+        }
+
+        return DB::table('card_price_points')->insertOrIgnore($pointRows);
+    }
+
+    /**
+     * Combine the stored points into today's prices of the card (database only).
+     *
+     * @return array<string, array<string, mixed>> Prices keyed by "{condition}_{language}"
+     */
+    public function aggregate(Blueprint $blueprint): array
+    {
+        $pointsByPriceKey = $this->latestFreshPointOfEachSource($blueprint)
+            ->groupBy(fn (PricePoint $pricePoint) => $this->priceKey($pricePoint));
+
+        $estimates = [];
+
+        foreach ($pointsByPriceKey as $priceKey => $pointsOfAllSources) {
+            $weightedPriceCents = $this->weightedAveragePriceCents($pointsOfAllSources);
+            if ($weightedPriceCents === null) {
+                continue;
+            }
+
+            /** @var PricePoint $referencePoint */
+            $referencePoint = $pointsOfAllSources->first();
+            $contributingSources = $pointsOfAllSources
+                ->map(fn (PricePoint $pricePoint) => $pricePoint->source)
+                ->unique()
+                ->sort()
+                ->implode('+');
+            $newestObservationAt = $pointsOfAllSources
+                ->map(fn (PricePoint $pricePoint) => $pricePoint->fetchedAt)
+                ->max();
+
+            $estimates[$priceKey] = [
+                'price_cents' => $weightedPriceCents,
+                'currency' => 'EUR',
+                'condition' => $referencePoint->condition,
+                'language' => $referencePoint->language,
+                'is_foil' => $referencePoint->isFoil,
+                // When the underlying market data was observed, not when it was aggregated
+                'fetched_at' => $newestObservationAt,
+                // Provenance: which sources produced this price
+                'source' => 'aggregate:'.$contributingSources,
+            ];
+        }
+
+        $this->upsertTodayPrices($blueprint, $estimates);
 
         return $estimates;
     }
 
-    private function storeRawPoints(Collection $points): void
+    /**
+     * Most recent point of each source for each language/condition/foil, within the
+     * freshness window. Taking one point per source keeps a source fetched many times
+     * from outweighing the others.
+     *
+     * @return Collection<int, PricePoint>
+     */
+    private function latestFreshPointOfEachSource(Blueprint $blueprint): Collection
     {
-        if ($points->isEmpty()) {
-            return;
-        }
-        $rows = $points->map(fn (PricePoint $pp) => [
-            'blueprint_id' => $pp->blueprintId,
-            'price_cents' => $pp->priceCents,
-            'currency' => $pp->currency,
-            'condition' => $pp->condition,
-            'language' => strtolower($pp->language),
-            'is_foil' => $pp->isFoil,
-            'source' => $pp->source,
-            'fetched_at' => $pp->fetchedAt->toDateTimeString(),
-            'meta' => json_encode($pp->meta),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ])->all();
-
-        DB::table('card_price_points')->insert($rows);
+        return DB::table('card_price_points')
+            ->where('blueprint_id', $blueprint->id)
+            ->where('fetched_at', '>=', now()->subDays(self::FRESHNESS_WINDOW_DAYS))
+            ->orderByDesc('fetched_at')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (object $pointRow) => new PricePoint(
+                blueprintId: $pointRow->blueprint_id,
+                priceCents: $pointRow->price_cents,
+                currency: $pointRow->currency,
+                condition: $pointRow->condition,
+                language: $pointRow->language,
+                isFoil: (bool) $pointRow->is_foil,
+                fetchedAt: CarbonImmutable::parse($pointRow->fetched_at),
+                source: $pointRow->source,
+                meta: json_decode($pointRow->meta ?? '[]', true) ?? [],
+            ))
+            // Rows are sorted newest first: unique() keeps the latest point of each source
+            ->unique(fn (PricePoint $pricePoint) => $pricePoint->source.'|'.$this->priceKey($pricePoint))
+            ->values();
     }
 
-    private function upsertDailyAggregates(Blueprint $bp, array $estimates): void
+    /**
+     * Weighted average of the points (outliers clamped first), or null when no point has weight.
+     *
+     * @param  Collection<int, PricePoint>  $pricePoints
+     */
+    private function weightedAveragePriceCents(Collection $pricePoints): ?int
     {
-        foreach ($estimates as $entry) {
-            $exists = CardPrice::query()
-                ->where('blueprint_id', $bp->id)
-                ->where('condition', $entry['condition'])
-                ->where('language', $entry['language'])
-                ->whereDate('fetched_at', today())
-                ->first();
+        $pricePoints = $pricePoints->values();
+        $clampedPrices = $this->winsorize(
+            $pricePoints->map(fn (PricePoint $pricePoint) => $pricePoint->priceCents)->all(),
+            self::WINSORIZE_ALPHA
+        );
 
-            if ($exists) {
-                $exists->update([
-                    'price_cents' => $entry['price_cents'],
-                    'currency' => $entry['currency'],
-                    'is_foil' => $entry['is_foil'] ?? false,
-                    'source' => $entry['source'],
-                    'fetched_at' => $entry['fetched_at'],
-                ]);
-            } else {
-                CardPrice::create([
-                    'blueprint_id' => $bp->id,
-                    'condition' => $entry['condition'],
-                    'language' => $entry['language'],
-                    'price_cents' => $entry['price_cents'],
-                    'currency' => $entry['currency'],
-                    'is_foil' => $entry['is_foil'] ?? false,
-                    'source' => $entry['source'],
-                    'fetched_at' => $entry['fetched_at'],
-                ]);
-            }
+        $weightedPricesSum = 0.0;
+        $weightsSum = 0.0;
+        foreach ($pricePoints as $pointIndex => $pricePoint) {
+            $pointWeight = $this->weightFor($pricePoint);
+            $weightedPricesSum += $clampedPrices[$pointIndex] * $pointWeight;
+            $weightsSum += $pointWeight;
         }
+
+        if ($weightsSum <= 0) {
+            return null;
+        }
+
+        return (int) round($weightedPricesSum / $weightsSum);
+    }
+
+    /**
+     * Store today's prices: one row per card, language, condition, foil and day.
+     *
+     * @param  array<string, array<string, mixed>>  $estimates
+     */
+    private function upsertTodayPrices(Blueprint $blueprint, array $estimates): void
+    {
+        if (empty($estimates)) {
+            return;
+        }
+
+        $todayDate = today()->toDateString();
+        $priceRows = [];
+
+        foreach ($estimates as $estimate) {
+            $priceRows[] = [
+                'blueprint_id' => $blueprint->id,
+                'language' => $estimate['language'],
+                'condition' => $estimate['condition'],
+                'is_foil' => $estimate['is_foil'],
+                'price_date' => $todayDate,
+                'price_cents' => $estimate['price_cents'],
+                'currency' => $estimate['currency'],
+                'source' => $estimate['source'],
+                // card_prices.fetched_at has no timezone: always stored in UTC
+                'fetched_at' => $estimate['fetched_at']->utc()->toDateTimeString(),
+            ];
+        }
+
+        CardPrice::query()->upsert(
+            $priceRows,
+            uniqueBy: ['blueprint_id', 'language', 'condition', 'is_foil', 'price_date'],
+            update: ['price_cents', 'currency', 'source', 'fetched_at']
+        );
+    }
+
+    /**
+     * Key identifying a price: condition and language, plus a suffix for foil prices.
+     */
+    private function priceKey(PricePoint $pricePoint): string
+    {
+        $priceKey = $pricePoint->condition.'_'.$pricePoint->language;
+
+        if ($pricePoint->isFoil) {
+            $priceKey .= '_foil';
+        }
+
+        return $priceKey;
     }
 
     private function weightFor(PricePoint $pp): float
