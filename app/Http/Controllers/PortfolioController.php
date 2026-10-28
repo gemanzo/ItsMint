@@ -9,6 +9,7 @@ use App\Models\UserCard;
 use App\Rules\ValidCardCondition;
 use App\Rules\ValidCardLanguage;
 use App\Services\PortfolioTradingService;
+use App\Support\PortfolioInputRules;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -229,7 +230,7 @@ class PortfolioController extends Controller
         $this->authorize('view', $portfolio);
 
         // Check if pagination is requested (default: paginate for performance)
-        $perPage = (int) $request->get('per_page', 50);
+        $perPage = PortfolioInputRules::clampPerPage($request->get('per_page'), 50);
         $page = (int) $request->get('page', 1);
 
         // For web requests, paginate userCards to improve performance
@@ -341,12 +342,12 @@ class PortfolioController extends Controller
             'blueprint_id' => 'required|exists:blueprints,id',
             'condition' => ['required', 'string', new ValidCardCondition],
             'language' => ['required', 'string', new ValidCardLanguage],
-            'quantity' => 'required|integer|min:1',
+            'quantity' => 'required|'.PortfolioInputRules::quantity(),
             // 0 is a valid cost: pulled from a pack, received as a gift, ...
-            'purchase_price_cents' => 'required|integer|min:0',
+            'purchase_price_cents' => 'required|'.PortfolioInputRules::unitPriceCents(),
             // Optional, defaults to today; a card can't be acquired in the future
-            'acquired_at' => 'nullable|date|before_or_equal:today',
-            'notes' => 'nullable|string|max:1000',
+            'acquired_at' => 'nullable|'.PortfolioInputRules::notFutureDate(),
+            'notes' => 'nullable|'.PortfolioInputRules::notes(),
         ]);
 
         // Store the canonical vocabulary, whatever spelling the client sent ("Near Mint", "EN", ...)
@@ -409,7 +410,7 @@ class PortfolioController extends Controller
 
         $validated = $request->validate([
             'user_card_id' => 'required|exists:user_cards,id',
-            'quantity' => 'required|integer|min:1',
+            'quantity' => 'required|'.PortfolioInputRules::quantity(),
         ]);
 
         // Verifica che la user_card appartenga all'utente autenticato
@@ -468,7 +469,7 @@ class PortfolioController extends Controller
         }
 
         $validated = $request->validate([
-            'quantity' => 'required|integer|min:1',
+            'quantity' => 'required|'.PortfolioInputRules::quantity(),
         ]);
 
         // Check if updating quantity would exceed free plan limit
@@ -529,7 +530,7 @@ class PortfolioController extends Controller
             'blueprint_id' => 'required|exists:blueprints,id',
             'condition' => ['required', 'string', new ValidCardCondition],
             'language' => ['required', 'string', new ValidCardLanguage],
-            'quantity' => 'required|integer|min:1',
+            'quantity' => 'required|'.PortfolioInputRules::quantity(),
             // When given, the copies are removed from this purchase lot only
             'user_card_id' => 'nullable|integer',
         ]);

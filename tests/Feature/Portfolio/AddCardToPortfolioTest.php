@@ -49,9 +49,10 @@ test('a card can be added with a zero purchase price', function () {
 });
 
 test('a card cannot be acquired in the future', function () {
+    // Tomorrow (UTC) is tolerated for the timezone offset: two days ahead is the future
     $response = $this->actingAs($this->owner)->postJson(
         "/api/portfolios/{$this->portfolio->id}/blueprints",
-        addCardPayload($this->blueprint, ['acquired_at' => now()->addDay()->toDateString()])
+        addCardPayload($this->blueprint, ['acquired_at' => now()->addDays(2)->toDateString()])
     );
 
     $response->assertUnprocessable()->assertJsonValidationErrors('acquired_at');

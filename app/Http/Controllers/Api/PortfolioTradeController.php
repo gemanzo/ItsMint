@@ -10,6 +10,7 @@ use App\Models\PortfolioSale;
 use App\Models\PortfolioTransaction;
 use App\Models\UserCard;
 use App\Services\PortfolioTradingService;
+use App\Support\PortfolioInputRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -26,11 +27,11 @@ final class PortfolioTradeController extends Controller
 
         $validated = $request->validate([
             'user_card_id' => 'required|exists:user_cards,id',
-            'quantity' => 'required|integer|min:1',
-            'unit_sale_price_cents' => 'required|integer|min:0',
+            'quantity' => 'required|'.PortfolioInputRules::quantity(),
+            'unit_sale_price_cents' => 'required|'.PortfolioInputRules::unitPriceCents(),
             'platform' => 'required|string|in:ebay,cardmarket,private,cardtrader,custom',
-            'notes' => 'nullable|string',
-            'sold_at' => 'nullable|date',
+            'notes' => 'nullable|'.PortfolioInputRules::notes(),
+            'sold_at' => 'nullable|'.PortfolioInputRules::notFutureDate(),
         ]);
 
         $userCard = UserCard::where('id', $validated['user_card_id'])
@@ -117,7 +118,7 @@ final class PortfolioTradeController extends Controller
         }
 
         // Pagination
-        $perPage = (int) $request->get('per_page', 50);
+        $perPage = PortfolioInputRules::clampPerPage($request->get('per_page'), 50);
         $sales = $query->paginate($perPage);
 
         return response()->json($sales);
@@ -134,10 +135,10 @@ final class PortfolioTradeController extends Controller
             // Changing the sold quantity would create or lose copies: cancel the sale
             // and record a new one instead
             'quantity' => 'prohibited',
-            'unit_sale_price_cents' => 'sometimes|required|integer|min:0',
+            'unit_sale_price_cents' => 'sometimes|required|'.PortfolioInputRules::unitPriceCents(),
             'platform' => 'sometimes|required|string|in:ebay,cardmarket,private,cardtrader,custom',
-            'notes' => 'nullable|string',
-            'sold_at' => 'nullable|date',
+            'notes' => 'nullable|'.PortfolioInputRules::notes(),
+            'sold_at' => 'nullable|'.PortfolioInputRules::notFutureDate(),
         ]);
 
         $sale->fill($validated);
@@ -210,9 +211,9 @@ final class PortfolioTradeController extends Controller
 
         $validated = $request->validate([
             'type' => 'required|string|in:deposit,withdraw,adjustment',
-            'amount_cents' => 'required|integer|min:1',
-            'notes' => 'nullable|string',
-            'occurred_at' => 'nullable|date',
+            'amount_cents' => 'required|'.PortfolioInputRules::cashAmountCents(),
+            'notes' => 'nullable|'.PortfolioInputRules::notes(),
+            'occurred_at' => 'nullable|'.PortfolioInputRules::notFutureDate(),
         ]);
 
         $amount = (int) $validated['amount_cents'];
@@ -275,19 +276,37 @@ final class PortfolioTradeController extends Controller
 
                 fputcsv($out, [
                     $s->sold_at?->toDateString(),
-                    $s->blueprint?->name,
+                    $this->neutralizeSpreadsheetFormula($s->blueprint?->name),
                     $s->condition,
                     $s->language,
                     $s->quantity,
                     $unitPurchaseEuros,
                     number_format($s->unit_sale_price_cents / 100, 2, '.', ''),
                     $realizedProfitEuros,
-                    $s->platform,
-                    $s->notes,
+                    $this->neutralizeSpreadsheetFormula($s->platform),
+                    $this->neutralizeSpreadsheetFormula($s->notes),
                 ]);
             }
             fclose($out);
         }, 200, $headers);
+    }
+
+    /**
+     * Free text written into a CSV must never be run as a formula by a spreadsheet
+     * (e.g. a note starting with "=HYPERLINK(...)"): such values get a leading quote.
+     */
+    private function neutralizeSpreadsheetFormula(?string $cellValue): ?string
+    {
+        if ($cellValue === null || $cellValue === '') {
+            return $cellValue;
+        }
+
+        $formulaStartCharacters = ['=', '+', '-', '@', "\t", "\r"];
+        if (in_array($cellValue[0], $formulaStartCharacters, true)) {
+            return "'".$cellValue;
+        }
+
+        return $cellValue;
     }
 
     public function piggyBankMetrics(Request $request, Portfolio $portfolio): JsonResponse

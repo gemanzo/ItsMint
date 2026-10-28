@@ -9,6 +9,7 @@ use App\Models\UserCard;
 use App\Rules\ValidCardCondition;
 use App\Rules\ValidCardLanguage;
 use App\Services\PortfolioTradingService;
+use App\Support\PortfolioInputRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -41,10 +42,10 @@ class UserCardController extends Controller
             'condition' => ['required', 'string', new ValidCardCondition],
             'language' => ['required', 'string', new ValidCardLanguage],
             'quantity' => 'required|integer|min:1|max:50',
-            'purchase_price' => 'nullable|numeric|min:0',
+            'purchase_price' => 'nullable|'.PortfolioInputRules::unitPriceEuros(),
             'purchase_currency' => 'nullable|string|max:3',
-            'acquired_at' => 'nullable|date',
-            'notes' => 'nullable|string',
+            'acquired_at' => 'nullable|'.PortfolioInputRules::notFutureDate(),
+            'notes' => 'nullable|'.PortfolioInputRules::notes(),
         ]);
 
         // Store the canonical vocabulary, whatever spelling the client sent ("Near Mint", "EN", ...)
@@ -168,14 +169,14 @@ class UserCardController extends Controller
             'condition' => ['sometimes', 'required', 'string', new ValidCardCondition],
             'language' => ['sometimes', 'required', 'string', new ValidCardLanguage],
             // Preferred: integer cents, no float conversion involved
-            'purchase_price_cents' => 'nullable|integer|min:0',
-            'purchase_price' => 'nullable|numeric|min:0',
+            'purchase_price_cents' => 'nullable|'.PortfolioInputRules::unitPriceCents(),
+            'purchase_price' => 'nullable|'.PortfolioInputRules::unitPriceEuros(),
             'purchase_currency' => 'nullable|string|max:3',
-            'acquired_at' => 'nullable|date',
-            'sold_price' => 'nullable|numeric|min:0',
+            'acquired_at' => 'nullable|'.PortfolioInputRules::notFutureDate(),
+            'sold_price' => 'nullable|'.PortfolioInputRules::unitPriceEuros(),
             'sold_currency' => 'nullable|string|max:3',
-            'sold_at' => 'nullable|date',
-            'notes' => 'nullable|string',
+            'sold_at' => 'nullable|'.PortfolioInputRules::notFutureDate(),
+            'notes' => 'nullable|'.PortfolioInputRules::notes(),
         ]);
 
         // Store the canonical vocabulary, whatever spelling the client sent

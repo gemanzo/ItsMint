@@ -9,6 +9,7 @@ use App\Models\CardScan;
 use App\Rules\ValidCardCondition;
 use App\Rules\ValidCardLanguage;
 use App\Services\CardOcrService;
+use App\Support\PortfolioInputRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -260,8 +261,8 @@ final class CardScanController extends Controller
             'condition' => ['required', 'string', new ValidCardCondition],
             'language' => ['required', 'string', new ValidCardLanguage],
             'quantity' => 'sometimes|integer|min:1|max:50',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string',
+            'purchase_price' => 'nullable|'.PortfolioInputRules::unitPriceEuros(),
+            'notes' => 'nullable|'.PortfolioInputRules::notes(),
         ]);
 
         $scan = CardScan::where('id', $id)

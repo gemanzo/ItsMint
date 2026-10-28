@@ -95,6 +95,16 @@ final class PortfolioTradingService
             $consumedLots = $this->takeQuantityFromLots($portfolio, $lotsOldestFirst, $quantity);
             $firstConsumedLot = $consumedLots->first()['lot'];
 
+            // A copy can't be sold before it was acquired (the transaction is rolled back)
+            foreach ($consumedLots as $consumedLot) {
+                $lotAcquiredOn = $this->lotDate($consumedLot['lot']);
+                if ($lotAcquiredOn->gt($soldAt->copy()->startOfDay())) {
+                    throw ValidationException::withMessages([
+                        'sold_at' => "The sale date can't be earlier than the purchase of the copies sold ({$lotAcquiredOn->toDateString()}).",
+                    ]);
+                }
+            }
+
             $sale = PortfolioSale::create([
                 'portfolio_id' => $portfolio->id,
                 'user_card_id' => $firstConsumedLot->id,
