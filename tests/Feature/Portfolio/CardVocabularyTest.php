@@ -23,15 +23,16 @@ function addToPortfolio($testCase, string $condition, string $language)
     ]);
 }
 
-test('the same card added with different spellings ends up in a single holding', function () {
+test('the same card added with different spellings is stored as the same card', function () {
     addToPortfolio($this, 'Near Mint', 'EN')->assertCreated();
     addToPortfolio($this, 'NM', 'en')->assertCreated();
 
-    $userCards = $this->owner->userCards()->get();
-    expect($userCards)->toHaveCount(1);
-    expect($userCards->first()->condition)->toBe('NM');
-    expect($userCards->first()->language)->toBe('en');
-    expect($this->portfolio->userCards()->first()->pivot->quantity)->toBe(2);
+    // Each addition is its own purchase lot, both with the canonical vocabulary:
+    // they are lots of the same card (same blueprint, condition and language)
+    $purchaseLots = $this->owner->userCards()->get();
+    expect($purchaseLots)->toHaveCount(2);
+    expect($purchaseLots->pluck('condition')->unique()->all())->toBe(['NM']);
+    expect($purchaseLots->pluck('language')->unique()->all())->toBe(['en']);
 });
 
 test('unknown conditions and languages are rejected', function () {

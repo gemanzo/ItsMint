@@ -56,7 +56,7 @@ final class PortfolioTradeController extends Controller
         ])->loadCount('userCards');
 
         return response()->json([
-            'sale' => $sale->load('userCard.blueprint'),
+            'sale' => $sale->load(['blueprint', 'lots']),
             'portfolio' => $portfolio,
         ], 201);
     }
@@ -75,7 +75,8 @@ final class PortfolioTradeController extends Controller
             'sort_dir' => 'nullable|string|in:asc,desc',
         ]);
 
-        $query = PortfolioSale::with('userCard.blueprint.expansion')
+        // The card comes from the sale's own snapshot: its lots may have been removed since
+        $query = PortfolioSale::with(['blueprint.expansion', 'lots'])
             ->where('portfolio_id', $portfolio->id);
 
         // Date range filter
@@ -130,7 +131,9 @@ final class PortfolioTradeController extends Controller
         }
 
         $validated = $request->validate([
-            'quantity' => 'sometimes|required|integer|min:1',
+            // Changing the sold quantity would create or lose copies: cancel the sale
+            // and record a new one instead
+            'quantity' => 'prohibited',
             'unit_sale_price_cents' => 'sometimes|required|integer|min:0',
             'platform' => 'sometimes|required|string|in:ebay,cardmarket,private,cardtrader,custom',
             'notes' => 'nullable|string',
@@ -160,7 +163,7 @@ final class PortfolioTradeController extends Controller
             }
         }
 
-        return response()->json($sale->fresh('userCard.blueprint'));
+        return response()->json($sale->fresh(['blueprint', 'lots']));
     }
 
     public function salesDestroy(Request $request, Portfolio $portfolio, PortfolioSale $sale): JsonResponse
@@ -170,20 +173,8 @@ final class PortfolioTradeController extends Controller
             abort(404);
         }
 
-        $userCard = $sale->userCard;
-        $pivot = $portfolio->userCards()->where('user_card_id', $userCard->id)->first();
-        if ($pivot) {
-            $newQty = $pivot->pivot->quantity + $sale->quantity;
-            $portfolio->userCards()->updateExistingPivot($userCard->id, ['quantity' => $newQty]);
-        } else {
-            $portfolio->userCards()->attach($userCard->id, ['quantity' => $sale->quantity]);
-        }
-
-        if ($sale->portfolio_transaction_id) {
-            PortfolioTransaction::where('id', $sale->portfolio_transaction_id)->delete();
-        }
-
-        $sale->delete();
+        // The sold copies go back to the lots they were taken from
+        $this->service->cancelSale($portfolio, $sale);
 
         // Clear portfolio value cache after sale deletion
         Cache::forget("portfolio_total_value_cents_{$portfolio->id}");
@@ -245,7 +236,7 @@ final class PortfolioTradeController extends Controller
     {
         Gate::authorize('view', $portfolio);
 
-        $query = \App\Models\PortfolioSale::with('userCard.blueprint')
+        $query = \App\Models\PortfolioSale::with(['blueprint', 'lots'])
             ->where('portfolio_id', $portfolio->id)
             ->orderBy('sold_at');
 
@@ -272,17 +263,25 @@ final class PortfolioTradeController extends Controller
             $out = fopen('php://output', 'w');
             fputcsv($out, ['Sold At', 'Blueprint', 'Condition', 'Language', 'Qty', 'Unit Purchase (€)', 'Unit Sale (€)', 'P&L (€)', 'Platform', 'Notes']);
             foreach ($sales as $s) {
-                $bp = $s->userCard->blueprint;
-                $pnl = ($s->unit_sale_price_cents - $s->unit_purchase_price_cents) * $s->quantity;
+                // Unknown purchase cost: purchase and P&L columns stay empty (not 0)
+                $unitPurchaseEuros = '';
+                if ($s->unit_purchase_price_cents !== null) {
+                    $unitPurchaseEuros = number_format($s->unit_purchase_price_cents / 100, 2, '.', '');
+                }
+                $realizedProfitEuros = '';
+                if ($s->realized_profit_cents !== null) {
+                    $realizedProfitEuros = number_format($s->realized_profit_cents / 100, 2, '.', '');
+                }
+
                 fputcsv($out, [
                     $s->sold_at?->toDateString(),
-                    $bp?->name,
-                    $s->userCard->condition,
-                    $s->userCard->language,
+                    $s->blueprint?->name,
+                    $s->condition,
+                    $s->language,
                     $s->quantity,
-                    number_format($s->unit_purchase_price_cents / 100, 2, '.', ''),
+                    $unitPurchaseEuros,
                     number_format($s->unit_sale_price_cents / 100, 2, '.', ''),
-                    number_format($pnl / 100, 2, '.', ''),
+                    $realizedProfitEuros,
                     $s->platform,
                     $s->notes,
                 ]);
@@ -308,8 +307,14 @@ final class PortfolioTradeController extends Controller
             $qty = (int) $s->quantity;
             $totalQty += $qty;
             if ($s->acquired_at && $s->sold_at) {
-                $days = max(0, $s->sold_at->diffInDays($s->acquired_at));
+                // Carbon 3 returns a signed difference: from acquisition to sale is positive
+                // (the reversed order was always negative, so the average was always 0)
+                $days = max(0, $s->acquired_at->diffInDays($s->sold_at));
                 $weightedDays += $days * $qty;
+            }
+            // Sales with an unknown purchase cost have no known profit: they can't rank
+            if ($s->unit_purchase_price_cents === null) {
+                continue;
             }
             $pnlCents = ($s->unit_sale_price_cents - $s->unit_purchase_price_cents) * $qty;
             $roi = $s->unit_purchase_price_cents > 0 ? ($s->unit_sale_price_cents - $s->unit_purchase_price_cents) / $s->unit_purchase_price_cents : 0.0;

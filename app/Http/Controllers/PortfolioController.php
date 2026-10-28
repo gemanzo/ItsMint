@@ -8,12 +8,14 @@ use App\Models\Portfolio;
 use App\Models\UserCard;
 use App\Rules\ValidCardCondition;
 use App\Rules\ValidCardLanguage;
+use App\Services\PortfolioTradingService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class PortfolioController extends Controller
@@ -359,54 +361,9 @@ class PortfolioController extends Controller
             $acquiredAt = \Carbon\Carbon::parse($validated['acquired_at']);
         }
 
-        // Prepare creation data
-        $createData = [
-            'purchase_price_cents' => $validated['purchase_price_cents'],
-            'purchase_currency' => 'EUR',
-            'acquired_at' => $acquiredAt,
-        ];
-
-        // Add notes if provided
-        if (isset($validated['notes']) && ! empty($validated['notes'])) {
-            $createData['notes'] = $validated['notes'];
-        }
-
-        // Find an existing UserCard or create a new one
-        $userCard = $user->userCards()->firstOrCreate(
-            [
-                'blueprint_id' => $validated['blueprint_id'],
-                'condition' => $validated['condition'],
-                'language' => $validated['language'],
-            ],
-            $createData
-        );
-
-        // If UserCard already exists but we want to update acquired_at, purchase_price, or notes, update it
-        if ($userCard->wasRecentlyCreated === false) {
-            if (isset($validated['purchase_price_cents'])) {
-                $userCard->purchase_price_cents = $validated['purchase_price_cents'];
-            }
-            $userCard->acquired_at = $acquiredAt;
-            if (isset($validated['notes'])) {
-                $userCard->notes = $validated['notes'];
-            }
-            $userCard->save();
-        }
-
-        // Check if the card is already in the portfolio
-        $pivot = $portfolio->userCards()->where('user_card_id', $userCard->id)->first();
-
-        // Calculate actual quantity increase
-        $currentQuantity = $pivot ? ($pivot->pivot->quantity ?? 0) : 0;
-        $quantityIncrease = $validated['quantity'];
-        $newQuantity = $currentQuantity + $quantityIncrease;
-
         // Check card limit for free plan users (50 cards per portfolio)
-        // Calculate the actual increase in total card count
         $currentTotal = $this->getTotalCardCount($portfolio);
-        $totalAfterAdd = $currentTotal - $currentQuantity + $newQuantity;
-
-        if (! $this->hasUnlimitedPortfolio($user) && $totalAfterAdd > 50) {
+        if (! $this->hasUnlimitedPortfolio($user) && $currentTotal + $validated['quantity'] > 50) {
             return response()->json([
                 'message' => 'Card limit reached for Free plan. Maximum 50 cards per portfolio allowed.',
                 'current_total' => $currentTotal,
@@ -415,21 +372,24 @@ class PortfolioController extends Controller
             ], 403);
         }
 
-        if ($pivot) {
-            // If it exists, update the quantity
-            $portfolio->userCards()->updateExistingPivot($userCard->id, ['quantity' => $newQuantity]);
-        } else {
-            // If not, attach it with the new quantity
-            $portfolio->userCards()->attach($userCard->id, ['quantity' => $validated['quantity']]);
-        }
+        // Every addition is a new purchase lot with its own price and date: the copies
+        // already owned keep their purchase price (it used to be overwritten here)
+        $purchaseLot = app(PortfolioTradingService::class)->addLot(
+            $portfolio,
+            $user,
+            (int) $validated['blueprint_id'],
+            $validated['condition'],
+            $validated['language'],
+            (int) $validated['quantity'],
+            (int) $validated['purchase_price_cents'],
+            $acquiredAt,
+            $validated['notes'] ?? null,
+        );
 
         // Clear portfolio value cache after modification
         $this->clearPortfolioValueCache($portfolio);
 
-        // Record purchase in ledger (cash out)
-        app(\App\Services\PortfolioTradingService::class)->recordPurchase($portfolio, $userCard, (int) $validated['quantity']);
-
-        return response()->json($userCard->load('blueprint'), 201);
+        return response()->json($purchaseLot->load('blueprint'), 201);
     }
 
     /**
@@ -489,10 +449,8 @@ class PortfolioController extends Controller
         // Clear portfolio value cache after modification
         $this->clearPortfolioValueCache($portfolio);
 
-        // Record purchase in ledger (cash out) - only record the actual increase, not the total quantity
-        if ($quantityIncrease > 0) {
-            app(\App\Services\PortfolioTradingService::class)->recordPurchase($portfolio, $userCard, (int) $quantityIncrease);
-        }
+        // The purchase transaction of the lot follows its quantity in this portfolio
+        app(PortfolioTradingService::class)->syncLotPurchaseTransaction($portfolio, $userCard);
 
         return response()->json($portfolio->load('userCards'));
     }
@@ -533,41 +491,25 @@ class PortfolioController extends Controller
             }
         }
 
-        if ($portfolio->userCards()->where('user_card_id', $userCard->id)->exists()) {
-            // Find all cards in the portfolio that match the same "group"
-            // (same blueprint, condition, language, purchase_price)
-            $groupCards = $portfolio->userCards()
-                ->where('blueprint_id', $userCard->blueprint_id)
-                ->where('condition', $userCard->condition)
-                ->where('language', $userCard->language)
-                ->where('purchase_price_cents', $userCard->purchase_price_cents)
-                ->get();
-
-            // Remove all cards from this group in the portfolio
-            foreach ($groupCards as $groupCard) {
-                $portfolio->userCards()->detach($groupCard->id);
-            }
-
-            // Add the card back with the new quantity
-            $portfolio->userCards()->attach($userCard->id, [
-                'quantity' => $validated['quantity'],
-                'added_to_portfolio_at' => now(),
-            ]);
-
-            // Clear portfolio value cache after modification
-            $this->clearPortfolioValueCache($portfolio);
-
-            // Load all necessary relationships that the frontend expects
-            $portfolio->load([
-                'userCards.blueprint.expansion',
-                'userCards.blueprint.latestPrice',
-                'userCards.blueprint.cardPrices', // Eager load all prices to avoid N+1 in estimated_value_cents accessor
-            ])->loadCount('userCards');
-
-            return response()->json($portfolio);
+        if (! $portfolio->userCards()->where('user_card_id', $userCard->id)->exists()) {
+            return response()->json(['message' => 'Card not in portfolio'], 404);
         }
 
-        return response()->json(['message' => 'Card not in portfolio'], 404);
+        // Only this purchase lot changes: the other lots of the card keep their own
+        // quantity, price and date (they used to be merged into this one)
+        app(PortfolioTradingService::class)->changeLotQuantity($portfolio, $userCard, (int) $validated['quantity']);
+
+        // Clear portfolio value cache after modification
+        $this->clearPortfolioValueCache($portfolio);
+
+        // Load all necessary relationships that the frontend expects
+        $portfolio->load([
+            'userCards.blueprint.expansion',
+            'userCards.blueprint.latestPrice',
+            'userCards.blueprint.cardPrices', // Eager load all prices to avoid N+1 in estimated_value_cents accessor
+        ])->loadCount('userCards');
+
+        return response()->json($portfolio);
     }
 
     /**
@@ -588,77 +530,38 @@ class PortfolioController extends Controller
             'condition' => ['required', 'string', new ValidCardCondition],
             'language' => ['required', 'string', new ValidCardLanguage],
             'quantity' => 'required|integer|min:1',
+            // When given, the copies are removed from this purchase lot only
+            'user_card_id' => 'nullable|integer',
         ]);
 
         // Store the canonical vocabulary, whatever spelling the client sent ("Near Mint", "EN", ...)
         $validated['condition'] = CardCondition::normalize($validated['condition']);
         $validated['language'] = CardLanguage::normalize($validated['language']);
 
-        // Find all UserCards matching the criteria
-        $matchingCards = $user->userCards()
-            ->where('blueprint_id', $validated['blueprint_id'])
-            ->where('condition', $validated['condition'])
-            ->where('language', $validated['language'])
-            ->get();
+        if (! empty($validated['user_card_id'])) {
+            $cardToRemove = $user->userCards()->find($validated['user_card_id']);
+        } else {
+            // Any lot of the card: the service takes the most recent lots first
+            $cardToRemove = $user->userCards()
+                ->where('blueprint_id', $validated['blueprint_id'])
+                ->where('condition', $validated['condition'])
+                ->where('language', $validated['language'])
+                ->first();
+        }
 
-        if ($matchingCards->isEmpty()) {
+        if (! $cardToRemove) {
             return response()->json(['message' => 'No matching cards found'], 404);
         }
 
-        // Find all cards in the portfolio that match the group
-        $portfolioCards = $portfolio->userCards()
-            ->whereIn('user_card_id', $matchingCards->pluck('id'))
-            ->get();
-
-        if ($portfolioCards->isEmpty()) {
-            return response()->json(['message' => 'No matching cards found in portfolio'], 404);
-        }
-
-        // Calculate total available quantity in portfolio
-        $totalAvailable = $portfolioCards->sum(function ($card) {
-            return $card->pivot->quantity ?? 0;
-        });
-
-        if ($validated['quantity'] > $totalAvailable) {
-            return response()->json([
-                'message' => 'Insufficient quantity. Only '.$totalAvailable.' card(s) available.',
-                'available' => $totalAvailable,
-            ], 400);
-        }
-
-        // Remove the specified quantity from matching cards
-        $remainingToRemove = $validated['quantity'];
-
-        foreach ($portfolioCards as $portfolioCard) {
-            if ($remainingToRemove <= 0) {
-                break;
-            }
-
-            $currentQuantity = $portfolioCard->pivot->quantity ?? 0;
-            $quantityToRemoveFromThisCard = min($remainingToRemove, $currentQuantity);
-            $newQuantity = $currentQuantity - $quantityToRemoveFromThisCard;
-
-            if ($newQuantity <= 0) {
-                // Remove completely from portfolio
-                $portfolio->userCards()->detach($portfolioCard->id);
-
-                // Check if UserCard is still in other portfolios
-                $otherPortfoliosCount = $portfolioCard->portfolios()
-                    ->where('portfolios.id', '!=', $portfolio->id)
-                    ->count();
-
-                // If not in any other portfolio, delete the UserCard
-                if ($otherPortfoliosCount === 0) {
-                    $portfolioCard->delete();
-                }
-            } else {
-                // Update quantity
-                $portfolio->userCards()->updateExistingPivot($portfolioCard->id, [
-                    'quantity' => $newQuantity,
-                ]);
-            }
-
-            $remainingToRemove -= $quantityToRemoveFromThisCard;
+        try {
+            app(PortfolioTradingService::class)->removeCopies(
+                $portfolio,
+                $cardToRemove,
+                (int) $validated['quantity'],
+                onlyFromThisLot: ! empty($validated['user_card_id']),
+            );
+        } catch (ValidationException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 400);
         }
 
         // Clear portfolio value cache after modification
@@ -691,21 +594,13 @@ class PortfolioController extends Controller
             return response()->json(['message' => 'Card not found in portfolio'], 404);
         }
 
-        // Remove the card from this portfolio (pivot table)
-        $portfolio->userCards()->detach($userCard->id);
+        // Remove every copy of this lot from the portfolio; the lot is deleted when no
+        // other portfolio holds it and no sale refers to it (sales keep their history)
+        $quantityInPortfolio = (int) $portfolio->userCards()->where('user_card_id', $userCard->id)->first()->pivot->quantity;
+        app(PortfolioTradingService::class)->removeCopies($portfolio, $userCard, $quantityInPortfolio, onlyFromThisLot: true);
 
         // Clear portfolio value cache after modification
         $this->clearPortfolioValueCache($portfolio);
-
-        // Check if the UserCard is still in other portfolios
-        $otherPortfoliosCount = $userCard->portfolios()
-            ->where('portfolios.id', '!=', $portfolio->id)
-            ->count();
-
-        // If the UserCard is not in any other portfolio, delete it completely
-        if ($otherPortfoliosCount === 0) {
-            $userCard->delete();
-        }
 
         return response()->json(null, 204);
     }

@@ -8,9 +8,11 @@ use App\Models\Blueprint;
 use App\Models\UserCard;
 use App\Rules\ValidCardCondition;
 use App\Rules\ValidCardLanguage;
+use App\Services\PortfolioTradingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class UserCardController extends Controller
 {
@@ -191,16 +193,24 @@ class UserCardController extends Controller
             'notes' => $validated['notes'] ?? $userCard->notes,
         ];
 
+        // New purchase price, when sent (integer cents preferred, euros accepted);
+        // null clears it (unknown cost)
+        $purchasePriceWasSent = false;
+        $newPurchasePriceCents = null;
         if (array_key_exists('purchase_price_cents', $validated)) {
-            // null clears the purchase price (unknown cost)
-            $updateData['purchase_price_cents'] = $validated['purchase_price_cents'];
-            $updateData['purchase_currency'] = $validated['purchase_currency'] ?? $userCard->purchase_currency ?? 'EUR';
-        } elseif (isset($validated['purchase_price'])) {
-            $updateData['purchase_price'] = $validated['purchase_price'];
-            $updateData['purchase_currency'] = $validated['purchase_currency'] ?? $userCard->purchase_currency ?? 'EUR';
-        } elseif (array_key_exists('purchase_price', $validated) && is_null($validated['purchase_price'])) {
-            $updateData['purchase_price'] = null;
+            $purchasePriceWasSent = true;
+            $newPurchasePriceCents = $validated['purchase_price_cents'];
+        } elseif (array_key_exists('purchase_price', $validated)) {
+            $purchasePriceWasSent = true;
+            if ($validated['purchase_price'] !== null) {
+                $newPurchasePriceCents = UserCard::eurosToCents((float) $validated['purchase_price']);
+            }
+        }
+
+        if ($purchasePriceWasSent && $newPurchasePriceCents === null) {
             $updateData['purchase_currency'] = null;
+        } elseif ($purchasePriceWasSent) {
+            $updateData['purchase_currency'] = $validated['purchase_currency'] ?? $userCard->purchase_currency ?? 'EUR';
         }
 
         if (isset($validated['sold_price'])) {
@@ -213,7 +223,19 @@ class UserCardController extends Controller
             $updateData['sold_at'] = null;
         }
 
-        $userCard->update($updateData);
+        $tradingService = app(PortfolioTradingService::class);
+
+        DB::transaction(function () use ($userCard, $updateData, $purchasePriceWasSent, $newPurchasePriceCents, $tradingService) {
+            $userCard->update($updateData);
+
+            if ($purchasePriceWasSent) {
+                // The sales that consumed this lot and the cash ledger follow the new price
+                $tradingService->changeLotPurchasePrice($userCard, $newPurchasePriceCents);
+            } else {
+                // The purchase date may have changed: the ledger follows it
+                $tradingService->syncLotPurchaseTransactions($userCard);
+            }
+        });
 
         return response()->json($userCard->load(['blueprint.expansion', 'blueprint.latestPrice']));
     }
@@ -227,9 +249,9 @@ class UserCardController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        // Prima di eliminare la UserCard, dissociala da tutti i portafogli
-        $userCard->portfolios()->detach();
-        $userCard->delete();
+        // Removed from every portfolio; the lot is kept (out of any portfolio) when sales
+        // refer to it, so that their history stays complete
+        app(PortfolioTradingService::class)->removeLotEverywhere($userCard);
 
         return response()->json(null, 204);
     }

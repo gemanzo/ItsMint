@@ -14,6 +14,8 @@ final class PortfolioTransaction extends Model
 
     protected $fillable = [
         'portfolio_id',
+        // Purchase transactions: the lot they paid for
+        'user_card_id',
         'type',
         'amount_cents',
         'currency',
