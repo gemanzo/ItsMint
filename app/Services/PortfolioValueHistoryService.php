@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\CardCondition;
 use App\Models\Portfolio;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -184,11 +185,15 @@ final class PortfolioValueHistoryService
             return ($userCard->estimated_value_cents ?? 0) * $quantity;
         }
 
+        // Market prices use CardTrader's condition names (e.g. LP = "Slightly Played"):
+        // translate the user card's condition code before comparing
+        $marketConditionName = CardCondition::fromProviderValue($userCard->condition)?->marketConditionName();
+
         // Find the closest price to this date matching language and condition
         $closestPrice = $prices
-            ->filter(function ($price) use ($userCard, $date) {
+            ->filter(function ($price) use ($userCard, $date, $marketConditionName) {
                 return strtolower($price->language ?? '') === strtolower($userCard->language ?? '') &&
-                    $price->condition === $userCard->condition &&
+                    $price->condition === $marketConditionName &&
                     Carbon::parse($price->fetched_at)->lte($date);
             })
             ->first();
@@ -199,9 +204,9 @@ final class PortfolioValueHistoryService
 
         // Fallback: Use the most recent price available for this card (regardless of date)
         $fallbackPrice = $prices
-            ->filter(function ($price) use ($userCard) {
+            ->filter(function ($price) use ($userCard, $marketConditionName) {
                 return strtolower($price->language ?? '') === strtolower($userCard->language ?? '') &&
-                    $price->condition === $userCard->condition;
+                    $price->condition === $marketConditionName;
             })
             ->first();
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
+use InvalidArgumentException;
+
 /**
  * Canonical card languages used across the app (prices, user cards, filters).
  *
@@ -73,6 +75,22 @@ enum CardLanguage: string
     }
 
     /**
+     * Canonical code of an already validated language.
+     *
+     * @throws InvalidArgumentException when the language is not recognized
+     */
+    public static function normalize(string $rawLanguage): string
+    {
+        $language = self::fromProviderValue($rawLanguage);
+
+        if ($language === null) {
+            throw new InvalidArgumentException("Unknown card language: {$rawLanguage}");
+        }
+
+        return $language->value;
+    }
+
+    /**
      * Language codes mapped to their display names, e.g. ['en' => 'English', ...].
      *
      * @return array<string, string>
@@ -85,6 +103,36 @@ enum CardLanguage: string
         }
 
         return $displayNamesByCode;
+    }
+
+    /**
+     * Short name shown in compact selectors (e.g. "EN").
+     */
+    public function shortName(): string
+    {
+        return match ($this) {
+            self::ENGLISH => 'EN',
+            self::JAPANESE => 'JP',
+            self::FRENCH => 'FR',
+            self::CHINESE_SIMPLIFIED => 'CHS',
+            self::CHINESE_TRADITIONAL => 'CHT',
+            self::KOREAN => 'KO',
+        };
+    }
+
+    /**
+     * ISO country code of the flag shown next to the language (flag-icons).
+     */
+    public function flagCountryCode(): string
+    {
+        return match ($this) {
+            self::ENGLISH => 'us',
+            self::JAPANESE => 'jp',
+            self::FRENCH => 'fr',
+            self::CHINESE_SIMPLIFIED => 'cn',
+            self::CHINESE_TRADITIONAL => 'tw',
+            self::KOREAN => 'kr',
+        };
     }
 
     /**

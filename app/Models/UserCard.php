@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\CardCondition;
+use App\Enums\CardLanguage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -40,45 +42,35 @@ class UserCard extends Model
         'estimated_value_cents',
     ];
 
-    // Helper for price condition adjustments
-    // NM: 0%, LP: -10%, MP: -25%, HP: -50%, DMG: -75%
-    // Note: These values should match the frontend constants in resources/js/constants/cardConditions.ts
-    protected static array $conditionPriceAdjustments = [
-        'NM' => 1.00,  // No change
-        'LP' => 0.90,  // -10%
-        'MP' => 0.75,  // -25%
-        'HP' => 0.50,  // -50%
-        'DMG' => 0.25, // -75%
-    ];
-
-    protected static array $conditionAbbreviations = [
-        'Near Mint' => 'NM',
-        'Slightly Played' => 'LP',
-        'Lightly Played' => 'LP',
-        'Moderately Played' => 'MP',
-        'Played' => 'HP',
-        'Heavily Played' => 'HP',
-        'Poor' => 'DMG',
-        'Damaged' => 'DMG',
-    ];
-
     /**
-     * Get condition-based price adjustments array
-     */
-    public static function getConditionPriceAdjustments(): array
-    {
-        return self::$conditionPriceAdjustments;
-    }
-
-    /**
-     * Calculate estimated price in cents for a given condition and base price
+     * Calculate estimated price in cents for a given condition and base price.
+     *
+     * The condition can be written in any accepted spelling (see CardCondition);
+     * the adjustment factors live in CardCondition::priceAdjustmentFactor().
      */
     public static function calculateEstimatedPriceCents(int $basePriceCents, string $condition): int
     {
-        $conditionAbbreviation = self::$conditionAbbreviations[$condition] ?? $condition;
-        $adjustmentFactor = self::$conditionPriceAdjustments[$conditionAbbreviation] ?? 1.00;
+        $adjustmentFactor = CardCondition::fromProviderValue($condition)?->priceAdjustmentFactor() ?? 1.00;
 
         return (int) round($basePriceCents * $adjustmentFactor);
+    }
+
+    /**
+     * Always store the canonical condition code ("NM", "LP", ...), whatever spelling
+     * is assigned. Controllers normalize validated input already: this guarantees that
+     * no other code path can store a different vocabulary.
+     */
+    public function setConditionAttribute(string $condition): void
+    {
+        $this->attributes['condition'] = CardCondition::normalize($condition);
+    }
+
+    /**
+     * Always store the canonical language code ("en", "jp", ...).
+     */
+    public function setLanguageAttribute(string $language): void
+    {
+        $this->attributes['language'] = CardLanguage::normalize($language);
     }
 
     public function user(): BelongsTo

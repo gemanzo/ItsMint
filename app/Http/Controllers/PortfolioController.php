@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CardCondition;
+use App\Enums\CardLanguage;
 use App\Models\Portfolio;
 use App\Models\UserCard;
+use App\Rules\ValidCardCondition;
+use App\Rules\ValidCardLanguage;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -333,8 +337,8 @@ class PortfolioController extends Controller
 
         $validated = $request->validate([
             'blueprint_id' => 'required|exists:blueprints,id',
-            'condition' => 'required|string|max:50',
-            'language' => 'required|string|max:10',
+            'condition' => ['required', 'string', new ValidCardCondition],
+            'language' => ['required', 'string', new ValidCardLanguage],
             'quantity' => 'required|integer|min:1',
             // 0 is a valid cost: pulled from a pack, received as a gift, ...
             'purchase_price_cents' => 'required|integer|min:0',
@@ -342,6 +346,10 @@ class PortfolioController extends Controller
             'acquired_at' => 'nullable|date|before_or_equal:today',
             'notes' => 'nullable|string|max:1000',
         ]);
+
+        // Store the canonical vocabulary, whatever spelling the client sent ("Near Mint", "EN", ...)
+        $validated['condition'] = CardCondition::normalize($validated['condition']);
+        $validated['language'] = CardLanguage::normalize($validated['language']);
 
         $user = $request->user();
 
@@ -577,10 +585,14 @@ class PortfolioController extends Controller
 
         $validated = $request->validate([
             'blueprint_id' => 'required|exists:blueprints,id',
-            'condition' => 'required|string|max:50',
-            'language' => 'required|string|max:10',
+            'condition' => ['required', 'string', new ValidCardCondition],
+            'language' => ['required', 'string', new ValidCardLanguage],
             'quantity' => 'required|integer|min:1',
         ]);
+
+        // Store the canonical vocabulary, whatever spelling the client sent ("Near Mint", "EN", ...)
+        $validated['condition'] = CardCondition::normalize($validated['condition']);
+        $validated['language'] = CardLanguage::normalize($validated['language']);
 
         // Find all UserCards matching the criteria
         $matchingCards = $user->userCards()

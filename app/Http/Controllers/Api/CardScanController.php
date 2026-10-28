@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\CardScan;
+use App\Rules\ValidCardCondition;
+use App\Rules\ValidCardLanguage;
 use App\Services\CardOcrService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -255,8 +257,8 @@ final class CardScanController extends Controller
     public function createUserCard(Request $request, int $id): JsonResponse
     {
         $validated = $request->validate([
-            'condition' => 'required|string|max:50',
-            'language' => 'required|string|max:10',
+            'condition' => ['required', 'string', new ValidCardCondition],
+            'language' => ['required', 'string', new ValidCardLanguage],
             'quantity' => 'sometimes|integer|min:1|max:50',
             'purchase_price' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',

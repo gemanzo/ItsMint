@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CardCondition;
+use App\Enums\CardLanguage;
 use App\Models\Blueprint;
 use App\Models\UserCard;
+use App\Rules\ValidCardCondition;
+use App\Rules\ValidCardLanguage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,14 +36,18 @@ class UserCardController extends Controller
     {
         $validated = $request->validate([
             'blueprint_id' => 'required|exists:blueprints,id',
-            'condition' => 'required|string|max:50',
-            'language' => 'required|string|max:10',
+            'condition' => ['required', 'string', new ValidCardCondition],
+            'language' => ['required', 'string', new ValidCardLanguage],
             'quantity' => 'required|integer|min:1|max:50',
             'purchase_price' => 'nullable|numeric|min:0',
             'purchase_currency' => 'nullable|string|max:3',
             'acquired_at' => 'nullable|date',
             'notes' => 'nullable|string',
         ]);
+
+        // Store the canonical vocabulary, whatever spelling the client sent ("Near Mint", "EN", ...)
+        $validated['condition'] = CardCondition::normalize($validated['condition']);
+        $validated['language'] = CardLanguage::normalize($validated['language']);
 
         $blueprint = Blueprint::find($validated['blueprint_id']);
         if (! $blueprint) {
@@ -56,13 +64,14 @@ class UserCardController extends Controller
             $validated['purchase_price'] === ''
         ) {
 
-            $userLanguage = strtolower($validated['language']);
+            $userLanguage = $validated['language'];
             $userCondition = $validated['condition'];
 
-            // Try to get exact match for language and condition first
+            // Try to get exact match for language and condition first.
+            // Market prices use CardTrader's condition names (e.g. LP = "Slightly Played").
             $specificPrice = $blueprint->cardPrices()
                 ->where('language', $userLanguage)
-                ->where('condition', $userCondition)
+                ->where('condition', CardCondition::from($userCondition)->marketConditionName())
                 ->orderBy('fetched_at', 'desc')
                 ->first();
 
@@ -154,8 +163,8 @@ class UserCardController extends Controller
         }
 
         $validated = $request->validate([
-            'condition' => 'sometimes|required|string|max:50',
-            'language' => 'sometimes|required|string|max:10',
+            'condition' => ['sometimes', 'required', 'string', new ValidCardCondition],
+            'language' => ['sometimes', 'required', 'string', new ValidCardLanguage],
             'purchase_price' => 'nullable|numeric|min:0',
             'purchase_currency' => 'nullable|string|max:3',
             'acquired_at' => 'nullable|date',
@@ -164,6 +173,14 @@ class UserCardController extends Controller
             'sold_at' => 'nullable|date',
             'notes' => 'nullable|string',
         ]);
+
+        // Store the canonical vocabulary, whatever spelling the client sent
+        if (isset($validated['condition'])) {
+            $validated['condition'] = CardCondition::normalize($validated['condition']);
+        }
+        if (isset($validated['language'])) {
+            $validated['language'] = CardLanguage::normalize($validated['language']);
+        }
 
         $updateData = [
             'condition' => $validated['condition'] ?? $userCard->condition,
