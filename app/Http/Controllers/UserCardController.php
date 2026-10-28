@@ -165,6 +165,8 @@ class UserCardController extends Controller
         $validated = $request->validate([
             'condition' => ['sometimes', 'required', 'string', new ValidCardCondition],
             'language' => ['sometimes', 'required', 'string', new ValidCardLanguage],
+            // Preferred: integer cents, no float conversion involved
+            'purchase_price_cents' => 'nullable|integer|min:0',
             'purchase_price' => 'nullable|numeric|min:0',
             'purchase_currency' => 'nullable|string|max:3',
             'acquired_at' => 'nullable|date',
@@ -189,7 +191,11 @@ class UserCardController extends Controller
             'notes' => $validated['notes'] ?? $userCard->notes,
         ];
 
-        if (isset($validated['purchase_price'])) {
+        if (array_key_exists('purchase_price_cents', $validated)) {
+            // null clears the purchase price (unknown cost)
+            $updateData['purchase_price_cents'] = $validated['purchase_price_cents'];
+            $updateData['purchase_currency'] = $validated['purchase_currency'] ?? $userCard->purchase_currency ?? 'EUR';
+        } elseif (isset($validated['purchase_price'])) {
             $updateData['purchase_price'] = $validated['purchase_price'];
             $updateData['purchase_currency'] = $validated['purchase_currency'] ?? $userCard->purchase_currency ?? 'EUR';
         } elseif (array_key_exists('purchase_price', $validated) && is_null($validated['purchase_price'])) {

@@ -13,6 +13,21 @@ use Illuminate\Validation\ValidationException;
 
 final class PortfolioTradingService
 {
+    /**
+     * Restrict the query to cards with the same purchase price.
+     *
+     * A card with an unknown purchase price (null) must match the other unknown ones:
+     * comparing with 0 found nothing, so those cards could never be sold.
+     */
+    private function whereSamePurchasePrice($userCardsQuery, ?int $purchasePriceCents)
+    {
+        if ($purchasePriceCents === null) {
+            return $userCardsQuery->whereNull('user_cards.purchase_price_cents');
+        }
+
+        return $userCardsQuery->where('user_cards.purchase_price_cents', $purchasePriceCents);
+    }
+
     public function sell(
         Portfolio $portfolio,
         UserCard $userCard,
@@ -30,12 +45,13 @@ final class PortfolioTradingService
 
         // Calculate total available quantity for this card type (same blueprint, condition, language, purchase_price)
         // This handles cases where multiple UserCard entries exist for the same card type
-        $totalAvailableQty = $portfolio->userCards()
-            ->where('blueprint_id', $userCard->blueprint_id)
-            ->where('condition', $userCard->condition)
-            ->where('language', $userCard->language)
-            ->where('purchase_price_cents', $userCard->purchase_price_cents ?? 0)
-            ->sum('portfolio_user_card.quantity');
+        $totalAvailableQty = $this->whereSamePurchasePrice(
+            $portfolio->userCards()
+                ->where('blueprint_id', $userCard->blueprint_id)
+                ->where('condition', $userCard->condition)
+                ->where('language', $userCard->language),
+            $userCard->purchase_price_cents
+        )->sum('portfolio_user_card.quantity');
 
         if ($quantity < 1 || $quantity > $totalAvailableQty) {
             throw ValidationException::withMessages(['quantity' => 'Invalid quantity.']);
@@ -45,12 +61,13 @@ final class PortfolioTradingService
 
         return DB::transaction(function () use ($portfolio, $userCard, $quantity, $unitSalePriceCents, $platform, $notes, $soldAt) {
             // Find all UserCard entries that match this card type
-            $matchingCards = $portfolio->userCards()
-                ->where('blueprint_id', $userCard->blueprint_id)
-                ->where('condition', $userCard->condition)
-                ->where('language', $userCard->language)
-                ->where('purchase_price_cents', $userCard->purchase_price_cents ?? 0)
-                ->get();
+            $matchingCards = $this->whereSamePurchasePrice(
+                $portfolio->userCards()
+                    ->where('blueprint_id', $userCard->blueprint_id)
+                    ->where('condition', $userCard->condition)
+                    ->where('language', $userCard->language),
+                $userCard->purchase_price_cents
+            )->get();
 
             $remainingToSell = $quantity;
 

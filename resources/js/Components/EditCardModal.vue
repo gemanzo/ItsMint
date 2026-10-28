@@ -173,6 +173,18 @@ const isFormValid = computed(() => {
   );
 });
 
+/**
+ * Euros typed in the form to integer cents (null when the field is empty).
+ */
+const toCentsOrNull = (
+  amountInEuros: number | string | null
+): number | null => {
+  if (amountInEuros === null || amountInEuros === '') {
+    return null;
+  }
+  return Math.round(Number(amountInEuros) * 100);
+};
+
 const closeModal = () => {
   isOpen.value = false;
   setTimeout(() => emit('close'), 300);
@@ -185,7 +197,8 @@ const submitEdit = async () => {
     try {
       // Update the UserCard properties
       await portfolioStore.updateUserCard(props.userCard.id, {
-        purchase_price: formData.purchase_price,
+        // Integer cents: an empty field clears the price, 0 is a free card
+        purchase_price_cents: toCentsOrNull(formData.purchase_price),
         acquired_at: formData.acquired_at || null,
         notes: formData.notes || null,
       });

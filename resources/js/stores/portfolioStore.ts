@@ -385,6 +385,8 @@ export const usePortfolioStore = defineStore('portfolio', {
       data: {
         condition?: string;
         language?: string;
+        // Prefer integer cents: euros as floats can lose a cent on conversion
+        purchase_price_cents?: number | null;
         purchase_price?: number | null;
         acquired_at?: string | null;
         notes?: string | null;
@@ -393,6 +395,7 @@ export const usePortfolioStore = defineStore('portfolio', {
       const payload: {
         condition?: string;
         language?: string;
+        purchase_price_cents?: number | null;
         purchase_price?: number | null;
         purchase_currency?: string;
         acquired_at?: string | null;

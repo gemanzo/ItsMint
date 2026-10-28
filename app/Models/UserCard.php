@@ -93,25 +93,50 @@ class UserCard extends Model
     // Accessor for purchase_price (converts cents to float)
     public function getPurchasePriceAttribute(): ?float
     {
-        return $this->purchase_price_cents ? $this->purchase_price_cents / 100 : null;
+        // 0 is a real price (free card): only null means "unknown"
+        if ($this->purchase_price_cents === null) {
+            return null;
+        }
+
+        return $this->purchase_price_cents / 100;
     }
 
     // Mutator for purchase_price (converts float to cents)
     public function setPurchasePriceAttribute(?float $value): void
     {
-        $this->attributes['purchase_price_cents'] = $value ? (int) ($value * 100) : null;
+        $this->attributes['purchase_price_cents'] = self::eurosToCents($value);
     }
 
     // Accessor for sold_price (converts cents to float)
     public function getSoldPriceAttribute(): ?float
     {
-        return $this->sold_price_cents ? $this->sold_price_cents / 100 : null;
+        if ($this->sold_price_cents === null) {
+            return null;
+        }
+
+        return $this->sold_price_cents / 100;
     }
 
     // Mutator for sold_price (converts float to cents)
     public function setSoldPriceAttribute(?float $value): void
     {
-        $this->attributes['sold_price_cents'] = $value ? (int) ($value * 100) : null;
+        $this->attributes['sold_price_cents'] = self::eurosToCents($value);
+    }
+
+    /**
+     * Convert an amount in euros to integer cents.
+     *
+     * Rounded, not truncated: floats can't represent most decimal amounts exactly
+     * (19.99 * 100 = 1998.9999...), so a plain (int) cast loses a cent. 0 stays 0
+     * (a free card), only null means "unknown".
+     */
+    public static function eurosToCents(?float $amountInEuros): ?int
+    {
+        if ($amountInEuros === null) {
+            return null;
+        }
+
+        return (int) round($amountInEuros * 100);
     }
 
     /**
