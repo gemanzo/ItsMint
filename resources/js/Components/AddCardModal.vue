@@ -244,11 +244,13 @@
               formErrors.condition,
           }"
         >
-          <option value="NM">Near Mint (NM)</option>
-          <option value="LP">Lightly Played (LP)</option>
-          <option value="MP">Moderately Played (MP)</option>
-          <option value="HP">Heavily Played (HP)</option>
-          <option value="DMG">Damaged (DMG)</option>
+          <option
+            v-for="cardCondition in CARD_CONDITIONS"
+            :key="cardCondition.value"
+            :value="cardCondition.value"
+          >
+            {{ cardCondition.label }}
+          </option>
         </select>
         <p
           v-if="formErrors.condition"
@@ -403,6 +405,7 @@ import { useCardPricing } from '@/composables/useCardPricing';
 import { useCurrency } from '@/composables/useCurrency';
 import { useApiError } from '@/composables/useApiError';
 import BlueprintSearchBar from '@/Components/BlueprintSearchBar.vue';
+import { CARD_CONDITIONS } from '@/constants/cardConditions';
 
 import FormModal from '@/Components/Base/FormModal.vue';
 import PriceInput from '@/Components/Forms/PriceInput.vue';
@@ -448,7 +451,7 @@ const currentScan = ref<CardScan | null>(null);
 
 const cardDetails = reactive({
   condition: 'NM',
-  language: 'EN',
+  language: 'en',
   quantity: 1,
   purchase_price: null as number | null,
   acquired_at: undefined as string | undefined,
@@ -571,16 +574,16 @@ const selectBlueprint = (blueprint: Blueprint) => {
 
   // Auto-set language based on selection context
   if (blueprint.latest_price?.language) {
-    cardDetails.language = blueprint.latest_price.language.toUpperCase();
+    cardDetails.language = blueprint.latest_price.language.toLowerCase();
   } else if (searchLanguageCode.value !== undefined) {
-    cardDetails.language = (searchLanguageCode.value || 'en').toUpperCase();
+    cardDetails.language = (searchLanguageCode.value || 'en').toLowerCase();
   } else {
-    cardDetails.language = 'EN';
+    cardDetails.language = 'en';
   }
   // If blueprint.latest_price refers to another language, clear purchase price to recompute
   if (
     blueprint.latest_price?.language &&
-    blueprint.latest_price.language.toUpperCase() !== cardDetails.language
+    blueprint.latest_price.language.toLowerCase() !== cardDetails.language
   ) {
     cardDetails.purchase_price = null;
   }
@@ -737,14 +740,14 @@ watch(searchLanguageCode, () => {
   }
   // Language changed: update language in card details
   if (selectedBlueprint.value) {
-    cardDetails.language = (searchLanguageCode.value || 'en').toUpperCase();
+    cardDetails.language = (searchLanguageCode.value || 'en').toLowerCase();
     // Note: purchase_price is now required, so we don't clear it when language changes
   }
 });
 
 // Sync language selection with card details
 watchEffect(() => {
-  cardDetails.language = (searchLanguageCode.value || 'en').toUpperCase();
+  cardDetails.language = (searchLanguageCode.value || 'en').toLowerCase();
 });
 
 onMounted(async () => {

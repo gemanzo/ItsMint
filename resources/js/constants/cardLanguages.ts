@@ -1,3 +1,5 @@
+import { CARD_LANGUAGE_DEFINITIONS } from '@/constants/generated/cardVocabulary';
+
 export interface CardLanguage {
   name: string;
   code: string;
@@ -5,12 +7,17 @@ export interface CardLanguage {
   flag?: string;
 }
 
+/**
+ * Card languages for selectors, generated from the backend CardLanguage enum
+ * (php artisan itsmint:export-card-vocabulary), plus the "Any" filter option.
+ */
 export const CARD_LANGUAGES: CardLanguage[] = [
   { name: 'Any', code: '', countryCode: 'un' },
-  { name: 'EN', code: 'en', countryCode: 'us' },
-  { name: 'JP', code: 'jp', countryCode: 'jp' },
-  { name: 'FR', code: 'fr', countryCode: 'fr' },
-  { name: 'CHI', code: 'zh-cn', countryCode: 'cn' },
+  ...CARD_LANGUAGE_DEFINITIONS.map((languageDefinition) => ({
+    name: languageDefinition.shortName,
+    code: languageDefinition.code,
+    countryCode: languageDefinition.countryCode,
+  })),
 ];
 
 export const AVAILABLE_LANGUAGES = CARD_LANGUAGES.filter(

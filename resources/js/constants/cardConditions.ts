@@ -1,3 +1,8 @@
+import {
+  CARD_CONDITION_ALIASES,
+  CARD_CONDITION_DEFINITIONS,
+} from '@/constants/generated/cardVocabulary';
+
 export interface CardCondition {
   value: string;
   label: string;
@@ -5,38 +10,18 @@ export interface CardCondition {
   priceAdjustment: number;
 }
 
-export const CARD_CONDITIONS: CardCondition[] = [
-  {
-    value: 'NM',
-    label: 'Near Mint (NM)',
-    description: 'Perfect condition',
-    priceAdjustment: 1.0,
-  },
-  {
-    value: 'LP',
-    label: 'Lightly Played (LP)',
-    description: 'Minor wear',
-    priceAdjustment: 0.9,
-  },
-  {
-    value: 'MP',
-    label: 'Moderately Played (MP)',
-    description: 'Visible wear',
-    priceAdjustment: 0.75,
-  },
-  {
-    value: 'HP',
-    label: 'Heavily Played (HP)',
-    description: 'Major wear',
-    priceAdjustment: 0.5,
-  },
-  {
-    value: 'DMG',
-    label: 'Damaged (DMG)',
-    description: 'Significant damage',
-    priceAdjustment: 0.25,
-  },
-];
+/**
+ * Card conditions for the forms, generated from the backend CardCondition enum
+ * (php artisan itsmint:export-card-vocabulary): never edit the list here.
+ */
+export const CARD_CONDITIONS: CardCondition[] = CARD_CONDITION_DEFINITIONS.map(
+  (conditionDefinition) => ({
+    value: conditionDefinition.value,
+    label: `${conditionDefinition.label} (${conditionDefinition.value})`,
+    description: conditionDefinition.description,
+    priceAdjustment: conditionDefinition.priceAdjustment,
+  })
+);
 
 export const CONDITION_PRICE_ADJUSTMENTS = CARD_CONDITIONS.reduce(
   (acc, condition) => {
@@ -47,22 +32,8 @@ export const CONDITION_PRICE_ADJUSTMENTS = CARD_CONDITIONS.reduce(
 );
 
 /**
- * Full condition names (as stored in card prices, e.g. "Near Mint") mapped to the
- * condition codes used by the forms. Mirrors UserCard::$conditionAbbreviations.
- */
-const CONDITION_CODES_BY_FULL_NAME: Record<string, string> = {
-  'Near Mint': 'NM',
-  'Slightly Played': 'LP',
-  'Lightly Played': 'LP',
-  'Moderately Played': 'MP',
-  Played: 'HP',
-  'Heavily Played': 'HP',
-  Poor: 'DMG',
-  Damaged: 'DMG',
-};
-
-/**
- * Convert a condition (full name or code) to the condition code used by the forms.
+ * Convert a condition written in any accepted spelling (code, label or CardTrader
+ * name such as "Slightly Played") to the condition code used by the forms.
  * Unknown values fall back to Near Mint.
  */
 export function toConditionCode(condition: string | null | undefined): string {
@@ -70,12 +41,5 @@ export function toConditionCode(condition: string | null | undefined): string {
     return 'NM';
   }
 
-  const isAlreadyACode = CARD_CONDITIONS.some(
-    (cardCondition) => cardCondition.value === condition
-  );
-  if (isAlreadyACode) {
-    return condition;
-  }
-
-  return CONDITION_CODES_BY_FULL_NAME[condition] ?? 'NM';
+  return CARD_CONDITION_ALIASES[condition.trim().toLowerCase()] ?? 'NM';
 }

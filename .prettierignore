@@ -1,2 +1,5 @@
 # Generated file (Ziggy routes), not formatted
 resources/js/ziggy.js
+
+# Generated from the PHP enums (php artisan itsmint:export-card-vocabulary)
+resources/js/constants/generated/
