@@ -1145,18 +1145,13 @@
                       <div class="card-image flex-shrink-0">
                         <Link
                           v-if="sale.user_card?.blueprint?.id"
-                          :href="
-                            route(
-                              'blueprints.show',
-                              sale.user_card.blueprint.id
-                            )
-                          "
+                          :href="route('blueprints.show', sale.blueprint.id)"
                           class="block"
                         >
                           <img
                             v-if="sale.user_card?.blueprint?.image_url"
-                            :src="sale.user_card.blueprint.image_url"
-                            :alt="sale.user_card.blueprint.name"
+                            :src="sale.blueprint.image_url"
+                            :alt="sale.blueprint.name"
                             class="h-36 w-auto object-contain rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md transition-shadow"
                           />
                           <div
@@ -1176,10 +1171,7 @@
                               <Link
                                 v-if="sale.user_card?.blueprint?.id"
                                 :href="
-                                  route(
-                                    'blueprints.show',
-                                    sale.user_card.blueprint.id
-                                  )
+                                  route('blueprints.show', sale.blueprint.id)
                                 "
                                 class="text-gray-900 dark:text-gray-100 hover:underline hover:text-blue-600 dark:hover:text-blue-400"
                               >
@@ -1229,8 +1221,8 @@
                                 v-if="sale.user_card?.blueprint?.expansion"
                                 class="text-sm text-gray-500 dark:text-gray-500"
                               >
-                                {{ sale.user_card.blueprint.expansion.name }}
-                                ({{ sale.user_card.blueprint.expansion.code }})
+                                {{ sale.blueprint.expansion.name }}
+                                ({{ sale.blueprint.expansion.code }})
                               </p>
                             </div>
                           </div>
@@ -1268,9 +1260,8 @@
                                     class="text-sm font-medium text-gray-700 dark:text-gray-300"
                                   >
                                     {{
-                                      formatCurrency(
-                                        (sale.unit_purchase_price_cents || 0) /
-                                          100
+                                      formatOptionalCents(
+                                        sale.unit_purchase_price_cents
                                       )
                                     }}
                                   </p>
@@ -1316,10 +1307,8 @@
                                     class="text-sm font-bold text-indigo-800 dark:text-indigo-200"
                                   >
                                     {{
-                                      formatCurrency(
-                                        ((sale.unit_purchase_price_cents || 0) *
-                                          sale.quantity) /
-                                          100
+                                      formatOptionalCents(
+                                        saleTotalCostCents(sale)
                                       )
                                     }}
                                   </p>
@@ -1344,20 +1333,13 @@
                               <div class="text-center">
                                 <p
                                   :class="[
-                                    (sale.unit_sale_price_cents || 0) -
-                                      (sale.unit_purchase_price_cents || 0) >=
-                                    0
-                                      ? 'text-emerald-600'
-                                      : 'text-red-600',
+                                    saleProfitClass(sale),
                                     'text-sm font-bold',
                                   ]"
                                 >
                                   {{
-                                    formatCurrency(
-                                      (((sale.unit_sale_price_cents || 0) -
-                                        (sale.unit_purchase_price_cents || 0)) *
-                                        sale.quantity) /
-                                        100
+                                    formatOptionalCents(
+                                      sale.realized_profit_cents
                                     )
                                   }}
                                 </p>
@@ -1498,6 +1480,8 @@ interface PortfolioPageData extends PortfolioInterface {
 
 interface CardGroup {
   groupKey: string;
+  // Each row is one purchase lot (a user card with its own price and date)
+  userCardId: number;
   blueprint?: BlueprintInterface;
   condition: string;
   language: string;
@@ -1507,6 +1491,16 @@ interface CardGroup {
   acquired_at?: string;
   singleEstimatedValue: number;
   singlePurchasePrice: number;
+}
+
+/**
+ * Amounts of a sale used by the sold tab (realized_profit_cents is computed by the
+ * server from the consumed purchase lots; null when a lot's cost is unknown).
+ */
+interface SaleAmounts {
+  quantity: number;
+  unit_sale_price_cents: number;
+  realized_profit_cents: number | null;
 }
 
 const props = defineProps<{
@@ -1645,7 +1639,8 @@ const closeRemoveCardModal = () => {
 const openSell = (group: CardGroup) => {
   const card = getFirstCardFromGroup(group);
   sellingUserCardId.value = card.id;
-  sellingMaxQty.value = group.totalQuantity;
+  // Sales consume the oldest copies of the same card first (FIFO), across all its lots
+  sellingMaxQty.value = ownedCopiesOfSameCard(card);
   showSellModal.value = true;
 };
 
@@ -1710,6 +1705,8 @@ const confirmRemoveCards = async (quantityToRemove: number) => {
         condition: cardGroupToRemove.value.condition,
         language: cardGroupToRemove.value.language,
         quantity: quantityToRemove,
+        // Only from this purchase lot
+        user_card_id: cardGroupToRemove.value.userCardId,
       },
     });
 
@@ -1738,44 +1735,16 @@ const confirmRemoveCards = async (quantityToRemove: number) => {
 };
 
 const getFirstCardFromGroup = (group: CardGroup): UserCardData => {
-  // Find the first card that matches this group
-  const card = props.portfolio.user_cards?.find(
-    (c) =>
-      c.blueprint?.name === group.blueprint?.name &&
-      c.condition === group.condition &&
-      c.language === group.language &&
-      c.purchase_price_cents ===
-        (group.singlePurchasePrice
-          ? Math.round(group.singlePurchasePrice * 100)
-          : null)
+  // Each row is a single purchase lot
+  const purchaseLot = props.portfolio.user_cards?.find(
+    (card) => card.id === group.userCardId
   );
 
-  if (!card) {
-    // Fallback: take the first card with matching name/condition/language
-    const fallbackCard = props.portfolio.user_cards?.find(
-      (c) =>
-        c.blueprint?.name === group.blueprint?.name &&
-        c.condition === group.condition &&
-        c.language === group.language
-    );
-
-    if (!fallbackCard) {
-      throw new Error('Card not found in group');
-    }
-
-    return fallbackCard;
+  if (!purchaseLot) {
+    throw new Error('Card not found in group');
   }
 
-  // Create a representative card with the correct total quantity
-  const representativeCard: UserCardData = {
-    ...card,
-    pivot: {
-      ...card.pivot,
-      quantity: group.totalQuantity, // Use the total quantity from the group
-    },
-  };
-
-  return representativeCard;
+  return purchaseLot;
 };
 
 // Portfolio value history functions
@@ -1908,10 +1877,13 @@ const groupedCards = computed(() => {
   const grouped: Record<string, CardGroup> = {};
 
   cards.forEach((card) => {
-    const groupKey = `${card.blueprint?.name}-${card.condition}-${card.language}-${card.purchase_price_cents}`;
+    // One row per purchase lot: lots keep their own price and date, and rows are
+    // tied to the exact printing (blueprint id), never merged by card name
+    const groupKey = `lot-${card.id}`;
     if (!grouped[groupKey]) {
       grouped[groupKey] = {
         groupKey,
+        userCardId: card.id,
         blueprint: card.blueprint,
         condition: card.condition,
         language: card.language,
@@ -1942,6 +1914,61 @@ const groupedCards = computed(() => {
 
   return Object.values(grouped);
 });
+
+/**
+ * Copies owned of the same card (blueprint, condition, language) across all its lots.
+ */
+const ownedCopiesOfSameCard = (purchaseLot: UserCardData): number => {
+  return (props.portfolio.user_cards || [])
+    .filter(
+      (card) =>
+        card.blueprint_id === purchaseLot.blueprint_id &&
+        card.condition === purchaseLot.condition &&
+        card.language === purchaseLot.language
+    )
+    .reduce((ownedCopies, card) => ownedCopies + card.pivot.quantity, 0);
+};
+
+/**
+ * Amount in cents formatted as currency, or "—" when unknown (never shown as 0).
+ */
+const formatOptionalCents = (
+  amountCents: number | null | undefined
+): string => {
+  if (amountCents === null || amountCents === undefined) {
+    return '—';
+  }
+  return formatCurrency(amountCents / 100);
+};
+
+/**
+ * Purchase cost of the copies sold (from the realized profit computed on the server
+ * from the consumed lots), or null when the cost of a lot is unknown.
+ */
+const saleTotalCostCents = (sale: SaleAmounts): number | null => {
+  if (
+    sale.realized_profit_cents === null ||
+    sale.realized_profit_cents === undefined
+  ) {
+    return null;
+  }
+  return (
+    sale.unit_sale_price_cents * sale.quantity - sale.realized_profit_cents
+  );
+};
+
+const saleProfitClass = (sale: SaleAmounts): string => {
+  if (
+    sale.realized_profit_cents === null ||
+    sale.realized_profit_cents === undefined
+  ) {
+    return 'text-gray-500 dark:text-gray-400';
+  }
+  if (sale.realized_profit_cents >= 0) {
+    return 'text-emerald-600';
+  }
+  return 'text-red-600';
+};
 
 // Backend now handles filtering and sorting, so soldSalesFiltered is just the soldSales array
 const soldSalesFiltered = computed(() => {

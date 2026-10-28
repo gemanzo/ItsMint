@@ -22,7 +22,8 @@
                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
               />
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Available: {{ maxQty }}
+                Available: {{ maxQty }}. Copies are taken from your oldest
+                purchases of this card first (FIFO).
               </p>
             </div>
             <div>
@@ -127,6 +128,7 @@
 import { computed, reactive, ref, watch } from 'vue';
 import axios from 'axios';
 import BaseModal from '@/Components/Base/BaseModal.vue';
+import { todayAsLocalDateString } from '@/utils/date';
 // Ziggy's route helper is available globally
 declare const route: any;
 
@@ -143,7 +145,8 @@ const form = reactive({
   quantity: 1,
   unitSalePrice: 0,
   platform: 'private',
-  soldAt: new Date().toISOString().slice(0, 10),
+  // Local date: toISOString() is the UTC date, still "yesterday" just after midnight
+  soldAt: todayAsLocalDateString(),
   notes: '',
 });
 const submitting = ref(false);
