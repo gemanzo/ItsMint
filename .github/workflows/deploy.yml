@@ -1,12 +1,19 @@
 name: CD - Continuous Deployment
 
-# Deploys only master commits that passed the CI workflow (ci.yml):
-# a push on master no longer goes to production without tests and build checks.
+# TEMPORARILY DISABLED (2026-10-28): the production server no longer exists, so every
+# automatic deploy would fail. It can only be started by hand (Actions > Run workflow).
+#
+# To re-enable it once a new server is configured (PROD_* secrets), replace the
+# "on:" block below with the original trigger, which deploys only master commits
+# that passed the CI workflow (ci.yml):
+#
+#   on:
+#     workflow_run:
+#       workflows: [CI]
+#       types: [completed]
+#       branches: [master]
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [master]
+  workflow_dispatch:
 
 # Never run two deploys at the same time; a new one waits for the running one
 concurrency:
@@ -16,10 +23,13 @@ concurrency:
 jobs:
   deploy:
     name: Deploy to Production
-    # Only when CI succeeded for a push (not for a pull request targeting master)
+    # When triggered by CI (workflow_run): only if CI succeeded for a push, not for a
+    # pull request targeting master. Manual runs (workflow_dispatch) always proceed.
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push'
+      github.event_name == 'workflow_dispatch' || (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push'
+      )
     runs-on: ubuntu-latest
     steps:
       - name: Deploy via SSH
