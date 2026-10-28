@@ -1144,12 +1144,12 @@
                       <!-- Card Image -->
                       <div class="card-image flex-shrink-0">
                         <Link
-                          v-if="sale.user_card?.blueprint?.id"
+                          v-if="sale.blueprint?.id"
                           :href="route('blueprints.show', sale.blueprint.id)"
                           class="block"
                         >
                           <img
-                            v-if="sale.user_card?.blueprint?.image_url"
+                            v-if="sale.blueprint?.image_url"
                             :src="sale.blueprint.image_url"
                             :alt="sale.blueprint.name"
                             class="h-36 w-auto object-contain rounded-lg border-2 border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md transition-shadow"
@@ -1169,23 +1169,19 @@
                           <div class="flex-1 min-w-0 pr-4">
                             <h3 class="text-xl font-bold mb-2">
                               <Link
-                                v-if="sale.user_card?.blueprint?.id"
+                                v-if="sale.blueprint?.id"
                                 :href="
                                   route('blueprints.show', sale.blueprint.id)
                                 "
                                 class="text-gray-900 dark:text-gray-100 hover:underline hover:text-blue-600 dark:hover:text-blue-400"
                               >
-                                {{
-                                  sale.user_card?.blueprint?.name ||
-                                  'Unknown Card'
-                                }}
+                                {{ sale.blueprint?.name || 'Unknown Card' }}
                               </Link>
                               <span
                                 v-else
                                 class="text-gray-900 dark:text-gray-100"
                                 >{{
-                                  sale.user_card?.blueprint?.name ||
-                                  'Unknown Card'
+                                  sale.blueprint?.name || 'Unknown Card'
                                 }}</span
                               >
                             </h3>
@@ -1195,12 +1191,12 @@
                                 <span
                                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                                 >
-                                  {{ sale.user_card?.condition }}
+                                  {{ sale.condition }}
                                 </span>
                                 <span
                                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                                 >
-                                  {{ sale.user_card?.language }}
+                                  {{ sale.language }}
                                 </span>
                                 <span
                                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
@@ -1218,7 +1214,7 @@
                               </div>
 
                               <p
-                                v-if="sale.user_card?.blueprint?.expansion"
+                                v-if="sale.blueprint?.expansion"
                                 class="text-sm text-gray-500 dark:text-gray-500"
                               >
                                 {{ sale.blueprint.expansion.name }}
