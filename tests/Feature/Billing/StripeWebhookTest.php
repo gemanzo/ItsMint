@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Request;
 use Illuminate\Session\TokenMismatchException;
 use Laravel\Pennant\Feature;
@@ -12,9 +12,9 @@ const TEST_STRIPE_WEBHOOK_SECRET = 'whsec_test_secret';
  * CSRF middleware that behaves as in production: Laravel skips CSRF checks
  * while running tests, which would hide a missing exclusion.
  */
-function productionLikeCsrfMiddleware(): ValidateCsrfToken
+function productionLikeCsrfMiddleware(): PreventRequestForgery
 {
-    return new class(app(), app('encrypter')) extends ValidateCsrfToken
+    return new class(app(), app('encrypter')) extends PreventRequestForgery
     {
         protected function runningUnitTests(): bool
         {

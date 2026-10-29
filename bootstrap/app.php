@@ -28,7 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Stripe webhooks are server-to-server calls without a CSRF token:
         // they are authenticated by the Stripe signature instead (see StripeWebhookController)
-        $middleware->validateCsrfTokens(except: [
+        $middleware->preventRequestForgery(except: [
             'stripe/*',
         ]);
 
