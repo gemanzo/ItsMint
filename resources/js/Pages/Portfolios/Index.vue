@@ -579,135 +579,136 @@
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Empty State -->
-          <div v-if="portfolios.length === 0" class="text-center py-8 sm:py-12">
-            <div
-              class="bg-white dark:bg-gray-800 rounded-card p-6 sm:p-8 border border-gray-200 dark:border-gray-700"
+        <!-- Empty State (no portfolios at all) -->
+        <div
+          v-else-if="portfolios.length === 0"
+          class="text-center py-8 sm:py-12"
+        >
+          <div
+            class="bg-white dark:bg-gray-800 rounded-card p-6 sm:p-8 border border-gray-200 dark:border-gray-700"
+          >
+            <svg
+              class="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              <svg
-                class="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+              />
+            </svg>
+            <h3
+              class="mt-2 text-lg sm:text-xl font-medium text-gray-900 dark:text-white"
+            >
+              No portfolios yet
+            </h3>
+            <p
+              class="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-400"
+            >
+              Get started by creating your first portfolio to organize your card
+              collection.
+            </p>
+            <div class="mt-6">
+              <button
+                type="button"
+                :disabled="!canCreatePortfolio"
+                :class="[
+                  'inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors',
+                  canCreatePortfolio
+                    ? 'text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                    : 'text-gray-400 bg-gray-300 dark:bg-gray-600 cursor-not-allowed',
+                ]"
+                :title="
+                  canCreatePortfolio
+                    ? 'Create your first portfolio'
+                    : 'Upgrade to Premium to create multiple portfolios'
+                "
+                @click="
+                  canCreatePortfolio ? (showCreatePortfolioModal = true) : null
+                "
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                />
-              </svg>
-              <h3
-                class="mt-2 text-lg sm:text-xl font-medium text-gray-900 dark:text-white"
-              >
-                No portfolios yet
-              </h3>
-              <p
-                class="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-400"
-              >
-                Get started by creating your first portfolio to organize your
-                card collection.
-              </p>
-              <div class="mt-6">
-                <button
-                  type="button"
-                  :disabled="!canCreatePortfolio"
-                  :class="[
-                    'inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors',
-                    canCreatePortfolio
-                      ? 'text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
-                      : 'text-gray-400 bg-gray-300 dark:bg-gray-600 cursor-not-allowed',
-                  ]"
-                  :title="
-                    canCreatePortfolio
-                      ? 'Create your first portfolio'
-                      : 'Upgrade to Premium to create multiple portfolios'
-                  "
-                  @click="
-                    canCreatePortfolio
-                      ? (showCreatePortfolioModal = true)
-                      : null
-                  "
+                <svg
+                  class="-ml-1 mr-2 h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
-                  <svg
-                    class="-ml-1 mr-2 h-5 w-5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                    />
-                  </svg>
-                  Create Portfolio
-                  <PremiumBadge
-                    v-if="!canCreatePortfolio"
-                    variant="subtle"
-                    size="sm"
-                    :show-icon="false"
-                    text="Premium"
-                    class="ml-2"
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                   />
-                </button>
-                <!-- Info message for free plan users -->
-                <p
+                </svg>
+                Create Portfolio
+                <PremiumBadge
                   v-if="!canCreatePortfolio"
-                  class="mt-3 text-xs text-gray-500 dark:text-gray-400"
+                  variant="subtle"
+                  size="sm"
+                  :show-icon="false"
+                  text="Premium"
+                  class="ml-2"
+                />
+              </button>
+              <!-- Info message for free plan users -->
+              <p
+                v-if="!canCreatePortfolio"
+                class="mt-3 text-xs text-gray-500 dark:text-gray-400"
+              >
+                Free plan allows only 1 portfolio.
+                <a
+                  href="/subscribe"
+                  class="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium underline"
                 >
-                  Free plan allows only 1 portfolio.
-                  <a
-                    href="/subscribe"
-                    class="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium underline"
-                  >
-                    Upgrade to Premium
-                  </a>
-                  for unlimited portfolios.
-                </p>
-              </div>
+                  Upgrade to Premium
+                </a>
+                for unlimited portfolios.
+              </p>
             </div>
           </div>
+        </div>
 
-          <!-- No Search Results -->
-          <div v-else class="text-center py-8 sm:py-12">
-            <div
-              class="bg-white dark:bg-gray-800 rounded-card p-6 sm:p-8 border border-gray-200 dark:border-gray-700"
+        <!-- No Search Results -->
+        <div v-else class="text-center py-8 sm:py-12">
+          <div
+            class="bg-white dark:bg-gray-800 rounded-card p-6 sm:p-8 border border-gray-200 dark:border-gray-700"
+          >
+            <svg
+              class="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              <svg
-                class="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <h3
+              class="mt-2 text-base sm:text-lg font-medium text-gray-900 dark:text-white"
+            >
+              No portfolios found
+            </h3>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Try adjusting your search or filters to find what you're looking
+              for.
+            </p>
+            <div class="mt-4">
+              <button
+                type="button"
+                class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium"
+                @click="searchQuery = ''"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-              <h3
-                class="mt-2 text-base sm:text-lg font-medium text-gray-900 dark:text-white"
-              >
-                No portfolios found
-              </h3>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Try adjusting your search or filters to find what you're looking
-                for.
-              </p>
-              <div class="mt-4">
-                <button
-                  type="button"
-                  class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium"
-                  @click="searchQuery = ''"
-                >
-                  Clear search
-                </button>
-              </div>
+                Clear search
+              </button>
             </div>
           </div>
         </div>
