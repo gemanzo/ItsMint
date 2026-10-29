@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Blueprint;
 use App\Services\ElasticsearchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Laravel\Pennant\Feature;
 
 final class BlueprintSearchController extends Controller
 {
@@ -34,7 +36,7 @@ final class BlueprintSearchController extends Controller
         $query = $validated['q'];
         $from = $validated['from'] ?? 0;
         // Gating: se l'utente non ha search.advanced limitiamo parametri e size
-        $isAdvanced = \Laravel\Pennant\Feature::for($request->user())->active('search.advanced');
+        $isAdvanced = Feature::for($request->user())->active('search.advanced');
 
         // Base vs Advanced defaults/limits
         $size = $validated['size'] ?? ($isAdvanced ? 50 : 10);
@@ -86,7 +88,7 @@ final class BlueprintSearchController extends Controller
                 $lang = strtolower($language);
                 $ids = collect($results['hits'])->pluck('id')->unique()->values();
                 if ($ids->isNotEmpty()) {
-                    $byId = \App\Models\Blueprint::whereIn('id', $ids)->get()->keyBy('id');
+                    $byId = Blueprint::whereIn('id', $ids)->get()->keyBy('id');
                     $response['data'] = collect($response['data'])
                         ->map(function ($hit) use ($byId, $lang) {
                             $bp = $byId->get($hit['id'] ?? null);

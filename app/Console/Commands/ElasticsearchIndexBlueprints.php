@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Blueprint;
 use App\Services\ElasticsearchService;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 class ElasticsearchIndexBlueprints extends Command
@@ -196,15 +197,15 @@ class ElasticsearchIndexBlueprints extends Command
     {
         if (is_string($date)) {
             // Parse string date and convert to ISO 8601
-            return \Carbon\Carbon::parse($date)->toISOString();
+            return Carbon::parse($date)->toISOString();
         }
 
-        if ($date instanceof \Carbon\Carbon) {
+        if ($date instanceof Carbon) {
             return $date->toISOString();
         }
 
         // Fallback for other DateTime instances
-        return \Carbon\Carbon::instance($date)->toISOString();
+        return Carbon::instance($date)->toISOString();
     }
 
     private function normalizeExpansionName(string $name): string

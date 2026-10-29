@@ -9,7 +9,10 @@ use App\Models\UserCard;
 use App\Rules\ValidCardCondition;
 use App\Rules\ValidCardLanguage;
 use App\Services\PortfolioTradingService;
+use App\Services\PortfolioValueHistoryService;
 use App\Support\PortfolioInputRules;
+use Carbon\Carbon;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +21,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Laravel\Pennant\Feature;
 
 class PortfolioController extends Controller
 {
@@ -26,15 +30,15 @@ class PortfolioController extends Controller
     /**
      * Check if user has unlimited portfolio feature.
      */
-    private function hasUnlimitedPortfolio(\Illuminate\Contracts\Auth\Authenticatable $user): bool
+    private function hasUnlimitedPortfolio(Authenticatable $user): bool
     {
-        return \Laravel\Pennant\Feature::for($user)->active('portfolio.unlimited');
+        return Feature::for($user)->active('portfolio.unlimited');
     }
 
     /**
      * Get the oldest portfolio ID for a user.
      */
-    private function getOldestPortfolioId(\Illuminate\Contracts\Auth\Authenticatable $user): int
+    private function getOldestPortfolioId(Authenticatable $user): int
     {
         return (int) ($user->portfolios()->oldest('created_at')->value('id') ?? 0);
     }
@@ -42,7 +46,7 @@ class PortfolioController extends Controller
     /**
      * Check if a portfolio is locked for free plan users.
      */
-    private function isPortfolioLocked(\Illuminate\Contracts\Auth\Authenticatable $user, Portfolio $portfolio, ?int $oldestPortfolioId = null): bool
+    private function isPortfolioLocked(Authenticatable $user, Portfolio $portfolio, ?int $oldestPortfolioId = null): bool
     {
         if ($this->hasUnlimitedPortfolio($user)) {
             return false;
@@ -97,7 +101,7 @@ class PortfolioController extends Controller
     /**
      * Check if user can add more cards to a portfolio (Free plan limit: 50 cards per portfolio).
      */
-    private function canAddCards(\Illuminate\Contracts\Auth\Authenticatable $user, Portfolio $portfolio, int $quantityToAdd): bool
+    private function canAddCards(Authenticatable $user, Portfolio $portfolio, int $quantityToAdd): bool
     {
         if ($this->hasUnlimitedPortfolio($user)) {
             return true; // Premium users have no limit
@@ -359,7 +363,7 @@ class PortfolioController extends Controller
         if (empty($validated['acquired_at'])) {
             $acquiredAt = today();
         } else {
-            $acquiredAt = \Carbon\Carbon::parse($validated['acquired_at']);
+            $acquiredAt = Carbon::parse($validated['acquired_at']);
         }
 
         // Check card limit for free plan users (50 cards per portfolio)
@@ -624,7 +628,7 @@ class PortfolioController extends Controller
         $period = $validated['period'] ?? '1M';
         $metric = $validated['metric'] ?? 'market_value';
 
-        $service = app(\App\Services\PortfolioValueHistoryService::class);
+        $service = app(PortfolioValueHistoryService::class);
         $valueHistory = $service->calculateHistory($portfolio, $period, $metric);
 
         return response()->json($valueHistory);

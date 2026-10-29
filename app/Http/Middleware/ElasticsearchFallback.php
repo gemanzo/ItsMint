@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\BlueprintController;
 use App\Services\ElasticsearchService;
 use Closure;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ class ElasticsearchFallback
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -55,7 +56,7 @@ class ElasticsearchFallback
         $size = $request->input('size', 20);
 
         try {
-            $blueprintController = app(\App\Http\Controllers\BlueprintController::class);
+            $blueprintController = app(BlueprintController::class);
 
             // Create a new request with the expected format for legacy search
             $fallbackRequest = new Request([

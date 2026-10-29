@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\UserCardController;
 use App\Models\CardScan;
 use App\Rules\ValidCardCondition;
 use App\Rules\ValidCardLanguage;
@@ -295,7 +296,7 @@ final class CardScanController extends Controller
             ];
 
             // Use existing UserCardController logic
-            $userCardController = new \App\Http\Controllers\UserCardController;
+            $userCardController = new UserCardController;
             $request->merge($userCardData);
 
             $response = $userCardController->store($request);

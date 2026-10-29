@@ -4,7 +4,9 @@ use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Request;
 use Illuminate\Session\TokenMismatchException;
+use Illuminate\Testing\TestResponse;
 use Laravel\Pennant\Feature;
+use Tests\TestCase;
 
 const TEST_STRIPE_WEBHOOK_SECRET = 'whsec_test_secret';
 
@@ -60,7 +62,7 @@ function subscriptionCreatedEventPayload(string $stripeCustomerId, string $subsc
 /**
  * Send a webhook request signed like Stripe does (HMAC-SHA256 of "timestamp.payload").
  */
-function postSignedStripeWebhook(Tests\TestCase $testCase, array $payload, string $signingSecret): Illuminate\Testing\TestResponse
+function postSignedStripeWebhook(TestCase $testCase, array $payload, string $signingSecret): TestResponse
 {
     $jsonPayload = json_encode($payload);
     $timestamp = time();

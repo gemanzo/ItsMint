@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Blueprint;
 use App\Models\Expansion;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  * Note: creating a Blueprint fires BlueprintObserver (Elasticsearch indexing and
  * OCR match string generation). Use createQuietly() in tests that don't need it.
  *
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Blueprint>
+ * @extends Factory<Blueprint>
  */
 class BlueprintFactory extends Factory
 {

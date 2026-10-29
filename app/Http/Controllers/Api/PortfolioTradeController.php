@@ -11,6 +11,7 @@ use App\Models\PortfolioTransaction;
 use App\Models\UserCard;
 use App\Services\PortfolioTradingService;
 use App\Support\PortfolioInputRules;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -45,7 +46,7 @@ final class PortfolioTradeController extends Controller
             (int) $validated['unit_sale_price_cents'],
             $validated['platform'],
             $validated['notes'] ?? null,
-            isset($validated['sold_at']) ? \Carbon\Carbon::parse($validated['sold_at']) : null
+            isset($validated['sold_at']) ? Carbon::parse($validated['sold_at']) : null
         );
 
         // Clear portfolio value cache after sale
@@ -85,7 +86,7 @@ final class PortfolioTradeController extends Controller
             $query->where('sold_at', '>=', $validated['date_from']);
         }
         if (! empty($validated['date_to'])) {
-            $query->where('sold_at', '<=', \Carbon\Carbon::parse($validated['date_to'])->endOfDay());
+            $query->where('sold_at', '<=', Carbon::parse($validated['date_to'])->endOfDay());
         }
 
         // Price range filter (unit sale price)
@@ -143,7 +144,7 @@ final class PortfolioTradeController extends Controller
 
         $sale->fill($validated);
         if (isset($validated['sold_at'])) {
-            $sale->sold_at = \Carbon\Carbon::parse($validated['sold_at']);
+            $sale->sold_at = Carbon::parse($validated['sold_at']);
         }
         $sale->save();
 
@@ -227,7 +228,7 @@ final class PortfolioTradeController extends Controller
             'amount_cents' => $amount,
             'currency' => 'EUR',
             'notes' => $validated['notes'] ?? null,
-            'occurred_at' => isset($validated['occurred_at']) ? \Carbon\Carbon::parse($validated['occurred_at']) : now(),
+            'occurred_at' => isset($validated['occurred_at']) ? Carbon::parse($validated['occurred_at']) : now(),
         ]);
 
         return response()->json($tx, 201);
@@ -237,7 +238,7 @@ final class PortfolioTradeController extends Controller
     {
         Gate::authorize('view', $portfolio);
 
-        $query = \App\Models\PortfolioSale::with(['blueprint', 'lots'])
+        $query = PortfolioSale::with(['blueprint', 'lots'])
             ->where('portfolio_id', $portfolio->id)
             ->orderBy('sold_at');
 
@@ -314,7 +315,7 @@ final class PortfolioTradeController extends Controller
         Gate::authorize('view', $portfolio);
 
         // Balance from ledger
-        $balanceCents = (int) \App\Models\PortfolioTransaction::where('portfolio_id', $portfolio->id)->sum('amount_cents');
+        $balanceCents = (int) PortfolioTransaction::where('portfolio_id', $portfolio->id)->sum('amount_cents');
 
         // Avg hold time (weighted by qty)
         $sales = PortfolioSale::where('portfolio_id', $portfolio->id)->get(['quantity', 'sold_at', 'acquired_at', 'unit_purchase_price_cents', 'unit_sale_price_cents']);

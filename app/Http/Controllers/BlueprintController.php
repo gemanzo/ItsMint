@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Blueprint;
+use App\Models\CardPrice;
 use App\Models\Expansion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Inertia\Inertia; // Added for Str::title
+use Illuminate\Support\Str; // Added for Str::title
+use Inertia\Inertia;
 use Inertia\Response;
 
 class BlueprintController extends Controller
@@ -99,7 +100,7 @@ class BlueprintController extends Controller
                     $row = $mv->get($bp->id);
                     if ($row) {
                         // Create a lightweight object mimicking CardPrice attributes expected by FE
-                        $bp->setRelation('latestPrice', new \App\Models\CardPrice([
+                        $bp->setRelation('latestPrice', new CardPrice([
                             'blueprint_id' => $row->blueprint_id,
                             'language' => $row->language,
                             'is_foil' => $row->is_foil,

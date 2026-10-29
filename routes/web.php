@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PortfolioController as WebPortfolioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StripeWebhookController;
+use App\Http\Controllers\SubscriptionController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -48,15 +49,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/subscribe', function () {
         return Inertia::render('Subscription/Index');
     })->name('subscription.index');
-    Route::post('/subscribe/checkout', [\App\Http\Controllers\SubscriptionController::class, 'checkout'])
+    Route::post('/subscribe/checkout', [SubscriptionController::class, 'checkout'])
         ->name('subscription.checkout');
-    Route::get('/subscribe/portal', [\App\Http\Controllers\SubscriptionController::class, 'portal'])
+    Route::get('/subscribe/portal', [SubscriptionController::class, 'portal'])
         ->name('subscription.portal');
-    Route::get('/subscribe/success', [\App\Http\Controllers\SubscriptionController::class, 'success'])
+    Route::get('/subscribe/success', [SubscriptionController::class, 'success'])
         ->name('subscription.success');
-    Route::get('/subscribe/canceled', [\App\Http\Controllers\SubscriptionController::class, 'canceled'])
+    Route::get('/subscribe/canceled', [SubscriptionController::class, 'canceled'])
         ->name('subscription.canceled');
-    Route::get('/subscribe/status', [\App\Http\Controllers\SubscriptionController::class, 'status'])
+    Route::get('/subscribe/status', [SubscriptionController::class, 'status'])
         ->name('subscription.status');
 });
 

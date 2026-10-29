@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Blueprint;
 use App\Services\ElasticsearchService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 
@@ -204,13 +205,13 @@ class BlueprintObserver
     private function formatDateForElasticsearch($date): string
     {
         if (is_string($date)) {
-            return \Carbon\Carbon::parse($date)->toISOString();
+            return Carbon::parse($date)->toISOString();
         }
 
-        if ($date instanceof \Carbon\Carbon) {
+        if ($date instanceof Carbon) {
             return $date->toISOString();
         }
 
-        return \Carbon\Carbon::instance($date)->toISOString();
+        return Carbon::instance($date)->toISOString();
     }
 }

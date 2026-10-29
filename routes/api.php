@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ImageProxyController;
 use App\Http\Controllers\Api\PortfolioTradeController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\UserCardController;
+use App\Http\Middleware\ElasticsearchFallback;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -88,7 +89,7 @@ Route::prefix('card-scans')->middleware(['auth:sanctum', 'role:admin'])->group(f
 });
 
 // NEW: Elasticsearch-powered Blueprint search routes
-Route::prefix('blueprints')->middleware(['auth:sanctum', \App\Http\Middleware\ElasticsearchFallback::class])->group(function () {
+Route::prefix('blueprints')->middleware(['auth:sanctum', ElasticsearchFallback::class])->group(function () {
     // Base search: sempre disponibile (Free)
     Route::get('search', [BlueprintSearchController::class, 'search'])->name('api.blueprints.search');
 

@@ -7,7 +7,9 @@ namespace App\Services;
 use App\Enums\CardCondition;
 use App\Models\Portfolio;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 final class PortfolioValueHistoryService
 {
@@ -111,7 +113,7 @@ final class PortfolioValueHistoryService
     /**
      * Fetch prices for multiple blueprints optimized with single query.
      *
-     * @return array<int, \Illuminate\Support\Collection>
+     * @return array<int, Collection>
      */
     private function fetchPricesForBlueprints(array $blueprintIds, Carbon $startDate, Carbon $endDate): array
     {
@@ -120,7 +122,7 @@ final class PortfolioValueHistoryService
         }
 
         // Use raw query to efficiently fetch prices grouped by blueprint
-        $prices = \Illuminate\Support\Facades\DB::table('card_prices')
+        $prices = DB::table('card_prices')
             ->whereIn('blueprint_id', $blueprintIds)
             ->whereBetween('fetched_at', [$startDate, $endDate])
             ->select('id', 'blueprint_id', 'price_cents', 'language', 'condition', 'fetched_at')
